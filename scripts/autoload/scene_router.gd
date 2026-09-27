@@ -27,15 +27,26 @@ func _ready() -> void:
 func go(scene_path: String, new_context: Dictionary = {}) -> void:
 	if _busy:
 		return
+	if not ResourceLoader.exists(scene_path):
+		push_error("SceneRouter: no scene at %s" % scene_path)
+		return
 	_busy = true
 	await _fade_to(1.0)
 	context = new_context
 	var err: Error = get_tree().change_scene_to_file(scene_path)
-	if err != OK:
+	if err == OK:
+		await get_tree().scene_changed
+	else:
+		# No scene change will come, so do not wait for one: that would leave the
+		# router busy forever and every later button press would be ignored.
 		push_error("SceneRouter: could not load %s (%s)" % [scene_path, error_string(err)])
-	await get_tree().scene_changed
 	await _fade_to(0.0)
 	_busy = false
+
+
+## True while a transition is running; go() calls are ignored until it ends.
+func is_busy() -> bool:
+	return _busy
 
 
 func _fade_to(alpha: float) -> void:
