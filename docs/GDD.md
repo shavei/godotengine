@@ -525,7 +525,7 @@ Live values are in `data/balance/balance_default.tres` and `data/weapons/weapon_
 - **Stick aim assist:** with a gamepad, a new swing turns toward the target closest to the aim line within 30 degrees either side and 64 px. Mouse aim is never assisted. Set the angle to 0 to turn it off.
 - **Rumble:** light tap on each sword hit (stronger on crits and the finisher), 0.6 for 0.18 s when the hero is hit. `rumble_strength` scales it (0 = off, also the future accessibility slider).
 - **Low stamina:** pressing dodge without enough stamina blinks the stamina bar red.
-- Tune these live with the F4 panel in a debug build (docs/ARCHITECTURE.md Section 11).
+- Tune these live in the Tuning room (title screen) with a controller: Start opens the tuning menu. F4 opens it in any room (docs/ARCHITECTURE.md Section 11).
 
 | Enemy (Mossy Hollow) | HP | Speed | Attack | Damage | Wind-up | Notes |
 |---|---|---|---|---|---|---|
