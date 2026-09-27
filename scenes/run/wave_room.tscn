@@ -29,6 +29,7 @@ spawn_points = Array[Vector2]([Vector2(96, 96), Vector2(384, 80), Vector2(672, 9
 actors = NodePath("../Actors")
 
 [node name="Camera" type="Camera2D" parent="." node_paths=PackedStringArray("target")]
+process_callback = 0
 position = Vector2(384, 240)
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0

@@ -3,6 +3,7 @@ extends GutTest
 
 const HERO_SCENE: PackedScene = preload("res://scenes/actors/hero/hero.tscn")
 const DUMMY_SCENE: PackedScene = preload("res://scenes/actors/training_dummy/training_dummy.tscn")
+const ROOM_SCRIPT: Script = preload("res://scenes/run/placeholder_room.gd")
 
 var world: Node2D
 var hero: Hero
@@ -48,6 +49,38 @@ func test_moves_with_input() -> void:
 	await wait_physics_frames(30)
 	assert_gt(hero.position.y, 120.0)
 	assert_almost_eq(hero.position.x, 100.0, 0.5)
+
+
+func test_steers_while_attacking() -> void:
+	input.aim = Vector2.RIGHT
+	input.move = Vector2.DOWN
+	input.press(&"attack")
+	await wait_physics_frames(2)
+	assert_true(hero.state_machine.is_in(&"Attack"))
+	await wait_physics_frames(10)
+	assert_true(hero.state_machine.is_in(&"Attack"), "still swinging")
+	assert_gt(hero.position.y, 110.0, "moved down during the swing")
+
+
+func test_attack_move_scale_zero_roots_the_swing() -> void:
+	hero.balance = hero.balance.duplicate()
+	hero.balance.attack_move_scale = 0.0
+	input.aim = Vector2.RIGHT
+	input.move = Vector2.DOWN
+	input.press(&"attack")
+	await wait_physics_frames(12)
+	assert_almost_eq(hero.position.y, 100.0, 0.5)
+
+
+func test_slides_along_wall_at_a_shallow_angle() -> void:
+	var room: Node2D = ROOM_SCRIPT.new()
+	room.set("size_tiles", Vector2i(12, 12))
+	world.add_child(room)
+	hero.position = Vector2(100, 40)
+	# Mostly into the top wall, a little to the right (about 11 degrees).
+	input.move = Vector2(0.2, -1.0).normalized()
+	await wait_physics_frames(60)
+	assert_gt(hero.position.x, 110.0, "slides instead of sticking")
 
 
 func test_single_attack_hits_dummy_once() -> void:

@@ -44,6 +44,7 @@ position = Vector2(500, 240)
 counterattack = SubResource("Resource_slam")
 
 [node name="Camera" type="Camera2D" parent="." node_paths=PackedStringArray("target")]
+process_callback = 0
 position = Vector2(384, 320)
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0

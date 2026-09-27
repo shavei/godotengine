@@ -2,6 +2,8 @@ class_name GameCamera
 extends Camera2D
 ## Follows a target and shakes on EventBus.camera_shake_requested.
 ## Shake uses trauma (0 to 1), offset grows with trauma squared so small hits stay subtle.
+## Follows on physics ticks, like the actors: with physics interpolation on (project
+## setting) Godot then draws camera and actors between ticks together, so nothing jitters.
 
 @export var target: Node2D
 @export var max_offset: float = 6.0
@@ -17,13 +19,14 @@ func _ready() -> void:
 	if target != null:
 		global_position = target.global_position
 		reset_smoothing()
+		reset_physics_interpolation()
 
 
 func add_trauma(amount: float) -> void:
 	trauma = minf(1.0, trauma + amount)
 
 
-func _process(delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if target != null and is_instance_valid(target):
 		global_position = target.global_position
 	if trauma > 0.0:

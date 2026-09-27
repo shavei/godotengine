@@ -7,7 +7,8 @@ Persistent project memory. Read at the start of every session, update at the end
 - **Phase:** M0 done. M1 (combat core) code done (3 PRs merged); only the owner's gamepad playtest item is still open. M2 (run structure) in progress, split into 4 PRs. PR 1 (floor maps, doors, room flow) merged. PR 2 (drops, pickups, Treasure, Merchant, Event, Elite rooms) open for the owner to play.
 - **Also:** Controls remapping menu (title > Controls) added at the owner's request, ahead of the M7 Settings menu.
 - **Next step:** Owner plays a run and answers the M2 PR 2 questions in the session log. Then M2 PR 3 (Mother Toad and the Warden of Roots). The M1 gamepad tuning can happen any time in the Tuning room (title screen).
-- **Last updated:** 2026-09-27 (M2 PR 2)
+- **Also:** Movement feel fix (smooth camera, wall sliding, move while attacking) from owner feedback, in its own PR.
+- **Last updated:** 2026-09-27 (movement feel fix)
 
 ## The game in brief
 
@@ -78,6 +79,9 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-27 | Controls remapping added now (owner request), ahead of the M7 Settings menu | Owner asked to remap keys and buttons in game. One keyboard and one gamepad input per action; taking a used input swaps; right stick stays aim. Saved in `user://settings.cfg` (per machine, not in the profile). Menu on the title only until a pause menu exists. |
 | 2026-09-27 | Owner's F4 tuning adopted: acceleration 1100, aim assist 60 degrees / 84 px, rumble strength 5 | Owner played with a gamepad and saved these (commit b87b8c9). GDD 15.5 synced. Rumble 5 means most rumbles are at the device cap. |
 | 2026-09-27 | On-screen hints read the live bindings (`InputBindings.hint`) | Hardcoded "Shift / B" text would lie after a remap. |
+| 2026-09-27 | Hero moves while attacking at 60% speed (`attack_move_scale`, tunable in F4) | Owner: "can't attack and move at the same time". The swing direction still locks at the start, so aiming stays a commitment. 0 restores the old rooted swing. |
+| 2026-09-27 | Physics interpolation on (project setting); room cameras run on physics ticks | Owner: movement "not very smooth". Actors move 60 times a second but screens draw at 120+ Hz, and the camera followed per frame, so the hero stuttered against the world. Transform tweens run on physics ticks; nodes placed after entering the tree call `reset_physics_interpolation()`. |
+| 2026-09-27 | Hero `wall_min_slide_angle = 0` | Owner: hero "sometimes gets stuck". Godot's default (15 degrees) stops a floating body that pushes into a wall at a slant, easy to do with a stick. Found with a probe test, regression test added. |
 | 2026-09-27 | Run loot goes into a per-hero `Wallet` in `RunState.wallets[player_id]`; the profile gets it at run end (M2 PR 4) | Death keeps only 50% (GDD 6.4), so run loot must stay separate until the run ends. Keyed by player so co-op heroes keep their own loot. |
 | 2026-09-27 | Drops are `DropTable` resources inline in `EnemyData` and `RegionData`, rolled by pure `LootRoller` with a per-room seed | Data-driven, no drop tables by name in code. Seeded so co-op peers agree (ARCHITECTURE 9). Standalone drop table files would need an `id` for ContentDB, so they stay inline. |
 | 2026-09-27 | Pickups pop out, drift to a hero within 40 px, fly to the hero after a room clear, and are scooped up when leaving | Loot should feel good to see, but chasing coins after a fight is busywork and losing loot to a door is a trap. |

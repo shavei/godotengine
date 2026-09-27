@@ -90,6 +90,7 @@ func _spawn(data: EnemyData, local_position: Vector2) -> void:
 	var parent: Node2D = actors if actors != null else self
 	parent.add_child(enemy)
 	enemy.global_position = to_global(local_position)
+	enemy.reset_physics_interpolation()
 	_track(enemy)
 
 

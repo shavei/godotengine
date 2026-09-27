@@ -7,7 +7,7 @@ func enter(_msg: Dictionary = {}) -> void:
 	hero.velocity = Vector2.ZERO
 	hero.hitbox.deactivate()
 	hero.hurtbox.set_deferred(&"monitorable", false)
-	var tween: Tween = hero.create_tween()
+	var tween: Tween = hero.create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	tween.tween_property(hero.visual, "scale", Vector2(1.4, 0.3), 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	tween.parallel().tween_property(hero.visual, "self_modulate", Color(0.5, 0.3, 0.3), 0.35)
 

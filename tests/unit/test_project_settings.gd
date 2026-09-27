@@ -12,6 +12,10 @@ func test_integer_scaling_for_pixel_art() -> void:
 	assert_eq(ProjectSettings.get_setting("display/window/stretch/scale_mode"), "integer")
 
 
+func test_physics_interpolation_for_smooth_motion() -> void:
+	assert_true(ProjectSettings.get_setting("physics/common/physics_interpolation"))
+
+
 func test_nearest_texture_filter() -> void:
 	assert_eq(ProjectSettings.get_setting("rendering/textures/canvas_textures/default_texture_filter"), 0)
 

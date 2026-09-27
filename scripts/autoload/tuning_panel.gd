@@ -18,6 +18,7 @@ const ROWS: Array[Array] = [
 	[&"hero_move_speed", 5.0, "Move speed"],
 	[&"hero_acceleration", 50.0, "Acceleration"],
 	[&"hero_friction", 50.0, "Friction (stopping)"],
+	[&"attack_move_scale", 0.05, "Move while attacking"],
 	[&"dodge_distance", 4.0, "Dodge distance"],
 	[&"dodge_duration", 0.02, "Dodge time"],
 	[&"dodge_iframes", 0.02, "Dodge invincibility"],

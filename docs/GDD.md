@@ -512,6 +512,7 @@ Live values are in `data/balance/balance_default.tres` and `data/weapons/weapon_
 | Input buffer (attack, dodge, flask) | 0.15 s |
 | Combo continues if you attack again within | 0.35 s after a swing ends |
 | Flask drink time / move speed while drinking | 0.4 s / 40% |
+| Move speed while attacking | 60% (steers on top of the swing's lunge; 0 roots the hero) |
 | Hit-stop | Sword finisher 0.07 s, crits +0.03 s, hero hit 0.05 s |
 
 | Sword step | Damage | Wind-up | Active | Recovery | Knockback |
@@ -524,6 +525,8 @@ Live values are in `data/balance/balance_default.tres` and `data/weapons/weapon_
 - A flask charge is used when the heal lands. Getting hit while drinking cancels the drink and keeps the charge.
 - Enemies do not crit unless their data says so.
 - The hero rolls through enemy bodies during a dodge (walls still block).
+- The hero can move while swinging (at the speed above); the swing's direction stays where it was aimed.
+- The hero slides along walls at any angle, never sticks on a wall it touches at a slant.
 - **Stick aim assist:** with a gamepad, a new swing turns toward the target closest to the aim line within 30 degrees either side and 64 px (owner set it back from a 60 degree, 84 px trial). Mouse aim is never assisted. Set the angle to 0 to turn it off.
 - **Rumble:** light tap on each sword hit (stronger on crits and the finisher), 0.6 for 0.18 s when the hero is hit. `rumble_strength` scales it (0 = off, also the future accessibility slider). Owner tried 5 and settled back on 1.
 - **Low stamina:** pressing dodge without enough stamina blinks the stamina bar red.

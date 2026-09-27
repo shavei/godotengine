@@ -72,6 +72,7 @@ func _ready() -> void:
 		run = _start_test_run()
 	map_room = run.current_room()
 	hero.global_position = HERO_START
+	hero.reset_physics_interpolation()
 	_restore_hero()
 	wallet = run.wallet(hero.player_id)
 	_loot_rng = LootRoller.rng_for(run.run_seed, run.floor_index, run.current_room_id, &"loot")
@@ -475,6 +476,7 @@ func _fit_camera() -> void:
 	camera.limit_bottom = int(bounds.end.y)
 	camera.global_position = hero.global_position
 	camera.reset_smoothing()
+	camera.reset_physics_interpolation()
 
 
 ## A short line on the sign (a merchant's answer, why a choice is greyed out).
