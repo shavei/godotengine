@@ -76,6 +76,7 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-27 | Elite, Mother Toad and Warden rooms use stand-in wave encounters in M2 PR 1 | A full run can be played end to end now; the real enemies replace the `.tres` references in PR 2 and PR 3 without code changes. |
 | 2026-09-27 | Esc leaves the run straight to the title (no confirm) for now | A pause menu is not in the design docs yet; revisit when the results screen and mid-run save land (M2 PR 4). |
 | 2026-09-27 | Controls remapping added now (owner request), ahead of the M7 Settings menu | Owner asked to remap keys and buttons in game. One keyboard and one gamepad input per action; taking a used input swaps; right stick stays aim. Saved in `user://settings.cfg` (per machine, not in the profile). Menu on the title only until a pause menu exists. |
+| 2026-09-27 | Owner's F4 tuning adopted: acceleration 1100, aim assist 60 degrees / 84 px, rumble strength 5 | Owner played with a gamepad and saved these (commit b87b8c9). GDD 15.5 synced. Rumble 5 means most rumbles are at the device cap. |
 | 2026-09-27 | On-screen hints read the live bindings (`InputBindings.hint`) | Hardcoded "Shift / B" text would lie after a remap. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 

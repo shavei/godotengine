@@ -199,7 +199,8 @@ func test_hits_and_getting_hit_rumble() -> void:
 	hitbox.attack = slam
 	world.add_child(hitbox)
 	hero.hurtbox.receive_hit(hitbox)
-	assert_almost_eq(input.last_rumble.x, Hero.HURT_RUMBLE.x, 0.001)
+	# Scaled by the tuned rumble_strength in balance_default.tres.
+	assert_almost_eq(input.last_rumble.x, Hero.HURT_RUMBLE.x * hero.balance.rumble_strength, 0.001)
 
 
 func test_rumble_strength_zero_turns_it_off() -> void:
