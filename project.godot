@@ -24,6 +24,7 @@ GameState="*res://scripts/autoload/game_state.gd"
 SaveManager="*res://scripts/autoload/save_manager.gd"
 SceneRouter="*res://scripts/autoload/scene_router.gd"
 AudioManager="*res://scripts/autoload/audio_manager.gd"
+DebugOverlay="*res://scripts/autoload/debug_overlay.gd"
 
 [display]
 
