@@ -23,7 +23,7 @@ Legend: `[ ]` todo, `[x]` done. Update this file as work lands, and log decision
 ---
 
 ## M0: Project setup
-- [x] Create Godot 4.7.2 project (`project.godot`) at repo root: 640x360 viewport, `viewport` stretch, integer scaling, nearest filter, Compatibility renderer.
+- [x] Create Godot 4.7.2 project (`project.godot`) at repo root: 640x360 viewport, `canvas_items` stretch, integer scaling, nearest filter, Compatibility renderer.
 - [x] Folder structure from `docs/ARCHITECTURE.md` Section 2.
 - [x] `.gitignore` for Godot (`.godot/`, builds), `.gitattributes` for line endings and binary assets.
 - [x] Input map (GDD Section 7.1) for gamepad and keyboard/mouse.

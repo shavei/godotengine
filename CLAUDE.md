@@ -34,7 +34,7 @@ If code and docs disagree, stop and ask, or fix the doc in the same change. Neve
 ## Tech stack and conventions
 
 - **Engine:** Godot **4.7.2** (standard build, not .NET). Pinned: do not upgrade without logging it in `MEMORY.md`. **Renderer:** Compatibility (GL). **Language:** GDScript with static typing everywhere (`var hp: int = 10`, typed function signatures, typed arrays).
-- **Resolution:** 640x360 base, stretch mode `viewport` with integer scaling (1280x720 default window), 32x32 tiles, pixel art. `texture_filter = nearest`.
+- **Resolution:** 640x360 base, stretch mode `canvas_items` with integer scaling (1280x720 default window; text and UI render at full screen resolution, pixel art scales by whole numbers), 32x32 tiles, pixel art. `texture_filter = nearest`.
 - **Naming:**
   - Files and folders: `snake_case` (`gift_system.gd`, `power_fire.tres`).
   - Classes: `PascalCase` with `class_name`.

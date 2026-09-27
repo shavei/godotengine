@@ -8,7 +8,7 @@ func test_base_resolution_is_640x360() -> void:
 
 
 func test_integer_scaling_for_pixel_art() -> void:
-	assert_eq(ProjectSettings.get_setting("display/window/stretch/mode"), "viewport")
+	assert_eq(ProjectSettings.get_setting("display/window/stretch/mode"), "canvas_items")
 	assert_eq(ProjectSettings.get_setting("display/window/stretch/scale_mode"), "integer")
 
 
