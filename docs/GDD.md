@@ -518,6 +518,17 @@ Live values are in `data/balance/balance_default.tres` and `data/weapons/weapon_
 - The next combo step can start 0.06 s into recovery if attack was pressed during the swing. Dodge cancels recovery.
 - A flask charge is used when the heal lands. Getting hit while drinking cancels the drink and keeps the charge.
 - Enemies do not crit unless their data says so.
+- The hero rolls through enemy bodies during a dodge (walls still block).
+
+| Enemy (Mossy Hollow) | HP | Speed | Attack | Damage | Wind-up | Notes |
+|---|---|---|---|---|---|---|
+| Sproutling | 20 | 65 | Bite | 6 | 0.45 s | Splits into 2 Seedlings on death |
+| Seedling | 8 | 80 | Bite | 3 | 0.40 s | Does not split |
+| Tusk Boar | 60 | 40 (charge 260) | Charge, 0.9 s | 14 | 0.70 s | Hits do not interrupt it; a wall stuns it 1.6 s |
+| Thorn Archer | 30 | 55 | Arrow (190 px/s, 240 px range) | 8 | 0.60 s | Keeps ~130 px away; a missed arrow leaves thorns (4 dmg every 0.8 s, 4 s) |
+
+- Waves: enemies appear 0.7 s after a spawn marker, away from the hero when possible. The next wave starts 1.2 s after a clear. The M1 test room is 3 Sproutlings; a Boar and 2 Sproutlings; 2 Archers, a Boar and a Sproutling.
+- Live values: `data/enemies/*.tres` and `data/encounters/encounter_mossy_test.tres`.
 
 All numbers here are starting points for tuning. Update this section when they change.
 

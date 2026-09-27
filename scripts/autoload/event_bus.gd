@@ -19,6 +19,7 @@ signal renown_changed(points: int, level: int)
 # Runs
 signal run_started(region_id: StringName, seed: int)
 signal run_ended(success: bool)
+signal room_cleared
 
 # Raids
 signal raid_started(faction_id: StringName)

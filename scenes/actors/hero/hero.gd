@@ -5,6 +5,8 @@ extends CharacterBody2D
 ## States live under StateMachine: Move, Attack, Dodge, Drink, Hurt, Dead.
 
 const GROUP: StringName = &"heroes"
+## Physics layer number of enemy bodies (docs/ARCHITECTURE.md Section 7).
+const ENEMY_BODY_LAYER: int = 3
 
 @export var player_id: int = 0
 ## Left empty, these load from ContentDB (weapon_sword, balance_default).

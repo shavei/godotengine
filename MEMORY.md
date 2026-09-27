@@ -4,9 +4,9 @@ Persistent project memory. Read at the start of every session, update at the end
 
 ## Current status
 
-- **Phase:** M0 done. M1 (combat core) in progress, split into 3 PRs. PR 1 (hero combat core + test room) merged. A small fix PR clears the GDScript warnings the owner saw in the editor and adds a CI warnings check.
-- **Next step:** M1 PR 2: Sproutling, Tusk Boar, Thorn Archer, waves and room clear. Owner feel feedback on the test room still welcome.
-- **Last updated:** 2026-09-27
+- **Phase:** M0 done. M1 (combat core) in progress, split into 3 PRs. PR 1 (hero core) merged. PR 2 (enemies, waves, room clear) open for the owner to play.
+- **Next step:** Owner plays the Wave room (title screen button) and gives feel feedback. Then M1 PR 3: feel and tuning, checked with a gamepad.
+- **Last updated:** 2026-09-27 (M1 PR 2)
 
 ## The game in brief
 
@@ -57,6 +57,11 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-27 | Flask charge is used when the heal lands; a hit while drinking cancels and keeps the charge | Kinder while enemies are untuned. Revisit in M1 PR 3 if drinking mid-fight feels risk-free. |
 | 2026-09-27 | Hit-stop restores speed by request counter, not by clock comparison | Found in a render test: comparing millisecond clocks could leave the game stuck at 5% speed. Regression test added. |
 | 2026-09-27 | Zero GDScript warnings policy, enforced in CI by `tools/check_warnings.gd` | Owner saw 15 warnings in the editor debugger that headless tests could not show. EventBus is exempt from unused-signal (by design other scripts emit its signals). |
+| 2026-09-27 | One enemy scene; behavior is an `EnemyAI` script picked by `EnemyData.ai_script` (Swarm, Charger, Ranged) | A new enemy of an existing archetype is a `.tres` only, per the data-driven rule. AI is a small phase machine, simpler than node states for enemies. |
+| 2026-09-27 | The hero rolls through enemy bodies during a dodge | Answers the M1 open question: swarms could otherwise pin the hero against walls, and the dodge should always be an escape. Walls still block. |
+| 2026-09-27 | Waves count split children as part of the wave; enemies count as alive from their spawn marker | A wave can never clear while seedlings or pending spawns remain. Rules in `WaveTracker` with tests. |
+| 2026-09-27 | Thorn Archer arrows leave a thorn patch only when they miss | A hit already punishes; the patch punishes dodging carelessly and shrinks the room while the archer lives. |
+| 2026-09-27 | Wave room is a separate scene (title: "Wave room"); the dummy test room stays | Dummies are still useful for practicing combos and dodge timing without enemies around. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 
 ## Rejected ideas (do not re-propose without new info)
@@ -90,13 +95,13 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Art direction specifics (palette, reference games). Proposed: warm cozy village vs saturated dangerous dungeons.
 - Should failed runs still tick villager training? Current answer: yes (training counts runs attempted, not runs won). Revisit after playtest.
 - Is 6 runs to Master the right pace? Tune in M5 playtests.
-- Should the hero roll through enemies during a dodge (currently blocked by enemy bodies)? Decide in M1 PR 2 once real enemies exist.
 - Perfect dodge slow-motion (GDD 7.2): add before the Fusion meter (M6) if playtests want it.
 - Online multiplayer tech: Godot high-level multiplayer over ENet vs Steam networking. Decide at M10.
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
 
+- **2026-09-27 (M1 PR 2):** Enemies and waves. `EnemyData`, one `Enemy` scene, `SwarmAI`, `ChargerAI`, `RangedAI`. Sproutling (splits into 2 Seedlings), Tusk Boar (lane telegraph, charge, stuns on walls, not interrupted by hits), Thorn Archer (keeps distance, shot lane, arrows leave thorn patches on a miss). Enemy death animation. `EncounterData`/`WaveData`, `WaveDirector` with spawn markers, pure `WaveTracker`, `EventBus.room_cleared`. New Wave room (3 waves) on the title. Hero dodges through enemies. Numbers in GDD 15.5. 93 tests pass, no warnings, boot clean, checked with xvfb screenshots (lanes, thorn patch, waves advancing).
 - **2026-09-27 (debug overlay):** Owner's Output showed only editor undo lines ("Set mouse_filter" etc.), so they edited properties in the Inspector; nothing was pushed. Added the F3 `DebugOverlay` so the owner can see on their machine where clicks go and paste the Output lines.
 - **2026-09-27 (title click):** Owner reported mouse clicks not registering on the title. Could not reproduce (real clicks work in xvfb and in a new GUT test). Fixed a real SceneRouter bug found while checking: a failed scene load waited forever and locked the router. Added title click tests. Likely cause on the owner's side: the editor's embedded Game tab in a selection mode instead of Input mode. Waiting on the owner's answer.
 - **2026-09-27 (warnings fix):** Owner reported 15 editor warnings (EventBus unused signals, `count` shadowing in ContentDB). Fixed those plus a hidden one (`text` shadowing Label.text in DamageNumber). Added `tools/check_warnings.gd` and a CI step so warnings fail the build.

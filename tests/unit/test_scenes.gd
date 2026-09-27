@@ -7,6 +7,10 @@ const SCENES: Array[String] = [
 	"res://scenes/actors/hero/hero.tscn",
 	"res://scenes/actors/training_dummy/training_dummy.tscn",
 	"res://scenes/run/test_room.tscn",
+	"res://scenes/run/wave_room.tscn",
+	"res://scenes/actors/enemy/enemy.tscn",
+	"res://scenes/actors/enemy/thorn_arrow.tscn",
+	"res://scenes/actors/enemy/thorn_patch.tscn",
 	"res://scenes/ui/hud.tscn",
 ]
 
@@ -39,3 +43,14 @@ func test_test_room_runs_without_errors() -> void:
 	var hero: Hero = room.get_node("Actors/Hero")
 	assert_true(hero.state_machine.is_in(&"Move"))
 	assert_eq(room.get_node("Hud").hp_label.text, "100 / 100")
+
+
+func test_wave_room_starts_the_first_wave() -> void:
+	var room: Node = load("res://scenes/run/wave_room.tscn").instantiate()
+	add_child_autofree(room)
+	await wait_physics_frames(10)
+	var director: WaveDirector = room.get_node("WaveDirector")
+	assert_eq(director.tracker.current_wave, 0)
+	assert_eq(room.get_node("%WaveLabel").text, "Wave 1 / 3")
+	await wait_seconds(1.0)
+	assert_eq(get_tree().get_nodes_in_group(Enemy.GROUP).size(), 3, "three Sproutlings")
