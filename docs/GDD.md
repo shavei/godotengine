@@ -540,9 +540,20 @@ Live values are in `data/balance/balance_default.tres` and `data/weapons/weapon_
 | Thorn Archer | 30 | 55 | Arrow (190 px/s, 240 px range) | 8 | 0.60 s | Keeps ~130 px away; a missed arrow leaves thorns (4 dmg every 0.8 s, 4 s) |
 | **Elite:** Elder Boar | 180 | 42 (charge 280) | 3 charges in a row, 0.75 s each | 18 | 0.80 s, then 0.45 s | Hits do not interrupt it; a wall stun (2 s) ends the chain |
 | **Elite:** Spore Witch | 130 | 50 | Spore cloud at your feet (26 px, 3.5 s) | 5 every 0.7 s | 0.80 s | Keeps ~140 px away; calls 2 Sproutlings every 6 s (0.8 s cast), no more while 4 of hers live |
+| **Mini-boss:** Mother Toad | 320 | 55 | Tongue (150 px lane) / Belly flop (44 px ring) | 10 / 22 | 0.60 s / 0.60 s + 0.55 s leap | Tongue hit pulls you in; can't be hit mid-leap; sits 1.3 s after landing |
+| **Boss:** Warden of Roots (phase 1) | 420 | never moves | Seed volley (5 seeds, 50 degree fan, 170 px/s) / Root walls / Root slam (46 px ring) | 9 / 14 / 16 | 0.70 s / 0.70 s / 0.60 s | Walls: 128 px long, 40 px either side of you, stand 5 s, block seeds too |
 
 - Waves: enemies appear 0.7 s after a spawn marker, away from the hero when possible. The next wave starts 1.2 s after a clear. The M1 test room is 3 Sproutlings; a Boar and 2 Sproutlings; 2 Archers, a Boar and a Sproutling.
 - Live values: `data/enemies/*.tres` and `data/encounters/encounter_mossy_test.tres`.
+
+**Bosses (M2).** One sentence each:
+- A boss plays its moves in a fixed order that repeats; hits never interrupt it, and a health bar with its name shows at the top of the screen.
+- Below its enrage line a boss switches, for good, to a harsher order. Mother Toad enrages at 50% HP ("puffs up, furious") and flops twice in a row.
+- Mother Toad's order: tongue, flop, tongue, tongue, flop (1.0 s between moves, 0.3 s after a tongue). Enraged: tongue, flop, flop.
+- The Warden of Roots never walks. Its order: volley, roots, volley, volley, roots (0.9 s between moves). A hero within 50 px gets the root slam instead.
+- Root walls burst up on either side of you along the line to the Warden, so the next volley comes down the lane they make. They hurt only if you stand on the outline when they burst, and wither when the Warden dies.
+- Boss rooms are open arenas (no pillars); the boss appears at the top middle. Phase 2 of the Warden (vines that shrink the arena) comes with the full Mossy Hollow (M7).
+- Try either boss any time from the Tuning room menu (Fight Mother Toad, Fight Warden of Roots).
 
 ### 15.6 Runs (M2)
 Live values: `data/regions/region_mossy_hollow.tres` and `data/balance/balance_default.tres`.
@@ -557,7 +568,7 @@ Live values: `data/regions/region_mossy_hollow.tres` and `data/balance/balance_d
 | Rest room | Heal 30% max HP, or +1 flask charge |
 | Merchant prices | Flask 30, heal 25% 25, Power Shard 60 coins |
 
-- Mossy Hollow fight rooms draw from 4 encounters (2 to 3 waves). Mother Toad and Warden rooms use stand-in wave encounters until those enemies exist (M2 PR 3).
+- Mossy Hollow fight rooms draw from 4 encounters (2 to 3 waves). Floors 1 and 2 end in Mother Toad, floor 3 in the Warden of Roots (Section 15.5), each fought alone.
 - **Elite rooms:** one elite plus adds, one wave. Elder Boar with 2 Sproutlings and a Thorn Archer, or Spore Witch with a Tusk Boar. Elites have a gold outline and their name on the room banner.
 - **Treasure room:** one chest (Interact to open): 20 to 35 coins, 3 to 6 Wood, 25% a Power Shard, 10% a Crystal.
 - **Merchant (basic):** each ware sells once per visit. +1 flask 30 coins, heal 25% for 25 coins, a Power Shard for 60 coins. Wares the hero cannot pay for (or has no use for: full flasks, full HP) are greyed out. Run-only trinkets join the stock with the trinket list (M8).
@@ -580,9 +591,12 @@ Live values: `data/regions/region_mossy_hollow.tres` and `data/balance/balance_d
 | Tusk Boar | 3 to 5 | 40%: 1 to 2 | | |
 | Thorn Archer | 2 to 4 | 40%: 1 | | |
 | Elder Boar, Spore Witch | 15 to 25 | 3 to 5 | 1 | 1 to 2 |
+| Mother Toad | 20 to 30 | 3 to 5 | 50%: 1 | 2 |
+| Warden of Roots | 35 to 50 | 5 to 8 | 1 | 3 |
 | Treasure chest | 20 to 35 | 3 to 6 | 10%: 1 | 25%: 1 |
 
-- Rough run estimate before bosses (about 9 fights, 2 elites, 2 treasure rooms): about 300 to 350 coins, 35 to 40 Wood, 2 Crystal, 3 to 4 shards, less what the Merchant takes. Bosses (M2 PR 3) bring Crystal and shards to the Section 15.3 targets.
+- Rough run estimate before bosses (about 9 fights, 2 elites, 2 treasure rooms): about 300 to 350 coins, 35 to 40 Wood, 2 Crystal, 3 to 4 shards, less what the Merchant takes.
+- With the bosses (2 Mother Toads and the Warden) a full run comes to about 390 to 460 coins, 46 to 58 Wood, 4 Crystal and 10 to 11 shards. Shards follow the per-source rule in Section 4.3 (mini-boss 2, region boss 3) and so land well above the Section 15.3 target of 4 to 6; coins and Wood run a little high too. Rebalance in M3, when shards have a use (open question in MEMORY.md).
 
 All numbers here are starting points for tuning. Update this section when they change.
 

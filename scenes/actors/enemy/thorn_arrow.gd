@@ -1,7 +1,8 @@
 class_name ThornArrow
 extends Area2D
-## A Thorn Archer's arrow. Flies straight; if it misses the hero it drops a thorn patch
-## where it stops (a wall or its max range), per docs/CONTENT.md Section 6.1.
+## A Thorn Archer's arrow (or a Warden's seed). Flies straight; if it misses the hero it
+## drops the shooter's hazard, if any, where it stops (a wall or its max range), per
+## docs/CONTENT.md Section 6.1.
 
 const PATCH_SCENE: PackedScene = preload("res://scenes/actors/enemy/thorn_patch.tscn")
 
@@ -13,6 +14,7 @@ var _done: bool = false
 
 @onready var hitbox: HitboxComponent = $Hitbox
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/Shape
+@onready var visual: PlaceholderShape = $Visual
 
 
 func _ready() -> void:
@@ -24,6 +26,8 @@ func launch(dir: Vector2, enemy_data: EnemyData, stats: CombatStats) -> void:
 	direction = dir.normalized()
 	data = enemy_data
 	rotation = direction.angle()
+	visual.size = data.projectile_size
+	visual.color = data.projectile_color
 	var shape: CircleShape2D = CircleShape2D.new()
 	shape.radius = data.attack.radius
 	hitbox_shape.shape = shape

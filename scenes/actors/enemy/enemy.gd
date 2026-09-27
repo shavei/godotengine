@@ -8,11 +8,15 @@ signal telegraph_started
 ## A new enemy appeared from this one (a Sproutling's seedlings). Emitted before died.
 signal spawned(child: Enemy)
 signal died(enemy: Enemy)
+## A boss dropped below its enrage line (BossData.enrage_below).
+signal enraged
 
 const GROUP: StringName = &"enemies"
 const SCENE_PATH: String = "res://scenes/actors/enemy/enemy.tscn"
 const ARROW_SCENE: PackedScene = preload("res://scenes/actors/enemy/thorn_arrow.tscn")
 const PATCH_SCENE: PackedScene = preload("res://scenes/actors/enemy/thorn_patch.tscn")
+const ROOT_WALL_SCENE: PackedScene = preload("res://scenes/actors/enemy/root_wall.tscn")
+const TONGUE_COLOR: Color = Color(0.95, 0.45, 0.55)
 const ELITE_OUTLINE: Color = Color(1.0, 0.82, 0.3)
 const WORLD_LAYER: int = 1
 ## px/s per second when speeding up or slowing down.
@@ -32,8 +36,11 @@ var facing: Vector2 = Vector2.DOWN
 
 var _stun_time: float = 0.0
 var _dead: bool = false
-## A warning placed on the floor away from the enemy (a Spore Witch's cloud spot).
-var _ground_marker: TelegraphRing = null
+## Warnings besides the body telegraph: a spot on the floor (a Spore Witch's cloud, a
+## toad's landing) or a fan of lanes (a Warden's volley).
+var _markers: Array[TelegraphRing] = []
+## Drawn from the body to the hitbox for reaching attacks (Mother Toad's tongue).
+var _lash_line: Line2D = null
 
 @onready var body_shape: CollisionShape2D = $Shape
 @onready var visual: PlaceholderShape = $Visual
@@ -174,13 +181,26 @@ func telegraph_attack_self(radius: float, duration: float) -> void:
 
 
 ## Warns of something landing at a spot on the floor (world position).
-func telegraph_at(world_position: Vector2, radius: float, duration: float) -> void:
-	_clear_ground_marker()
-	_ground_marker = TelegraphRing.new()
-	_ground_marker.color = Color(0.75, 0.9, 0.35)
-	get_parent().add_child(_ground_marker)
-	_ground_marker.global_position = world_position
-	_ground_marker.play(radius, duration)
+func telegraph_at(world_position: Vector2, radius: float, duration: float, color: Color = TelegraphRing.SPORE_COLOR) -> void:
+	clear_markers()
+	var marker: TelegraphRing = TelegraphRing.new()
+	marker.color = color
+	get_parent().add_child(marker)
+	marker.global_position = world_position
+	marker.play(radius, duration)
+	_markers.append(marker)
+	telegraph_started.emit()
+
+
+## Warns of several shots at once: a lane from the enemy along each direction.
+func telegraph_lines(directions: Array[Vector2], length: float, width: float, duration: float) -> void:
+	clear_markers()
+	for direction: Vector2 in directions:
+		var marker: TelegraphRing = TelegraphRing.new()
+		marker.z_index = -1
+		add_child(marker)
+		marker.play_line(direction, length, width, duration)
+		_markers.append(marker)
 	telegraph_started.emit()
 
 
@@ -194,6 +214,7 @@ func telegraph_line(direction: Vector2, length: float, width: float, duration: f
 func start_attack(attack: AttackData) -> void:
 	attack_pivot.rotation = facing.angle()
 	hitbox_shape.position = Vector2(attack.reach, 0.0)
+	(hitbox_shape.shape as CircleShape2D).radius = attack.radius
 	hitbox.activate(attack)
 	if attack.shake > 0.0:
 		EventBus.camera_shake_requested.emit(attack.shake)
@@ -206,7 +227,57 @@ func end_attack() -> void:
 func cancel_attack() -> void:
 	hitbox.deactivate()
 	telegraph.stop()
-	_clear_ground_marker()
+	clear_markers()
+	lash(0.0)
+
+
+## Moves the live hitbox `length` px out along the facing and draws a line to it
+## (Mother Toad's tongue). 0 pulls it back in.
+func lash(length: float) -> void:
+	hitbox_shape.position = Vector2(length, 0.0)
+	if length <= 0.0:
+		if _lash_line != null:
+			_lash_line.hide()
+		return
+	if _lash_line == null:
+		_lash_line = Line2D.new()
+		_lash_line.default_color = TONGUE_COLOR
+		_lash_line.width = 4.0
+		_lash_line.begin_cap_mode = Line2D.LINE_CAP_ROUND
+		_lash_line.end_cap_mode = Line2D.LINE_CAP_ROUND
+		attack_pivot.add_child(_lash_line)
+	_lash_line.points = PackedVector2Array([Vector2.ZERO, Vector2(length, 0.0)])
+	_lash_line.show()
+
+
+## In the air (a leap): no body collision and no hurtbox, drawn above everything.
+func set_airborne(on: bool) -> void:
+	body_shape.set_deferred("disabled", on)
+	hurtbox_shape.set_deferred("disabled", on)
+	z_index = 5 if on else 0
+
+
+func is_airborne() -> bool:
+	return z_index > 0
+
+
+## A boss dropped below its enrage line: tells the room (a banner line).
+func announce_enrage() -> void:
+	enraged.emit()
+
+
+## A boss's root wall centered on `world_position`, running along `along`.
+func raise_root_wall(world_position: Vector2, along: Vector2) -> RootWall:
+	var boss: BossData = data as BossData
+	if boss == null or boss.root_wall == null:
+		return null
+	var wall: RootWall = ROOT_WALL_SCENE.instantiate()
+	get_parent().add_child(wall)
+	wall.global_position = world_position
+	wall.reset_physics_interpolation()
+	wall.setup(boss, along, stats, self)
+	telegraph_started.emit()
+	return wall
 
 
 func fire_projectile(direction: Vector2) -> ThornArrow:
@@ -220,7 +291,7 @@ func fire_projectile(direction: Vector2) -> ThornArrow:
 
 ## Leaves the data's hazard (thorns, spore cloud) at a world position.
 func drop_hazard(world_position: Vector2) -> ThornPatch:
-	_clear_ground_marker()
+	clear_markers()
 	if data.hazard == null:
 		return null
 	var patch: ThornPatch = PATCH_SCENE.instantiate()
@@ -290,10 +361,11 @@ func _spawn_children(child_data: EnemyData, count: int, spread: float) -> Array[
 	return children
 
 
-func _clear_ground_marker() -> void:
-	if _ground_marker != null and is_instance_valid(_ground_marker):
-		_ground_marker.queue_free()
-	_ground_marker = null
+func clear_markers() -> void:
+	for marker: TelegraphRing in _markers:
+		if is_instance_valid(marker):
+			marker.queue_free()
+	_markers.clear()
 
 
 ## Squash, spin and fade, then free.

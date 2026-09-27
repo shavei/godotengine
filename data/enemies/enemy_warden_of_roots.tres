@@ -1,0 +1,103 @@
+[gd_resource type="Resource" script_class="BossData" load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boss_data.gd" id="1_boss"]
+[ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="2_attack"]
+[ext_resource type="Script" path="res://scripts/ai/warden_ai.gd" id="3_ai"]
+[ext_resource type="Script" path="res://scripts/resources/drop_table.gd" id="90_table"]
+[ext_resource type="Script" path="res://scripts/resources/drop_entry.gd" id="91_entry"]
+
+[sub_resource type="Resource" id="Resource_seed"]
+script = ExtResource("2_attack")
+damage = 9.0
+windup = 0.7
+active = 1.0
+recovery = 0.5
+reach = 0.0
+radius = 4.0
+knockback = 90.0
+
+[sub_resource type="Resource" id="Resource_roots"]
+script = ExtResource("2_attack")
+damage = 14.0
+windup = 0.7
+active = 0.15
+recovery = 0.0
+reach = 0.0
+radius = 7.0
+knockback = 220.0
+shake = 0.25
+
+[sub_resource type="Resource" id="Resource_slam"]
+script = ExtResource("2_attack")
+damage = 16.0
+windup = 0.6
+active = 0.15
+recovery = 0.8
+reach = 0.0
+radius = 46.0
+knockback = 300.0
+shake = 0.3
+
+[sub_resource type="Resource" id="Resource_drop_0"]
+script = ExtResource("91_entry")
+currency = &"coins"
+chance = 1.0
+min_amount = 35
+max_amount = 50
+
+[sub_resource type="Resource" id="Resource_drop_1"]
+script = ExtResource("91_entry")
+currency = &"wood"
+chance = 1.0
+min_amount = 5
+max_amount = 8
+
+[sub_resource type="Resource" id="Resource_drop_2"]
+script = ExtResource("91_entry")
+currency = &"crystal"
+chance = 1.0
+min_amount = 1
+max_amount = 1
+
+[sub_resource type="Resource" id="Resource_drop_3"]
+script = ExtResource("91_entry")
+currency = &"shards"
+chance = 1.0
+min_amount = 3
+max_amount = 3
+
+[sub_resource type="Resource" id="Resource_drops"]
+script = ExtResource("90_table")
+entries = Array[ExtResource("91_entry")]([SubResource("Resource_drop_0"), SubResource("Resource_drop_1"), SubResource("Resource_drop_2"), SubResource("Resource_drop_3")])
+
+[resource]
+script = ExtResource("1_boss")
+id = &"warden_of_roots"
+display_name = "Warden of Roots"
+archetype = &"boss"
+ai_script = ExtResource("3_ai")
+max_hp = 420
+move_speed = 0.0
+body_radius = 22.0
+weight_scale = 0.0
+hit_stun = 0.0
+color = Color(0.36, 0.28, 0.17, 1)
+drops = SubResource("Resource_drops")
+attack = SubResource("Resource_seed")
+attack_range = 300.0
+attack_cooldown = 0.9
+projectile_speed = 170.0
+projectile_range = 300.0
+projectile_size = Vector2(5, 5)
+projectile_color = Color(0.9, 0.78, 0.35, 1)
+pattern = Array[StringName]([&"volley", &"roots", &"volley", &"volley", &"roots"])
+close_attack = SubResource("Resource_slam")
+close_range = 50.0
+volley_count = 5
+volley_spread_degrees = 50.0
+root_wall = SubResource("Resource_roots")
+root_wall_length = 128.0
+root_wall_thickness = 14.0
+root_wall_gap = 40.0
+root_wall_life = 5.0
+root_wall_color = Color(0.4, 0.3, 0.18, 1)

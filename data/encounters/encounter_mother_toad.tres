@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/encounter_data.gd" id="1_encounter"]
+[ext_resource type="Script" path="res://scripts/resources/wave_data.gd" id="2_wave"]
+[ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="3_enemy"]
+[ext_resource type="Resource" path="res://data/enemies/enemy_mother_toad.tres" id="4_boss"]
+
+[sub_resource type="Resource" id="Resource_wave1"]
+script = ExtResource("2_wave")
+enemies = Array[ExtResource("3_enemy")]([ExtResource("4_boss")])
+
+[resource]
+script = ExtResource("1_encounter")
+id = &"mother_toad"
+display_name = "Mother Toad"
+waves = Array[ExtResource("2_wave")]([SubResource("Resource_wave1")])
+wave_delay = 1.2

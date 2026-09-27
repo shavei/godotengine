@@ -177,6 +177,21 @@ func test_missed_arrow_leaves_thorn_patch_that_hurts() -> void:
 	assert_eq(hero.health.hp, hero.health.max_hp - 4, "thorns hurt")
 
 
+func test_arrow_stops_at_a_wall() -> void:
+	# Regression: a non-monitorable Area2D never reports static bodies, so arrows used
+	# to fly through walls and pillars to their full range.
+	_add_walls()
+	var archer: Enemy = _enemy(&"thorn_archer", Vector2(100, 100))
+	archer.ai.cooldown = 99.0
+	var arrow: ThornArrow = archer.fire_projectile(Vector2.UP)
+	await wait_seconds(0.6)
+	assert_false(is_instance_valid(arrow), "the arrow landed")
+	var patches: Array[Node] = world.get_children().filter(func(child: Node) -> bool: return child is ThornPatch)
+	assert_eq(patches.size(), 1)
+	if not patches.is_empty():
+		assert_lt((patches[0] as Node2D).global_position.y, 40.0, "at the wall, not at full range")
+
+
 func test_wave_director_clears_room_including_splits() -> void:
 	var encounter: EncounterData = EncounterData.new()
 	encounter.wave_delay = 0.1
