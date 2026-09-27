@@ -183,3 +183,14 @@ func _describe(map: FloorMap) -> String:
 	for room: MapRoom in map.rooms:
 		parts.append("%d:%s>%s" % [room.id, room.type, room.next])
 	return ",".join(parts)
+
+
+func test_event_pick_is_seeded_and_from_the_region() -> void:
+	var map: FloorMap = RunGenerator.generate_floor(region, 0, 11)
+	var seen: Dictionary = {}
+	for room: MapRoom in map.rooms:
+		var event: EventData = RunGenerator.pick_event(region, map, room, 11)
+		assert_true(region.events.has(event))
+		assert_eq(event, RunGenerator.pick_event(region, map, room, 11), "same seed, same event")
+		seen[event.id] = true
+	assert_eq(seen.size(), region.events.size(), "both events show up on a floor")

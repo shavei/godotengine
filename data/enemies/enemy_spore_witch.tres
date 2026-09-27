@@ -1,0 +1,88 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_enemy"]
+[ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="2_attack"]
+[ext_resource type="Script" path="res://scripts/ai/summoner_ai.gd" id="3_ai"]
+[ext_resource type="Resource" path="res://data/enemies/enemy_sproutling.tres" id="4_sproutling"]
+[ext_resource type="Script" path="res://scripts/resources/drop_table.gd" id="90_table"]
+[ext_resource type="Script" path="res://scripts/resources/drop_entry.gd" id="91_entry"]
+
+[sub_resource type="Resource" id="Resource_cast"]
+script = ExtResource("2_attack")
+damage = 0.0
+windup = 0.8
+active = 0.0
+recovery = 0.5
+reach = 0.0
+radius = 0.0
+knockback = 0.0
+
+[sub_resource type="Resource" id="Resource_spores"]
+script = ExtResource("2_attack")
+damage = 5.0
+windup = 0.0
+active = 0.0
+recovery = 0.0
+reach = 0.0
+radius = 26.0
+knockback = 0.0
+
+[sub_resource type="Resource" id="Resource_drop_0"]
+script = ExtResource("91_entry")
+currency = &"coins"
+chance = 1.0
+min_amount = 15
+max_amount = 25
+
+[sub_resource type="Resource" id="Resource_drop_1"]
+script = ExtResource("91_entry")
+currency = &"wood"
+chance = 1.0
+min_amount = 3
+max_amount = 5
+
+[sub_resource type="Resource" id="Resource_drop_2"]
+script = ExtResource("91_entry")
+currency = &"crystal"
+chance = 1.0
+min_amount = 1
+max_amount = 1
+
+[sub_resource type="Resource" id="Resource_drop_3"]
+script = ExtResource("91_entry")
+currency = &"shards"
+chance = 1.0
+min_amount = 1
+max_amount = 2
+
+[sub_resource type="Resource" id="Resource_drops"]
+script = ExtResource("90_table")
+entries = Array[ExtResource("91_entry")]([SubResource("Resource_drop_0"), SubResource("Resource_drop_1"), SubResource("Resource_drop_2"), SubResource("Resource_drop_3")])
+
+[resource]
+script = ExtResource("1_enemy")
+id = &"spore_witch"
+display_name = "Spore Witch"
+archetype = &"summoner"
+ai_script = ExtResource("3_ai")
+max_hp = 130
+move_speed = 50.0
+body_radius = 9.0
+weight_scale = 0.6
+hit_stun = 0.15
+color = Color(0.62, 0.5, 0.3, 1)
+is_elite = true
+attack = SubResource("Resource_cast")
+attack_range = 220.0
+attack_cooldown = 2.2
+keep_distance = 140.0
+hazard = SubResource("Resource_spores")
+hazard_lifetime = 3.5
+hazard_interval = 0.7
+hazard_color = Color(0.72, 0.68, 0.25, 0.5)
+summon = ExtResource("4_sproutling")
+summon_count = 2
+summon_max_alive = 4
+summon_windup = 0.8
+summon_cooldown = 6.0
+drops = SubResource("Resource_drops")

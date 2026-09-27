@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=10 format=3]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_enemy"]
 [ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="2_attack"]
@@ -8,48 +8,65 @@
 
 [sub_resource type="Resource" id="Resource_charge"]
 script = ExtResource("2_attack")
-damage = 14.0
-windup = 0.7
-active = 0.9
-recovery = 0.6
-reach = 6.0
-radius = 11.0
-knockback = 260.0
-shake = 0.15
+damage = 18.0
+windup = 0.8
+active = 0.75
+recovery = 1.0
+reach = 8.0
+radius = 14.0
+knockback = 300.0
+shake = 0.2
 
 [sub_resource type="Resource" id="Resource_drop_0"]
 script = ExtResource("91_entry")
 currency = &"coins"
 chance = 1.0
-min_amount = 3
-max_amount = 5
+min_amount = 15
+max_amount = 25
 
 [sub_resource type="Resource" id="Resource_drop_1"]
 script = ExtResource("91_entry")
 currency = &"wood"
-chance = 0.4
+chance = 1.0
+min_amount = 3
+max_amount = 5
+
+[sub_resource type="Resource" id="Resource_drop_2"]
+script = ExtResource("91_entry")
+currency = &"crystal"
+chance = 1.0
+min_amount = 1
+max_amount = 1
+
+[sub_resource type="Resource" id="Resource_drop_3"]
+script = ExtResource("91_entry")
+currency = &"shards"
+chance = 1.0
 min_amount = 1
 max_amount = 2
 
 [sub_resource type="Resource" id="Resource_drops"]
 script = ExtResource("90_table")
-entries = Array[ExtResource("91_entry")]([SubResource("Resource_drop_0"), SubResource("Resource_drop_1")])
+entries = Array[ExtResource("91_entry")]([SubResource("Resource_drop_0"), SubResource("Resource_drop_1"), SubResource("Resource_drop_2"), SubResource("Resource_drop_3")])
 
 [resource]
 script = ExtResource("1_enemy")
-id = &"tusk_boar"
-display_name = "Tusk Boar"
+id = &"elder_boar"
+display_name = "Elder Boar"
 archetype = &"charger"
 ai_script = ExtResource("3_ai")
-max_hp = 60
-move_speed = 40.0
-body_radius = 10.0
-weight_scale = 0.25
+max_hp = 180
+move_speed = 42.0
+body_radius = 14.0
+weight_scale = 0.1
 hit_stun = 0.0
-color = Color(0.55, 0.36, 0.24, 1)
+color = Color(0.45, 0.28, 0.2, 1)
+is_elite = true
 attack = SubResource("Resource_charge")
-attack_range = 170.0
-attack_cooldown = 1.0
-charge_speed = 260.0
-wall_stun = 1.6
+attack_range = 190.0
+attack_cooldown = 1.4
+charge_speed = 280.0
+wall_stun = 2.0
+charge_chain = 3
+chain_windup = 0.45
 drops = SubResource("Resource_drops")

@@ -4,9 +4,9 @@ extends Node2D
 ## the current map room, and opens doors to the next rooms once it is done. Every door
 ## loads this same scene again for the room behind it.
 ##
-## Fights use a WaveDirector encounter. Rest rooms offer a heal or a flask. Treasure,
-## Merchant and Event rooms are signposts until M2 PR 2. Playing this scene on its own
-## (F6) starts a test run.
+## Fights use a WaveDirector encounter; enemies drop loot as pickups. Rest rooms offer a
+## heal or a flask, Treasure rooms a chest, Merchant rooms wares for coins, and Event
+## rooms a short choice. Playing this scene on its own (F6) starts a test run.
 
 const ROOM_SCENE: String = "res://scenes/run/room.tscn"
 const TITLE_SCENE: String = "res://scenes/main/title.tscn"
@@ -16,6 +16,17 @@ const RUN_OVER_DELAY: float = 2.5
 const BANNER_TIME: float = 1.4
 const REST_HEAL: StringName = &"heal"
 const REST_FLASK: StringName = &"flask"
+const CHEST: StringName = &"chest"
+const WARE_FLASK: StringName = &"ware_flask"
+const WARE_HEAL: StringName = &"ware_heal"
+const WARE_SHARD: StringName = &"ware_shard"
+const EVENT_CHOICE: StringName = &"event_choice"
+## Where a room's offers stand (chest, wares, choices), and the gap between them.
+const OFFER_Y: float = 240.0
+const OFFER_GAP: float = 160.0
+## Most of one currency in a single pickup; bigger drops split into piles.
+const PILE_SIZE: Dictionary = {Wallet.COINS: 3}
+const MAX_PILES: int = 6
 
 ## Pillar layouts for fight rooms, in tiles. Picked per room from the run seed.
 const FIGHT_LAYOUTS: Array[Array] = [
@@ -28,22 +39,24 @@ const SPAWN_POINTS: Array[Vector2] = [
 	Vector2(96, 96), Vector2(384, 96), Vector2(672, 96), Vector2(96, 384), Vector2(672, 384),
 	Vector2(80, 240), Vector2(688, 240), Vector2(288, 176), Vector2(480, 304), Vector2(288, 304), Vector2(480, 176),
 ]
-const PLACEHOLDER_TEXT: Dictionary = {
-	MapRoom.TREASURE: "A treasure room will be here soon.\nFor now, catch your breath and pick a door.",
-	MapRoom.MERCHANT: "A merchant will set up shop here soon.\nFor now, pick a door.",
-	MapRoom.EVENT: "Something curious will happen here soon.\nFor now, pick a door.",
-}
 
 var run: RunState
 var map_room: MapRoom
+## The local hero's loot this run.
+var wallet: Wallet
+## The Event room's event, or null.
+var room_event: EventData
 
 var _leaving: bool = false
+## Loot amounts are seeded per room so co-op peers agree (docs/ARCHITECTURE.md Section 9).
+var _loot_rng: RandomNumberGenerator
 
 @onready var hero: Hero = $Actors/Hero
 @onready var hud: Hud = $Hud
 @onready var camera: GameCamera = $Camera
 @onready var room: PlaceholderRoom = $Room
 @onready var actors: Node2D = $Actors
+@onready var loot: Node2D = $Loot
 @onready var doors: Node2D = $Doors
 @onready var director: WaveDirector = $WaveDirector
 @onready var run_map: RunMap = $RunMap
@@ -60,24 +73,36 @@ func _ready() -> void:
 	map_room = run.current_room()
 	hero.global_position = HERO_START
 	_restore_hero()
+	wallet = run.wallet(hero.player_id)
+	_loot_rng = LootRoller.rng_for(run.run_seed, run.floor_index, run.current_room_id, &"loot")
 	hud.bind_hero(hero)
-	$Overlay/Help.text = InputBindings.combat_help([["Map", &"map"], ["Leave run", &"pause"]])
+	hud.bind_wallet(wallet, [Wallet.COINS, run.region.material, Wallet.CRYSTAL, Wallet.SHARDS])
+	$Overlay/Help.text = InputBindings.combat_help([["Use", &"interact"], ["Map", &"map"], ["Leave run", &"pause"]])
 	room.floor_a = run.region.floor_color
 	room.floor_b = run.region.floor_color.darkened(0.08)
 	_fit_camera()
 	EventBus.hero_died.connect(_on_hero_died)
 	director.wave_started.connect(_on_wave_started)
 	director.room_cleared.connect(_on_room_cleared)
+	director.enemy_died.connect(_on_enemy_died)
 	room_label.text = _room_title()
 	run_map.show_run(run, run.is_in_corridor())
 	if run.is_in_corridor():
 		_setup_corridor()
 	elif map_room.is_fight():
 		_setup_fight()
-	elif map_room.type == MapRoom.REST:
-		_setup_rest()
 	else:
-		_setup_signpost()
+		match map_room.type:
+			MapRoom.REST:
+				_setup_rest()
+			MapRoom.TREASURE:
+				_setup_treasure()
+			MapRoom.MERCHANT:
+				_setup_merchant()
+			MapRoom.EVENT:
+				_setup_event()
+			_:
+				_setup_quiet_room("")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -116,24 +141,98 @@ func _setup_rest() -> void:
 	wave_label.text = "Rest"
 	sign_label.text = "A quiet spot. Take one comfort, then pick a door."
 	var heal_percent: int = roundi(hero.balance.rest_heal_fraction * 100.0)
-	var offers: Array[RestSpot] = [
-		RestSpot.create(REST_HEAL, "Heal %d%%" % heal_percent, Color(0.45, 0.85, 0.5)),
-		RestSpot.create(REST_FLASK, "+%d flask" % hero.balance.rest_flask_refill, Color(0.95, 0.5, 0.55)),
+	var offers: Array[InteractSpot] = [
+		InteractSpot.create(REST_HEAL, "Heal %d%%" % heal_percent, Color(0.45, 0.85, 0.5)),
+		InteractSpot.create(REST_FLASK, "+%d flask" % hero.balance.rest_flask_refill, Color(0.95, 0.5, 0.55)),
 	]
-	for i: int in offers.size():
-		offers[i].position = Vector2(304.0 + i * 160.0, 250.0)
-		offers[i].chosen.connect(_on_rest_chosen)
-		actors.add_child(offers[i])
+	for offer: InteractSpot in offers:
+		offer.chosen.connect(_on_rest_chosen)
+	_place_offers(offers)
 	run.mark_cleared()
 	_open_exits()
 
 
-func _setup_signpost() -> void:
+func _setup_treasure() -> void:
+	_setup_quiet_room("A chest, left behind by someone in a hurry.\nOpen it, then pick a door.")
+	var chest: InteractSpot = InteractSpot.create(CHEST, "Open the chest", MapRoom.type_color(MapRoom.TREASURE))
+	chest.chosen.connect(_on_chest_opened)
+	_place_offers([chest] as Array[InteractSpot])
+
+
+func _setup_merchant() -> void:
+	_setup_quiet_room("A traveling merchant waves you over.\n\"Coins for comfort, friend. One of each.\"")
+	var balance: BalanceData = hero.balance
+	var wares: Array[InteractSpot] = [
+		InteractSpot.create(WARE_FLASK, "+1 flask", Color(0.95, 0.5, 0.55), balance.merchant_flask_price),
+		InteractSpot.create(WARE_HEAL, "Heal %d%%" % roundi(balance.merchant_heal_fraction * 100.0), Color(0.45, 0.85, 0.5), balance.merchant_heal_price),
+		InteractSpot.create(WARE_SHARD, "Power Shard", Wallet.currency_color(Wallet.SHARDS), balance.merchant_shard_price),
+	]
+	for ware: InteractSpot in wares:
+		ware.caption += "\n%d coins" % ware.payload
+		ware.chosen.connect(_on_ware_bought)
+		ware.refused.connect(_on_ware_refused)
+	_place_offers(wares)
+	wallet.changed.connect(_refresh_offers.unbind(2))
+	hero.health.health_changed.connect(_refresh_offers.unbind(2))
+	hero.flasks.changed.connect(_refresh_offers.unbind(2))
+	_refresh_offers()
+
+
+func _setup_event() -> void:
+	room_event = RunGenerator.pick_event(run.region, run.map, map_room, run.run_seed)
+	if room_event == null:
+		_setup_quiet_room("A quiet clearing. Pick a door.")
+		return
+	_setup_quiet_room(room_event.text)
+	_show_banner(room_event.title, 0.0)
+	var choices: Array[InteractSpot] = []
+	for choice: EventChoiceData in room_event.choices:
+		var spot: InteractSpot = InteractSpot.create(EVENT_CHOICE, EventResolver.caption(choice), MapRoom.type_color(MapRoom.EVENT), choice)
+		spot.chosen.connect(_on_event_chosen)
+		spot.refused.connect(func(_spot: InteractSpot, _who: Hero) -> void: _say("You cannot pay that."))
+		choices.append(spot)
+	_place_offers(choices)
+	wallet.changed.connect(_refresh_offers.unbind(2))
+	_refresh_offers()
+
+
+## A room without a fight: no pillars, the doors open at once.
+func _setup_quiet_room(text: String) -> void:
 	room.set_pillars([] as Array[Vector2i])
 	wave_label.text = MapRoom.type_name(map_room.type)
-	sign_label.text = PLACEHOLDER_TEXT.get(map_room.type, "")
+	sign_label.text = text
 	run.mark_cleared()
 	_open_exits()
+
+
+## Stands offers side by side in the middle of the room.
+func _place_offers(offers: Array[InteractSpot]) -> void:
+	var center: float = room.get_rect().size.x * 0.5
+	for i: int in offers.size():
+		offers[i].position = Vector2(center + (i - (offers.size() - 1) * 0.5) * OFFER_GAP, OFFER_Y)
+		actors.add_child(offers[i])
+
+
+func _offers() -> Array[InteractSpot]:
+	var result: Array[InteractSpot] = []
+	for child: Node in actors.get_children():
+		if child is InteractSpot and not child.is_queued_for_deletion():
+			result.append(child)
+	return result
+
+
+func _clear_offers() -> void:
+	for spot: InteractSpot in _offers():
+		spot.queue_free()
+
+
+## Greys out wares and choices the local hero cannot take right now.
+func _refresh_offers() -> void:
+	for spot: InteractSpot in _offers():
+		if spot.kind == EVENT_CHOICE:
+			spot.enabled = EventResolver.can_choose(spot.payload, wallet)
+		else:
+			spot.enabled = _ware_problem(spot, hero).is_empty()
 
 
 # --- Doors ------------------------------------------------------------------
@@ -184,6 +283,7 @@ func _on_door_entered(door: RoomDoor) -> void:
 	if _leaving:
 		return
 	_leaving = true
+	scoop_loot(hero)
 	run.save_hero(hero.player_id, hero.health.hp, hero.health.max_hp, hero.flasks.charges)
 	if door.room_id < 0:
 		run.advance_floor()
@@ -197,26 +297,120 @@ func _on_door_entered(door: RoomDoor) -> void:
 func _on_wave_started(index: int, total: int) -> void:
 	wave_label.text = "Wave %d / %d" % [index + 1, total]
 	if index == 0:
-		_show_banner(MapRoom.type_name(map_room.type), BANNER_TIME)
+		var title: String = MapRoom.type_name(map_room.type)
+		if map_room.type == MapRoom.ELITE and director.encounter != null:
+			title = "Elite: %s" % director.encounter.display_name
+		_show_banner(title, BANNER_TIME)
+
+
+func _on_enemy_died(enemy: Enemy) -> void:
+	if enemy.data != null:
+		drop_loot(LootRoller.roll(enemy.data.drops, _loot_rng), enemy.global_position)
 
 
 func _on_room_cleared() -> void:
 	wave_label.text = "Room clear"
 	run.mark_cleared()
+	for pickup: Pickup in _pickups():
+		pickup.attract()
 	if not run.is_run_won():
 		_show_banner("Room clear!", BANNER_TIME)
 	_open_exits()
 
 
-func _on_rest_chosen(spot: RestSpot, who: Hero) -> void:
+func _on_rest_chosen(spot: InteractSpot, who: Hero) -> void:
 	if spot.kind == REST_HEAL:
 		who.health.heal(roundi(who.health.max_hp * who.balance.rest_heal_fraction))
 	else:
 		who.flasks.refill(who.balance.rest_flask_refill)
-	for child: Node in actors.get_children():
-		if child is RestSpot:
-			child.queue_free()
+	_clear_offers()
 	sign_label.text = "Feeling better. Pick a door."
+
+
+func _on_chest_opened(spot: InteractSpot, _who: Hero) -> void:
+	spot.queue_free()
+	drop_loot(LootRoller.roll(run.region.treasure_drops, _loot_rng), spot.global_position)
+	sign_label.text = "Not bad at all. Pick a door."
+
+
+## Why `who` cannot buy this ware now ("" if they can).
+func _ware_problem(spot: InteractSpot, who: Hero) -> String:
+	if not run.wallet(who.player_id).can_afford(Wallet.COINS, spot.payload):
+		return "Not enough coins."
+	if spot.kind == WARE_FLASK and who.flasks.charges >= who.flasks.max_charges:
+		return "Your flasks are full."
+	if spot.kind == WARE_HEAL and who.health.hp >= who.health.max_hp:
+		return "You are already at full health."
+	return ""
+
+
+func _on_ware_bought(spot: InteractSpot, who: Hero) -> void:
+	if not _ware_problem(spot, who).is_empty():
+		return
+	var buyer: Wallet = run.wallet(who.player_id)
+	buyer.spend(Wallet.COINS, spot.payload)
+	match spot.kind:
+		WARE_FLASK:
+			who.flasks.refill(1)
+		WARE_HEAL:
+			who.health.heal(roundi(who.health.max_hp * who.balance.merchant_heal_fraction))
+		WARE_SHARD:
+			buyer.add(Wallet.SHARDS, 1)
+	DamageNumber.spawn(actors, spot.global_position, "-%d" % spot.payload, Wallet.currency_color(Wallet.COINS))
+	spot.queue_free()
+	_say("\"Pleasure doing business.\"")
+
+
+func _on_ware_refused(spot: InteractSpot, who: Hero) -> void:
+	_say(_ware_problem(spot, who))
+
+
+func _on_event_chosen(spot: InteractSpot, who: Hero) -> void:
+	var rng: RandomNumberGenerator = LootRoller.rng_for(run.run_seed, run.floor_index, run.current_room_id, &"event")
+	var outcome: EventOutcome = EventResolver.resolve(spot.payload, run.wallet(who.player_id), who.health.hp, who.health.max_hp, rng)
+	if not outcome.paid:
+		return
+	if outcome.hp < who.health.hp:
+		who.health.take_damage(who.health.hp - outcome.hp)
+		HitFlash.play(who.visual)
+	elif outcome.hp > who.health.hp:
+		who.health.heal(outcome.hp - who.health.hp)
+	_clear_offers()
+	banner.hide()
+	drop_loot(outcome.gains, spot.global_position)
+	sign_label.text = "%s\nPick a door." % outcome.text
+
+
+# --- Loot -------------------------------------------------------------------
+
+## Drops `gains` (currency -> amount) as pickups that pop out around `at` (world).
+func drop_loot(gains: Dictionary, at: Vector2) -> void:
+	for currency: StringName in gains:
+		for amount: int in LootRoller.split_piles(gains[currency], PILE_SIZE.get(currency, 1), MAX_PILES):
+			var launch: Vector2 = Vector2.RIGHT.rotated(_loot_rng.randf() * TAU) * _loot_rng.randf_range(40.0, 110.0)
+			var pickup: Pickup = Pickup.create(currency, amount, launch)
+			pickup.position = loot.to_local(at)
+			pickup.collected.connect(_on_pickup_collected)
+			loot.add_child(pickup)
+
+
+## Loot still on the floor is not lost when leaving: `who` scoops it up on the way out.
+func scoop_loot(who: Hero) -> void:
+	for pickup: Pickup in _pickups():
+		pickup.collect(who)
+
+
+func _pickups() -> Array[Pickup]:
+	var result: Array[Pickup] = []
+	for child: Node in loot.get_children():
+		if child is Pickup and not child.is_collected():
+			result.append(child)
+	return result
+
+
+func _on_pickup_collected(pickup: Pickup, who: Hero) -> void:
+	run.wallet(who.player_id).add(pickup.currency, pickup.amount)
+	DamageNumber.spawn(actors, pickup.global_position, "+%d" % pickup.amount, Wallet.currency_color(pickup.currency))
 
 
 func _finish_run() -> void:
@@ -281,6 +475,12 @@ func _fit_camera() -> void:
 	camera.limit_bottom = int(bounds.end.y)
 	camera.global_position = hero.global_position
 	camera.reset_smoothing()
+
+
+## A short line on the sign (a merchant's answer, why a choice is greyed out).
+func _say(text: String) -> void:
+	if not text.is_empty():
+		sign_label.text = text
 
 
 func _show_banner(text: String, duration: float) -> void:

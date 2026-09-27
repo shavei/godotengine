@@ -21,6 +21,12 @@ extends Resource
 ## Seconds a hit interrupts the enemy. 0 means hits never interrupt it.
 @export var hit_stun: float = 0.2
 @export var color: Color = Color(0.5, 0.7, 0.4)
+## Elites get a gold outline and their name on the room banner (docs/GDD.md Section 6.2).
+@export var is_elite: bool = false
+
+@export_group("Loot")
+## Rolled when the enemy dies; drops as pickups (docs/GDD.md Section 15.3).
+@export var drops: DropTable
 
 @export_group("Attack")
 ## The attack's windup is its telegraph (0.4 to 0.8 s, docs/GDD.md Section 7.4).
@@ -38,6 +44,10 @@ extends Resource
 @export var charge_speed: float = 240.0
 ## Stun after charging into a wall (s).
 @export var wall_stun: float = 1.5
+## Charges in a row before resting (Elder Boar: 3). A wall stun ends the chain.
+@export var charge_chain: int = 1
+## Telegraph time of the follow-up charges in a chain (s).
+@export var chain_windup: float = 0.45
 
 @export_group("Ranged")
 ## Preferred distance from the target (px).
@@ -49,3 +59,14 @@ extends Resource
 @export var hazard_lifetime: float = 4.0
 ## Seconds between hazard hits on the same target.
 @export var hazard_interval: float = 0.8
+@export var hazard_color: Color = Color(0.28, 0.4, 0.16, 0.6)
+
+@export_group("Summoner")
+## Cast at the target's feet: the attack's windup is the telegraph, then `hazard` lands
+## there (Spore Witch clouds). The summoner also calls `summon` minions.
+@export var summon: EnemyData
+@export var summon_count: int = 2
+## No new summons while this many of its own are alive.
+@export var summon_max_alive: int = 4
+@export var summon_windup: float = 0.8
+@export var summon_cooldown: float = 6.0

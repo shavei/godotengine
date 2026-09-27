@@ -278,7 +278,7 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 - Every action above except Aim can be remapped in **Controls** (title screen): one keyboard/mouse input and one gamepad input each. Taking an input another action uses swaps the two, so no action is left without one. The right stick always aims and cannot be taken. On-screen hints show the current inputs.
 
 ### 7.2 Core numbers
-- Dodge: 0.3 s roll, 0.22 s invincibility, 25 stamina. Stamina regen 40 per second after 0.5 s delay.
+- Dodge: 0.3 s roll, 0.22 s invincibility, 25 stamina. Stamina regen 40 per second after a 0.7 s delay (owner tuning, was 0.5).
 - **Perfect dodge:** dodging within 0.12 s of a hit gives a brief slow-motion (0.3 s) and +10 Fusion meter.
 - Crit: base 5% chance, x1.5 damage.
 - Damage formula: `final = base * weapon_tier * (1 + might_bonus + other_bonuses) * crit * status_mods * (1 - armor)`. Armor capped at 60%.
@@ -507,7 +507,7 @@ Live values are in `data/balance/balance_default.tres` and `data/weapons/weapon_
 | Number | Value |
 |---|---|
 | Hero acceleration / friction | 1100 / 1400 px/s per second |
-| Dodge distance | 72 px (about 2 tiles) over 0.3 s |
+| Dodge distance | 60 px (about 2 tiles) over 0.3 s (owner tuning, was 72) |
 | Hurt stagger / grace i-frames after a hit | 0.2 s / 0.6 s |
 | Input buffer (attack, dodge, flask) | 0.15 s |
 | Combo continues if you attack again within | 0.35 s after a swing ends |
@@ -524,8 +524,8 @@ Live values are in `data/balance/balance_default.tres` and `data/weapons/weapon_
 - A flask charge is used when the heal lands. Getting hit while drinking cancels the drink and keeps the charge.
 - Enemies do not crit unless their data says so.
 - The hero rolls through enemy bodies during a dodge (walls still block).
-- **Stick aim assist:** with a gamepad, a new swing turns toward the target closest to the aim line within 60 degrees either side and 84 px (owner tuning, was 30 and 64). Mouse aim is never assisted. Set the angle to 0 to turn it off.
-- **Rumble:** light tap on each sword hit (stronger on crits and the finisher), 0.6 for 0.18 s when the hero is hit. `rumble_strength` scales it (0 = off, also the future accessibility slider). Owner tuned it to 5, so most rumbles hit the controller's full strength (the device caps at 1).
+- **Stick aim assist:** with a gamepad, a new swing turns toward the target closest to the aim line within 30 degrees either side and 64 px (owner set it back from a 60 degree, 84 px trial). Mouse aim is never assisted. Set the angle to 0 to turn it off.
+- **Rumble:** light tap on each sword hit (stronger on crits and the finisher), 0.6 for 0.18 s when the hero is hit. `rumble_strength` scales it (0 = off, also the future accessibility slider). Owner tried 5 and settled back on 1.
 - **Low stamina:** pressing dodge without enough stamina blinks the stamina bar red.
 - Tune these live in the Tuning room (title screen) with a controller: Start opens the tuning menu. F4 opens it in any room (docs/ARCHITECTURE.md Section 11).
 
@@ -535,6 +535,8 @@ Live values are in `data/balance/balance_default.tres` and `data/weapons/weapon_
 | Seedling | 8 | 80 | Bite | 3 | 0.40 s | Does not split |
 | Tusk Boar | 60 | 40 (charge 260) | Charge, 0.9 s | 14 | 0.70 s | Hits do not interrupt it; a wall stuns it 1.6 s |
 | Thorn Archer | 30 | 55 | Arrow (190 px/s, 240 px range) | 8 | 0.60 s | Keeps ~130 px away; a missed arrow leaves thorns (4 dmg every 0.8 s, 4 s) |
+| **Elite:** Elder Boar | 180 | 42 (charge 280) | 3 charges in a row, 0.75 s each | 18 | 0.80 s, then 0.45 s | Hits do not interrupt it; a wall stun (2 s) ends the chain |
+| **Elite:** Spore Witch | 130 | 50 | Spore cloud at your feet (26 px, 3.5 s) | 5 every 0.7 s | 0.80 s | Keeps ~140 px away; calls 2 Sproutlings every 6 s (0.8 s cast), no more while 4 of hers live |
 
 - Waves: enemies appear 0.7 s after a spawn marker, away from the hero when possible. The next wave starts 1.2 s after a clear. The M1 test room is 3 Sproutlings; a Boar and 2 Sproutlings; 2 Archers, a Boar and a Sproutling.
 - Live values: `data/enemies/*.tres` and `data/encounters/encounter_mossy_test.tres`.
@@ -550,8 +552,34 @@ Live values: `data/regions/region_mossy_hollow.tres` and `data/balance/balance_d
 | Chance of each extra door between rows | 60% |
 | Room type weights (rows 2+) | Fight 50, Elite 12, Treasure 10, Event 8, Rest 8, Merchant 7 (Village Echo 5 arrives with powered villagers in M4+) |
 | Rest room | Heal 30% max HP, or +1 flask charge |
+| Merchant prices | Flask 30, heal 25% 25, Power Shard 60 coins |
 
-- Mossy Hollow fight rooms draw from 4 encounters (2 to 3 waves). Elite, Mother Toad and Warden rooms use stand-in wave encounters until those enemies exist (M2 PR 3).
+- Mossy Hollow fight rooms draw from 4 encounters (2 to 3 waves). Mother Toad and Warden rooms use stand-in wave encounters until those enemies exist (M2 PR 3).
+- **Elite rooms:** one elite plus adds, one wave. Elder Boar with 2 Sproutlings and a Thorn Archer, or Spore Witch with a Tusk Boar. Elites have a gold outline and their name on the room banner.
+- **Treasure room:** one chest (Interact to open): 20 to 35 coins, 3 to 6 Wood, 25% a Power Shard, 10% a Crystal.
+- **Merchant (basic):** each ware sells once per visit. +1 flask 30 coins, heal 25% for 25 coins, a Power Shard for 60 coins. Wares the hero cannot pay for (or has no use for: full flasks, full HP) are greyed out. Run-only trinkets join the stock with the trinket list (M8).
+- **Event room:** one of the region's events, 2 to 3 choices, the last always free. Costs are paid first; an HP cost never kills.
+
+| Mossy Hollow event | Choice | Cost | Result |
+|---|---|---|---|
+| Mossy Shrine | Offer blood | 20% max HP | 1 Power Shard |
+| | Leave it | none | nothing |
+| Wishing Well | Toss coins | 25 coins | 50%: 1 Crystal and 20 to 30 coins back |
+| | Reach in | 10% max HP | 60%: 15 to 30 coins |
+| | Walk on | none | nothing |
+
+**Drops (Mossy Hollow).** Each line rolls on its own when the enemy dies; loot pops out as pickups. A pickup drifts to a hero within 40 px, and after a room clear all of it flies to the hero. Leaving a room scoops up anything left.
+
+| Source | Coins | Wood | Crystal | Power Shards |
+|---|---|---|---|---|
+| Sproutling | 80%: 1 to 2 | 15%: 1 | | |
+| Seedling | 50%: 1 | | | |
+| Tusk Boar | 3 to 5 | 40%: 1 to 2 | | |
+| Thorn Archer | 2 to 4 | 40%: 1 | | |
+| Elder Boar, Spore Witch | 15 to 25 | 3 to 5 | 1 | 1 to 2 |
+| Treasure chest | 20 to 35 | 3 to 6 | 10%: 1 | 25%: 1 |
+
+- Rough run estimate before bosses (about 9 fights, 2 elites, 2 treasure rooms): about 300 to 350 coins, 35 to 40 Wood, 2 Crystal, 3 to 4 shards, less what the Merchant takes. Bosses (M2 PR 3) bring Crystal and shards to the Section 15.3 targets.
 
 All numbers here are starting points for tuning. Update this section when they change.
 

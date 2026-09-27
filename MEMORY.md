@@ -4,10 +4,10 @@ Persistent project memory. Read at the start of every session, update at the end
 
 ## Current status
 
-- **Phase:** M0 done. M1 (combat core) code done (3 PRs merged); only the owner's gamepad playtest item is still open. M2 (run structure) in progress, split into 4 PRs. PR 1 (floor maps, doors, room flow) open for the owner to play.
+- **Phase:** M0 done. M1 (combat core) code done (3 PRs merged); only the owner's gamepad playtest item is still open. M2 (run structure) in progress, split into 4 PRs. PR 1 (floor maps, doors, room flow) merged. PR 2 (drops, pickups, Treasure, Merchant, Event, Elite rooms) open for the owner to play.
 - **Also:** Controls remapping menu (title > Controls) added at the owner's request, ahead of the M7 Settings menu.
-- **Next step:** Owner plays a run from the title ("Start a run") and answers the M2 PR 1 questions in the session log. Then M2 PR 2 (drops, pickups, Treasure, Merchant, Event, Elite rooms). The M1 gamepad tuning can happen any time in the new Tuning room (title screen).
-- **Last updated:** 2026-09-27 (M2 PR 1)
+- **Next step:** Owner plays a run and answers the M2 PR 2 questions in the session log. Then M2 PR 3 (Mother Toad and the Warden of Roots). The M1 gamepad tuning can happen any time in the Tuning room (title screen).
+- **Last updated:** 2026-09-27 (M2 PR 2)
 
 ## The game in brief
 
@@ -78,6 +78,13 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-27 | Controls remapping added now (owner request), ahead of the M7 Settings menu | Owner asked to remap keys and buttons in game. One keyboard and one gamepad input per action; taking a used input swaps; right stick stays aim. Saved in `user://settings.cfg` (per machine, not in the profile). Menu on the title only until a pause menu exists. |
 | 2026-09-27 | Owner's F4 tuning adopted: acceleration 1100, aim assist 60 degrees / 84 px, rumble strength 5 | Owner played with a gamepad and saved these (commit b87b8c9). GDD 15.5 synced. Rumble 5 means most rumbles are at the device cap. |
 | 2026-09-27 | On-screen hints read the live bindings (`InputBindings.hint`) | Hardcoded "Shift / B" text would lie after a remap. |
+| 2026-09-27 | Run loot goes into a per-hero `Wallet` in `RunState.wallets[player_id]`; the profile gets it at run end (M2 PR 4) | Death keeps only 50% (GDD 6.4), so run loot must stay separate until the run ends. Keyed by player so co-op heroes keep their own loot. |
+| 2026-09-27 | Drops are `DropTable` resources inline in `EnemyData` and `RegionData`, rolled by pure `LootRoller` with a per-room seed | Data-driven, no drop tables by name in code. Seeded so co-op peers agree (ARCHITECTURE 9). Standalone drop table files would need an `id` for ContentDB, so they stay inline. |
+| 2026-09-27 | Pickups pop out, drift to a hero within 40 px, fly to the hero after a room clear, and are scooped up when leaving | Loot should feel good to see, but chasing coins after a fight is busywork and losing loot to a door is a trap. |
+| 2026-09-27 | Merchant (basic) sells a flask (30), a 25% heal (25) and a Power Shard (60), each once; trinkets wait for M8 | GDD 6.2 lists flasks, trinkets and shards; trinkets have no data yet. A shard for 60 coins makes coins vs power a small Choice of its own. Wares with no use (full flasks or HP) are greyed out. |
+| 2026-09-27 | Events are `EventData` resources (choices with a cost, HP cost, chance, reward); the last choice is always free; HP costs never kill | Risk for reward (GDD 6.2) without surprise deaths. Two samples for Mossy Hollow: Mossy Shrine (blood for a shard) and Wishing Well (coins or HP for a gamble). |
+| 2026-09-27 | Elites: Elder Boar (ChargerAI with `charge_chain` 3) and Spore Witch (new `SummonerAI`: spore clouds at your feet, calls Sproutlings, capped at 4 alive); one elite plus adds in one wave | From CONTENT 6.1. Chains reuse the charger; a wall stun ends the chain so baiting still pays. The summon cap stops a slow player from being buried. |
+| 2026-09-27 | Synced docs and a test with the owner's latest `balance_default.tres` (dodge 60 px, regen delay 0.7 s, aim assist back to 30 degrees / 64 px, rumble back to 1) | The owner's edit on `main` made `test_default_balance_matches_gdd_core_numbers` fail and left GDD 15.5 out of date. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 
 ## Rejected ideas (do not re-propose without new info)
@@ -116,6 +123,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-27 (M2 PR 2):** Drops, pickups and the other room types. `Wallet` (per hero in `RunState`), `DropTable`/`DropEntry`, pure `LootRoller`, `Pickup`, HUD loot line (coins, Wood, Crystal, shards). Every enemy drops loot; Treasure rooms have a chest; Merchant sells a flask, a heal and a shard; Event rooms (`EventData`, pure `EventResolver`) with Mossy Shrine and Wishing Well. Elites: Elder Boar (3 charges in a row) and Spore Witch (`SummonerAI`), gold outline, "Elite: name" banner. `RestSpot` became `InteractSpot`. Also fixed the red `main` test after the owner's balance edit. 205 tests pass, no warnings, boot clean, checked with xvfb screenshots (merchant, event, treasure loot, elite room). Questions for the owner: are the Merchant prices tempting or too steep? Do the events feel like a real risk? Is the Elder Boar's third charge fair? Is the Spore Witch too much with a Boar beside her? Does loot flying to you after a fight feel good?
 
 - **2026-09-27 (controls remapping):** Owner asked where the map button is (Back / View on Xbox, Share or Create on PlayStation, Minus on Switch, Tab on keyboard) and for in-game remapping. Added pure `InputBindings` (rebind with swap, save and load, input names, hints), the Controls menu (title > Controls: pick a slot, press the new input within 5 s; Reset to defaults), boot loading, and live hints in all rooms. 168 tests pass, no warnings, boot clean, menu checked with an xvfb screenshot.
 

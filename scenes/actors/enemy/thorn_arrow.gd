@@ -58,6 +58,7 @@ func _land(at: Vector2) -> void:
 	hitbox.deactivate()
 	if data.hazard != null:
 		var patch: ThornPatch = PATCH_SCENE.instantiate()
+		patch.color = data.hazard_color
 		get_parent().add_child.call_deferred(patch)
 		patch.position = get_parent().to_local(at)
 		patch.setup(data.hazard, data.hazard_lifetime, data.hazard_interval, hitbox.stats)

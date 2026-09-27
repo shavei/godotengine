@@ -54,6 +54,15 @@ static func pick_encounter(region: RegionData, map: FloorMap, room: MapRoom, run
 	return pool[rng.randi_range(0, pool.size() - 1)]
 
 
+## The event an Event room shows, or null if the region has none.
+static func pick_event(region: RegionData, map: FloorMap, room: MapRoom, run_seed: int) -> EventData:
+	if region.events.is_empty():
+		return null
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = hash([run_seed, map.floor_index, room.id, &"event"])
+	return region.events[rng.randi_range(0, region.events.size() - 1)]
+
+
 static func _assign_types(rooms: Array[MapRoom], row: int, region: RegionData, rng: RandomNumberGenerator) -> void:
 	var used: Array[StringName] = []
 	for room: MapRoom in rooms:

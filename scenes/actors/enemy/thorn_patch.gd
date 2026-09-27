@@ -1,7 +1,7 @@
 class_name ThornPatch
 extends Node2D
-## Thorns left by a missed arrow: hurts a hero standing in it every `interval` seconds,
-## then withers. Makes the room smaller the longer a Thorn Archer lives.
+## Thorns left by a missed arrow (or a Spore Witch's cloud): hurts a hero standing in it
+## every `interval` seconds, then withers. Makes the room smaller the longer its maker lives.
 
 const FADE_TIME: float = 0.4
 const SPIKES: int = 7
@@ -9,6 +9,8 @@ const SPIKES: int = 7
 var attack: AttackData
 var lifetime: float = 4.0
 var interval: float = 0.8
+## Fill color; the spikes are a lighter shade (thorns green, spore clouds yellow).
+var color: Color = Color(0.28, 0.4, 0.16, 0.6)
 
 var _time: float = 0.0
 var _next_hit: float = 0.0
@@ -57,9 +59,9 @@ func _draw() -> void:
 	if attack == null:
 		return
 	var r: float = attack.radius
-	draw_circle(Vector2.ZERO, r, Color(0.28, 0.4, 0.16, 0.6))
+	draw_circle(Vector2.ZERO, r, color)
 	for i: int in SPIKES:
 		var angle: float = TAU * i / SPIKES
 		var base: Vector2 = Vector2.RIGHT.rotated(angle) * r * 0.45
 		var tip: Vector2 = Vector2.RIGHT.rotated(angle + 0.3) * r * 0.95
-		draw_line(base, tip, Color(0.72, 0.9, 0.45), 1.0)
+		draw_line(base, tip, Color(color.lightened(0.55), 1.0), 1.0)

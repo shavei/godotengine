@@ -74,19 +74,19 @@ func test_rest_room_offers_heal_or_flask() -> void:
 	run.current_room().type = MapRoom.REST
 	run.save_hero(0, 50, 100, 1)
 	var room: RunRoom = await _spawn_room(run)
-	var spots: Array[RestSpot] = []
+	var spots: Array[InteractSpot] = []
 	for child: Node in room.actors.get_children():
-		if child is RestSpot:
+		if child is InteractSpot:
 			spots.append(child)
 	assert_eq(spots.size(), 2)
 	assert_true(run.room_cleared, "resting is optional")
-	var heal: RestSpot = spots[0] if spots[0].kind == RunRoom.REST_HEAL else spots[1]
+	var heal: InteractSpot = spots[0] if spots[0].kind == RunRoom.REST_HEAL else spots[1]
 	heal.chosen.emit(heal, room.hero)
 	assert_eq(room.hero.health.hp, 80, "30% of 100")
 	assert_eq(room.hero.flasks.charges, 1)
 	await wait_physics_frames(1)
 	for child: Node in room.actors.get_children():
-		assert_false(child is RestSpot and not child.is_queued_for_deletion(), "one comfort only")
+		assert_false(child is InteractSpot and not child.is_queued_for_deletion(), "one comfort only")
 
 
 func test_hero_keeps_hp_and_flasks_between_rooms() -> void:
@@ -140,6 +140,197 @@ func test_open_door_reports_the_hero_walking_in() -> void:
 	door.locked = false
 	await wait_physics_frames(4)
 	assert_signal_emit_count(door, "entered", 1)
+
+
+func _offers(room: RunRoom) -> Array[InteractSpot]:
+	var result: Array[InteractSpot] = []
+	for child: Node in room.actors.get_children():
+		if child is InteractSpot and not child.is_queued_for_deletion():
+			result.append(child)
+	return result
+
+
+## A run whose first room is forced to `type`, entered.
+func _run_in(type: StringName, seed_value: int = 5) -> RunState:
+	var run: RunState = RunState.start(region, seed_value)
+	run.enter(run.next_choices()[0])
+	run.current_room().type = type
+	return run
+
+
+func test_enemies_drop_loot_that_goes_to_the_wallet() -> void:
+	var run: RunState = RunState.start(region, 5)
+	run.enter(run.next_choices()[0])
+	var room: RunRoom = await _spawn_room(run)
+	assert_eq(room.hud.loot_label.text.contains("Coins 0"), true, "the HUD shows the wallet")
+	var boar: Enemy = Enemy.create(ContentDB.get_item(&"enemies", &"tusk_boar"))
+	boar.position = Vector2(200, 200)
+	room.actors.add_child(boar)
+	room.director._track(boar)
+	room.director.tracker.add_alive()
+	boar.health.take_damage(999)
+	await wait_physics_frames(1)
+	var pickups: Array[Pickup] = room._pickups()
+	assert_gt(pickups.size(), 0, "a Tusk Boar always drops coins")
+	var dropped: int = 0
+	for pickup: Pickup in pickups:
+		if pickup.currency == Wallet.COINS:
+			dropped += pickup.amount
+	assert_between(dropped, 3, 5)
+	# Walk over them.
+	room.hero.global_position = Vector2(200, 200)
+	await wait_seconds(0.8)
+	assert_eq(room._pickups().size(), 0, "all collected")
+	assert_eq(run.wallet(0).amount(Wallet.COINS), dropped)
+	assert_true(room.hud.loot_label.text.contains("Coins %d" % dropped))
+
+
+func test_room_clear_pulls_loot_to_the_hero() -> void:
+	var run: RunState = RunState.start(region, 5)
+	run.enter(run.next_choices()[0])
+	var room: RunRoom = await _spawn_room(run)
+	room.drop_loot({Wallet.COINS: 6, Wallet.WOOD: 2}, Vector2(120, 120))
+	room.director.room_cleared.emit()
+	await wait_seconds(2.0)
+	assert_eq(room._pickups().size(), 0)
+	assert_eq(run.wallet(0).amount(Wallet.COINS), 6)
+	assert_eq(run.wallet(0).amount(Wallet.WOOD), 2)
+
+
+func test_leaving_scoops_up_loot_left_on_the_floor() -> void:
+	var run: RunState = RunState.start(region, 5)
+	var room: RunRoom = await _spawn_room(run)
+	room.drop_loot({Wallet.SHARDS: 1}, Vector2(600, 150))
+	# Walking through a door calls this before the next room loads.
+	room.scoop_loot(room.hero)
+	assert_eq(run.wallet(0).amount(Wallet.SHARDS), 1)
+	assert_eq(room._pickups().size(), 0)
+
+
+func test_elite_room_uses_an_elite_encounter() -> void:
+	var run: RunState = _run_in(MapRoom.ELITE)
+	var room: RunRoom = await _spawn_room(run)
+	assert_true(region.elite_encounters.has(room.director.encounter))
+	await wait_seconds(0.9)
+	assert_string_starts_with(room.banner.text, "Elite: ")
+	var elites: int = 0
+	for node: Node in get_tree().get_nodes_in_group(Enemy.GROUP):
+		if (node as Enemy).data.is_elite:
+			elites += 1
+	assert_eq(elites, 1, "one elite plus adds")
+
+
+func test_treasure_chest_drops_loot() -> void:
+	var run: RunState = _run_in(MapRoom.TREASURE)
+	var room: RunRoom = await _spawn_room(run)
+	assert_true(run.room_cleared, "doors are open at once")
+	var offers: Array[InteractSpot] = _offers(room)
+	assert_eq(offers.size(), 1)
+	assert_eq(offers[0].kind, RunRoom.CHEST)
+	offers[0].chosen.emit(offers[0], room.hero)
+	await wait_physics_frames(1)
+	assert_eq(_offers(room).size(), 0, "opened once")
+	var coins: int = 0
+	var wood: int = 0
+	for pickup: Pickup in room._pickups():
+		if pickup.currency == Wallet.COINS:
+			coins += pickup.amount
+		elif pickup.currency == Wallet.WOOD:
+			wood += pickup.amount
+	assert_between(coins, 20, 35)
+	assert_between(wood, 3, 6)
+
+
+func test_merchant_sells_each_ware_once_for_coins() -> void:
+	var run: RunState = _run_in(MapRoom.MERCHANT)
+	run.save_hero(0, 50, 100, 1)
+	run.wallet(0).add(Wallet.COINS, 100)
+	var room: RunRoom = await _spawn_room(run)
+	var wares: Dictionary = {}
+	for spot: InteractSpot in _offers(room):
+		wares[spot.kind] = spot
+	assert_eq(wares.size(), 3)
+	var balance: BalanceData = room.hero.balance
+	var flask: InteractSpot = wares[RunRoom.WARE_FLASK]
+	assert_true(flask.enabled)
+	flask.chosen.emit(flask, room.hero)
+	assert_eq(room.hero.flasks.charges, 2)
+	assert_eq(run.wallet(0).amount(Wallet.COINS), 100 - balance.merchant_flask_price)
+	var shard: InteractSpot = wares[RunRoom.WARE_SHARD]
+	shard.chosen.emit(shard, room.hero)
+	assert_eq(run.wallet(0).amount(Wallet.SHARDS), 1)
+	var left: int = 100 - balance.merchant_flask_price - balance.merchant_shard_price
+	assert_eq(run.wallet(0).amount(Wallet.COINS), left)
+	await wait_physics_frames(1)
+	assert_eq(_offers(room).size(), 1, "sold wares are gone")
+	var heal: InteractSpot = wares[RunRoom.WARE_HEAL]
+	assert_eq(heal.enabled, left >= balance.merchant_heal_price)
+
+
+func test_merchant_refuses_when_short() -> void:
+	var run: RunState = _run_in(MapRoom.MERCHANT)
+	run.save_hero(0, 50, 100, 1)
+	run.wallet(0).add(Wallet.COINS, 10)
+	var room: RunRoom = await _spawn_room(run)
+	for spot: InteractSpot in _offers(room):
+		assert_false(spot.enabled, "%s is greyed out" % spot.kind)
+		spot.refused.emit(spot, room.hero)
+	assert_eq(room.sign_label.text, "Not enough coins.")
+	assert_eq(run.wallet(0).amount(Wallet.COINS), 10)
+	assert_eq(room.hero.flasks.charges, 1)
+
+
+func test_merchant_does_not_sell_flasks_to_a_full_pouch() -> void:
+	var run: RunState = _run_in(MapRoom.MERCHANT)
+	run.wallet(0).add(Wallet.COINS, 100)
+	var room: RunRoom = await _spawn_room(run)
+	for spot: InteractSpot in _offers(room):
+		if spot.kind == RunRoom.WARE_FLASK:
+			assert_false(spot.enabled)
+			spot.chosen.emit(spot, room.hero)
+	assert_eq(run.wallet(0).amount(Wallet.COINS), 100)
+
+
+func test_event_room_offers_its_choices() -> void:
+	var run: RunState = _run_in(MapRoom.EVENT)
+	var room: RunRoom = await _spawn_room(run)
+	assert_not_null(room.room_event)
+	assert_true(run.room_cleared, "events are optional")
+	assert_eq(room.banner.text, room.room_event.title)
+	assert_eq(room.sign_label.text, room.room_event.text)
+	var offers: Array[InteractSpot] = _offers(room)
+	assert_eq(offers.size(), room.room_event.choices.size())
+	# The free way out is always possible; leaving takes nothing.
+	var way_out: InteractSpot = offers.back()
+	assert_true(way_out.enabled)
+	way_out.chosen.emit(way_out, room.hero)
+	await wait_physics_frames(1)
+	assert_eq(_offers(room).size(), 0, "one choice per event")
+	assert_eq(room.hero.health.hp, room.hero.health.max_hp)
+
+
+func test_mossy_shrine_trades_blood_for_a_shard() -> void:
+	var run: RunState = _run_in(MapRoom.EVENT)
+	run.region = region.duplicate()
+	run.region.events = [ContentDB.get_item(&"events", &"mossy_shrine")] as Array[EventData]
+	var room: RunRoom = await _spawn_room(run)
+	var offer: InteractSpot = _offers(room)[0]
+	offer.chosen.emit(offer, room.hero)
+	assert_eq(room.hero.health.hp, 80, "20% of 100 HP")
+	room.hero.global_position = offer.global_position
+	await wait_seconds(0.8)
+	assert_eq(run.wallet(0).amount(Wallet.SHARDS), 1)
+
+
+func test_wishing_well_toss_needs_coins() -> void:
+	var run: RunState = _run_in(MapRoom.EVENT)
+	run.region = region.duplicate()
+	run.region.events = [ContentDB.get_item(&"events", &"wishing_well")] as Array[EventData]
+	var room: RunRoom = await _spawn_room(run)
+	var toss: InteractSpot = _offers(room)[0]
+	assert_false(toss.enabled, "no coins yet")
+	run.wallet(0).add(Wallet.COINS, 25)
+	assert_true(toss.enabled, "greys in as soon as the hero can pay")
 
 
 ## Walks the current floor (any path) to its exit room, which is left uncleared.

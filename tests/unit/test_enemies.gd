@@ -210,6 +210,131 @@ func test_wave_director_clears_room_including_splits() -> void:
 	assert_true(director.is_room_cleared())
 
 
+func test_elder_boar_charges_three_times_in_a_row() -> void:
+	_add_walls()
+	hero.position = Vector2(300, 200)
+	hero.grant_iframes(30.0)
+	var boar: Enemy = _enemy(&"elder_boar", Vector2(120, 200))
+	var ai: ChargerAI = boar.ai
+	watch_signals(boar)
+	# Keep the hero in open floor so no charge ends on a wall: move to where the boar
+	# is not aiming each time a lane locks.
+	var charges: int = 0
+	var was_charging: bool = false
+	for i: int in 600:
+		await wait_physics_frames(1)
+		var charging: bool = ai.phase == ChargerAI.Phase.CHARGE
+		if charging and not was_charging:
+			charges += 1
+		was_charging = charging
+		if ai.phase == ChargerAI.Phase.RECOVER or ai.is_stunned():
+			break
+		if ai.phase == ChargerAI.Phase.CHARGE:
+			hero.position = Vector2(192, 192) + (boar.global_position - Vector2(192, 192)).normalized().orthogonal() * 60.0
+	assert_false(ai.is_stunned(), "no wall in the way")
+	assert_eq(charges, 3, "Elder Boar charges 3 times before resting")
+
+
+func test_elder_boar_wall_stun_ends_the_chain() -> void:
+	_add_walls()
+	hero.position = Vector2(300, 200)
+	var boar: Enemy = _enemy(&"elder_boar", Vector2(160, 200))
+	var ai: ChargerAI = boar.ai
+	while ai.phase != ChargerAI.Phase.WINDUP:
+		await wait_physics_frames(1)
+	hero.position = Vector2(200, 330)
+	for i: int in 120:
+		await wait_physics_frames(1)
+		if ai.is_stunned():
+			break
+	assert_true(ai.is_stunned(), "the first charge hit the east wall")
+	await wait_seconds(boar.data.wall_stun + 0.1)
+	assert_eq(ai.phase, ChargerAI.Phase.RECOVER, "no more charges after a stun")
+
+
+func test_elites_have_a_gold_outline() -> void:
+	var boar: Enemy = _enemy(&"elder_boar", Vector2(100, 100))
+	var sprout: Enemy = _enemy(&"sproutling", Vector2(150, 100))
+	assert_eq(boar.visual.outline_color, Enemy.ELITE_OUTLINE)
+	assert_ne(sprout.visual.outline_color, Enemy.ELITE_OUTLINE)
+
+
+func test_spore_witch_summons_sproutlings_the_director_counts() -> void:
+	var encounter: EncounterData = EncounterData.new()
+	var wave: WaveData = WaveData.new()
+	wave.enemies.append(ContentDB.get_item(&"enemies", &"spore_witch"))
+	encounter.waves.append(wave)
+	var director: WaveDirector = WaveDirector.new()
+	director.encounter = encounter
+	director.spawn_points = [Vector2(100, 100)]
+	director.spawn_warning = 0.05
+	director.actors = world
+	world.add_child(director)
+	hero.position = Vector2(260, 100)
+	hero.grant_iframes(30.0)
+	await wait_seconds(0.2)
+	var witch: Enemy = get_tree().get_nodes_in_group(Enemy.GROUP)[0]
+	var ai: SummonerAI = witch.ai
+	ai.summon_timer = 0.0
+	ai.cooldown = 99.0
+	# It may be finishing a spore cast first.
+	for i: int in 180:
+		if ai.phase == SummonerAI.Phase.SUMMON:
+			break
+		await wait_physics_frames(1)
+	assert_eq(ai.phase, SummonerAI.Phase.SUMMON)
+	await wait_seconds(witch.data.summon_windup + 0.1)
+	assert_eq(ai.alive_minions(), witch.data.summon_count)
+	assert_eq(director.tracker.alive, 1 + witch.data.summon_count)
+	witch.health.take_damage(999)
+	await wait_physics_frames(3)
+	assert_false(director.is_room_cleared(), "summons must die too")
+	# The sproutlings, then their seedlings.
+	for i: int in 2:
+		_kill_all_enemies()
+		await wait_physics_frames(3)
+	assert_true(director.is_room_cleared())
+
+
+func test_spore_witch_stops_summoning_at_the_cap() -> void:
+	var witch: Enemy = _enemy(&"spore_witch", Vector2(100, 100))
+	hero.position = Vector2(360, 360)
+	await wait_physics_frames(1)
+	var ai: SummonerAI = witch.ai
+	ai.summon_timer = 0.0
+	for i: int in witch.data.summon_max_alive:
+		ai.minions.append(_enemy(&"sproutling", Vector2(40 + i * 20, 40)))
+	assert_false(ai.can_summon(), "4 alive is the cap")
+	ai.minions[0].health.take_damage(999)
+	assert_true(ai.can_summon())
+	# Let the seedlings it split into join the world so they are freed with it.
+	await wait_physics_frames(2)
+
+
+func test_spore_cloud_lands_where_the_hero_stood() -> void:
+	var witch: Enemy = _enemy(&"spore_witch", Vector2(100, 200))
+	var ai: SummonerAI = witch.ai
+	ai.summon_timer = 99.0
+	hero.position = Vector2(260, 200)
+	while ai.phase != SummonerAI.Phase.CAST:
+		await wait_physics_frames(1)
+	var target: Vector2 = hero.global_position
+	hero.position = Vector2(260, 330)
+	await wait_seconds(witch.data.attack.windup + 0.1)
+	var clouds: Array[ThornPatch] = []
+	for child: Node in world.get_children():
+		if child is ThornPatch:
+			clouds.append(child)
+	assert_eq(clouds.size(), 1)
+	if clouds.is_empty():
+		return
+	assert_almost_eq(clouds[0].global_position, target, Vector2(2, 2))
+	assert_eq(hero.health.hp, hero.health.max_hp, "stepping away dodged it")
+	hero.position = target
+	await wait_seconds(0.2)
+	assert_eq(hero.health.hp, hero.health.max_hp - 5, "spores hurt")
+
+
 func _kill_all_enemies() -> void:
 	for node: Node in get_tree().get_nodes_in_group(Enemy.GROUP):
 		(node as Enemy).health.take_damage(999)
