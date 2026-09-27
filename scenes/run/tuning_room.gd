@@ -16,6 +16,8 @@ const RESPAWN_DELAY: float = 1.5
 
 func _ready() -> void:
 	hud.bind_hero(hero)
+	$Overlay/Help.text = "Tuning menu %s    Attack %s    Dodge %s    Flask %s    Aim right stick" % [
+		InputBindings.hint(&"pause"), InputBindings.hint(&"attack"), InputBindings.hint(&"dodge"), InputBindings.hint(&"flask")]
 	var bounds: Rect2 = room.get_rect()
 	camera.limit_left = int(bounds.position.x)
 	camera.limit_top = int(bounds.position.y)

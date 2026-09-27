@@ -5,6 +5,7 @@ Persistent project memory. Read at the start of every session, update at the end
 ## Current status
 
 - **Phase:** M0 done. M1 (combat core) code done (3 PRs merged); only the owner's gamepad playtest item is still open. M2 (run structure) in progress, split into 4 PRs. PR 1 (floor maps, doors, room flow) open for the owner to play.
+- **Also:** Controls remapping menu (title > Controls) added at the owner's request, ahead of the M7 Settings menu.
 - **Next step:** Owner plays a run from the title ("Start a run") and answers the M2 PR 1 questions in the session log. Then M2 PR 2 (drops, pickups, Treasure, Merchant, Event, Elite rooms). The M1 gamepad tuning can happen any time in the new Tuning room (title screen).
 - **Last updated:** 2026-09-27 (M2 PR 1)
 
@@ -74,6 +75,9 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-27 | Map action on Back (gamepad) and Tab | Back was unused; Tab is the common map key. |
 | 2026-09-27 | Elite, Mother Toad and Warden rooms use stand-in wave encounters in M2 PR 1 | A full run can be played end to end now; the real enemies replace the `.tres` references in PR 2 and PR 3 without code changes. |
 | 2026-09-27 | Esc leaves the run straight to the title (no confirm) for now | A pause menu is not in the design docs yet; revisit when the results screen and mid-run save land (M2 PR 4). |
+| 2026-09-27 | Controls remapping added now (owner request), ahead of the M7 Settings menu | Owner asked to remap keys and buttons in game. One keyboard and one gamepad input per action; taking a used input swaps; right stick stays aim. Saved in `user://settings.cfg` (per machine, not in the profile). Menu on the title only until a pause menu exists. |
+| 2026-09-27 | Owner's F4 tuning adopted: acceleration 1100, aim assist 60 degrees / 84 px, rumble strength 5 | Owner played with a gamepad and saved these (commit b87b8c9). GDD 15.5 synced. Rumble 5 means most rumbles are at the device cap. |
+| 2026-09-27 | On-screen hints read the live bindings (`InputBindings.hint`) | Hardcoded "Shift / B" text would lie after a remap. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 
 ## Rejected ideas (do not re-propose without new info)
@@ -112,6 +116,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-27 (controls remapping):** Owner asked where the map button is (Back / View on Xbox, Share or Create on PlayStation, Minus on Switch, Tab on keyboard) and for in-game remapping. Added pure `InputBindings` (rebind with swap, save and load, input names, hints), the Controls menu (title > Controls: pick a slot, press the new input within 5 s; Reset to defaults), boot loading, and live hints in all rooms. 168 tests pass, no warnings, boot clean, menu checked with an xvfb screenshot.
 
 - **2026-09-27 (tuning room):** Owner asked for a separate tuning level driven by the controller, with results that can go to GitHub. New Tuning room on the title (dummies, a sparring dummy, Spawn enemies from the menu). `TuningPanel` is now a pause menu: Start opens it, D-pad changes numbers (RB x5), X resets, A runs Save results / Reset all / Spawn enemies / Back to title, B closes. Save results updates only the changed lines of `data/balance/balance_default.tres` (commit in GitHub Desktop), copies a summary to the clipboard and writes `user://tuning_results.txt`. 150 tests pass, no warnings, boot clean, menu checked with an xvfb screenshot.
 - **2026-09-27 (M2 PR 1):** Floor maps and room flow. `RegionData` (Mossy Hollow: 3 floors, 5 to 7 rows, 2 to 3 rooms per row, room weights, encounter pools), pure `RunGenerator`, `FloorMap`, `MapRoom`, `RunState` in `GameState.run`. One `room.tscn` builds the corridor, fights (seeded pillar layouts and encounters), Rest (heal 30% or +1 flask) and signposts for Treasure, Merchant and Event. Doors in the top wall show the next rooms' types and stay barred until a fight is won. Floor exits lead down; the Warden stand-in ends the run. `RunMap` overlay (Tab / Back). Title has "Start a run". 3 new Mossy encounters plus stand-ins for elite and bosses. 140 tests pass, no warnings, boot clean, checked with xvfb screenshots (corridor, doors, fight, map, rest, stairs). Questions for the owner: is a floor too long or too short? Is the map readable at a glance? Do the doors make the next room clear enough? Does walking to the top wall to leave feel fine?

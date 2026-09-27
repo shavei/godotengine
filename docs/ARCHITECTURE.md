@@ -293,6 +293,8 @@ Transport decision (ENet vs Steam networking) is deferred to M10 (see MEMORY.md 
 
 ## 10. Save system
 
+- **Controls:** `InputBindings` (`scripts/systems/input_bindings.gd`, pure static rules) rebinds the InputMap, swaps on conflicts, names inputs for hints, and saves one keyboard and one gamepad input per action to `user://settings.cfg` (section `input`). `main.gd` applies it at boot. The menu is `scenes/ui/controls_menu.tscn`. Machine settings live here, not in the profile save.
+
 - Location: `user://saves/slot_N.json`, plus `slot_N.bak` written before each save.
 - Format: JSON with `version`. `SaveManager` runs migrations `v1 -> v2 -> ...` on load.
 - Save points: after the Choice, after the training tick, after raids, on quit. Mid-run: `run_slot_N.json` at room boundaries.

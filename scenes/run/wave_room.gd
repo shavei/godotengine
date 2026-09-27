@@ -1,6 +1,6 @@
 extends Node2D
 ## M1 wave room: three waves of Mossy Hollow enemies, then a room clear.
-## Interact (Shift / B) after the clear fights again. Esc (or Select) returns to the title.
+## Interact after the clear fights again. Pause returns to the title.
 
 const TITLE_SCENE: String = "res://scenes/main/title.tscn"
 const RESPAWN_DELAY: float = 1.5
@@ -17,6 +17,7 @@ const BANNER_TIME: float = 1.2
 
 func _ready() -> void:
 	hud.bind_hero(hero)
+	$Overlay/Help.text = InputBindings.combat_help([["Title", &"pause"]])
 	var bounds: Rect2 = room.get_rect()
 	camera.limit_left = int(bounds.position.x)
 	camera.limit_top = int(bounds.position.y)
@@ -44,7 +45,7 @@ func _on_wave_started(index: int, total: int) -> void:
 
 func _on_room_cleared() -> void:
 	wave_label.text = "Room clear"
-	_show_banner("Room clear!\nShift / B to fight again", 0.0)
+	_show_banner("Room clear!\n%s to fight again" % InputBindings.hint(&"interact"), 0.0)
 
 
 func _show_banner(text: String, duration: float) -> void:

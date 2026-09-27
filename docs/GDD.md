@@ -275,6 +275,8 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 | Interact | B / Circle | Shift |
 | Map (in runs) | Back / View | Tab |
 
+- Every action above except Aim can be remapped in **Controls** (title screen): one keyboard/mouse input and one gamepad input each. Taking an input another action uses swaps the two, so no action is left without one. The right stick always aims and cannot be taken. On-screen hints show the current inputs.
+
 ### 7.2 Core numbers
 - Dodge: 0.3 s roll, 0.22 s invincibility, 25 stamina. Stamina regen 40 per second after 0.5 s delay.
 - **Perfect dodge:** dodging within 0.12 s of a hit gives a brief slow-motion (0.3 s) and +10 Fusion meter.
@@ -504,7 +506,7 @@ Live values are in `data/balance/balance_default.tres` and `data/weapons/weapon_
 
 | Number | Value |
 |---|---|
-| Hero acceleration / friction | 1000 / 1400 px/s per second |
+| Hero acceleration / friction | 1100 / 1400 px/s per second |
 | Dodge distance | 72 px (about 2 tiles) over 0.3 s |
 | Hurt stagger / grace i-frames after a hit | 0.2 s / 0.6 s |
 | Input buffer (attack, dodge, flask) | 0.15 s |
@@ -522,8 +524,8 @@ Live values are in `data/balance/balance_default.tres` and `data/weapons/weapon_
 - A flask charge is used when the heal lands. Getting hit while drinking cancels the drink and keeps the charge.
 - Enemies do not crit unless their data says so.
 - The hero rolls through enemy bodies during a dodge (walls still block).
-- **Stick aim assist:** with a gamepad, a new swing turns toward the target closest to the aim line within 30 degrees either side and 64 px. Mouse aim is never assisted. Set the angle to 0 to turn it off.
-- **Rumble:** light tap on each sword hit (stronger on crits and the finisher), 0.6 for 0.18 s when the hero is hit. `rumble_strength` scales it (0 = off, also the future accessibility slider).
+- **Stick aim assist:** with a gamepad, a new swing turns toward the target closest to the aim line within 60 degrees either side and 84 px (owner tuning, was 30 and 64). Mouse aim is never assisted. Set the angle to 0 to turn it off.
+- **Rumble:** light tap on each sword hit (stronger on crits and the finisher), 0.6 for 0.18 s when the hero is hit. `rumble_strength` scales it (0 = off, also the future accessibility slider). Owner tuned it to 5, so most rumbles hit the controller's full strength (the device caps at 1).
 - **Low stamina:** pressing dodge without enough stamina blinks the stamina bar red.
 - Tune these live in the Tuning room (title screen) with a controller: Start opens the tuning menu. F4 opens it in any room (docs/ARCHITECTURE.md Section 11).
 
