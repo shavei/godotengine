@@ -1,0 +1,11 @@
+# Godot 4
+.godot/
+/android/
+*.translation
+/builds/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/

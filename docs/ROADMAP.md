@@ -1,0 +1,215 @@
+# Pass It On: Roadmap
+
+Milestones are sequential. Each has tasks, a **Done when** checklist, and (where relevant) playtest questions. Estimates assume one developer working part time with Claude; adjust as real velocity becomes clear.
+
+Legend: `[ ]` todo, `[x]` done. Update this file as work lands, and log decisions in `MEMORY.md`.
+
+| Milestone | Goal | Estimate |
+|---|---|---|
+| M0 | Project setup | 2 to 3 days |
+| M1 | Combat core | 2 weeks |
+| M2 | Run structure | 1.5 weeks |
+| M3 | Kept powers | 1.5 weeks |
+| M4 | Village and the Choice | 2 weeks |
+| M5 | Training and Techniques (**prototype gate**) | 1.5 weeks |
+| M6 | Raids, Neighbors, Fusions | 2 weeks |
+| M7 | Vertical slice | 4 weeks |
+| M8 | Content expansion | 8 to 10 weeks |
+| M9 | Story, endgame, Codex | 4 weeks |
+| M10 | Local co-op | 3 weeks |
+| M11 | Online co-op, village visits, raid help | 6 weeks |
+| M12 | Polish and release | 6+ weeks |
+
+---
+
+## M0: Project setup
+- [ ] Create Godot 4 project (`project.godot`) at repo root: 640x360 viewport, `canvas_items` stretch, integer scaling, nearest filter, 60 FPS physics.
+- [ ] Folder structure from `docs/ARCHITECTURE.md` Section 2.
+- [ ] `.gitignore` for Godot (`.godot/`, exports), `.gitattributes` for line endings and LFS for large binaries if needed.
+- [ ] Input map (GDD Section 7.1) for gamepad and keyboard/mouse.
+- [ ] Autoload stubs: `EventBus`, `ContentDB`, `GameState`, `SaveManager`, `SceneRouter`, `AudioManager`.
+- [ ] Install GUT, one passing sample test.
+- [ ] GitHub Actions workflow: headless import plus GUT run.
+- [ ] Collision layer names (ARCHITECTURE Section 7).
+- [ ] Placeholder art: colored rectangles and circles are fine until M7.
+
+**Done when:** project opens with no errors, `main.tscn` boots to an empty title screen, CI is green.
+
+---
+
+## M1: Combat core
+- [ ] Hero: movement (8-direction, acceleration), aim, 3-hit sword combo, dodge with i-frames and stamina.
+- [ ] Components: Health, Hitbox, Hurtbox, Status, Knockback, StateMachine.
+- [ ] `CombatMath` + unit tests (damage formula, crit, armor cap).
+- [ ] 3 enemies from Mossy Hollow: Sproutling (swarm), Tusk Boar (charger), Thorn Archer (ranged), with telegraphs.
+- [ ] Test room scene with waves; room clear detection.
+- [ ] Game feel: hit flash, hit-stop, screen shake, damage numbers, death animations.
+- [ ] HUD: HP, stamina.
+- [ ] Flasks (3 charges).
+
+**Done when:** a 3-wave room is fun to play for 5 minutes with placeholder art. Dodge feels responsive (tested with gamepad).
+
+---
+
+## M2: Run structure
+- [ ] `RegionData` for Mossy Hollow; room weights.
+- [ ] `RunGenerator`: seeded branching node map per floor (5 to 7 deep), unit tested (connectivity, room type distribution).
+- [ ] Floor map UI; door previews of room type.
+- [ ] Room types: Combat, Elite, Treasure, Rest, Merchant (basic), Event (2 sample events).
+- [ ] Mini-boss (Mother Toad) and region boss (Warden of Roots, phase 1 only for now).
+- [ ] Coins, Wood, Crystal, Power Shards drops and pickups.
+- [ ] Results screen; death handling (50% materials rule).
+- [ ] `ProgressionSystem`: XP, level-ups, attribute points (unit tested).
+- [ ] Mid-run save at room boundaries.
+
+**Done when:** a full 3-floor run can be played start to finish in 12 to 15 minutes and ends at a results screen.
+
+---
+
+## M3: Kept powers
+- [ ] `PowerData` resources for Fire, Frost, Growth, Stone [P].
+- [ ] Ability base class and 4 abilities with levels 1, 3, 5 behaviors.
+- [ ] Status effects: Burn, Chill/Freeze, Root, Stagger (+ boss rules).
+- [ ] 3 power slots on the HUD with cooldowns.
+- [ ] Power Shards spending UI (level up at the Shrine or run end).
+- [ ] Boss reward: 2 power orbs, pick 1.
+- [ ] `GiftSystem.keep` and `merge` with unit tests (slot cap, merge level-up).
+
+**Done when:** you can earn powers from bosses, keep up to 3, level them with shards, and they feel distinct in combat.
+
+---
+
+## M4: Village and the Choice
+- [ ] Village scene: tilemap, 6 plots, Shrine, gate, notice board.
+- [ ] Villagers [P]: Smith, Farmer, Guard, Healer with base services.
+- [ ] `ComboData` for the 16 prototype combos (Novice and Adept services; Techniques stubbed).
+- [ ] `ModifierStack` gathering services into hero and run stats (unit tested).
+- [ ] Choice screen: Keep / Give / Merge, villager preview cards, slot-full flow.
+- [ ] `GiftSystem.give` with TP carry-over (unit tested).
+- [ ] Gift ceremony (simple version: particles, villager palette swap, line of dialogue).
+- [ ] Smith shop (weapon tiers, infusions), Farmer flasks, Healer revive tokens, Guard (raid stub).
+- [ ] Save/load of `ProfileState` with round-trip tests.
+- [ ] Forced first gift tutorial (GDD Section 16).
+
+**Done when:** the full loop Village > Run > Results > Choice > Village works and persists across restarts.
+
+---
+
+## M5: Training and Techniques (PROTOTYPE GATE)
+- [ ] `TrainingSystem.tick` with thresholds 3 and 7 (unit tested).
+- [ ] Rank-up presentation in the village (Adept visual, Master visual).
+- [ ] 16 prototype Techniques implemented (modifier-based where possible, behavior scripts for Ember Step, Cold Temper and others).
+- [ ] Technique lesson ceremony; character sheet shows Techniques.
+- [ ] Renown points and levels 1 to 3 (Healer arrival at Renown 2).
+- [ ] Local metrics logging (GDD Section 17).
+- [ ] Debug console commands (ARCHITECTURE Section 11).
+- [ ] Build for playtesters (Windows and Linux).
+
+**Prototype gate (must pass before M6):**
+- [ ] 5+ external playtesters, 2+ hours each.
+- [ ] 40% to 60% of powers given (metrics).
+- [ ] Median Choice time 10 to 40 s.
+- [ ] Most testers report hesitating on at least one Choice and being happy about a Master Technique.
+- [ ] Testers ask to keep playing.
+
+If the gate fails: iterate on numbers (TP thresholds, slot count, service strength) and ceremony presentation before adding anything new. Log findings in `MEMORY.md`.
+
+**Playtest questions:** GDD Section 17.
+
+---
+
+## M6: Raids, Neighbors, Fusions
+- [ ] `RaidDirector` + raid scene: gates, waves, building HP, towers, walls.
+- [ ] Powered villagers cast raid spells scaled by rank.
+- [ ] Damaged buildings and repair flow.
+- [ ] Raid warning on the notice board; Watchtower.
+- [ ] `NeighborSystem` + village map UI with glowing active paths (unit tested).
+- [ ] Resonance.
+- [ ] `FusionSystem` + Fusion meter + 6 prototype Fusions (pairs among Fire, Frost, Growth, Stone) (unit tested).
+- [ ] Buildings: Training Grounds, Walls, Storehouse (with costs from GDD 15.1).
+
+**Done when:** a player can see gifts defend the village in a raid, arrange villagers for neighbor bonuses, and fire a Fusion.
+
+---
+
+## M7: Vertical slice
+- [ ] Final art direction for Mossy Hollow, village, hero, 4 villagers (all visual rank states for the 4 prototype powers).
+- [ ] Music: village theme with layers, Mossy Hollow theme, boss theme, ceremony motif.
+- [ ] SFX pass for combat and UI.
+- [ ] Full Mossy Hollow content: 5 enemies, 2 elites, mini-boss, Warden of Roots both phases.
+- [ ] Sword and Hammer weapons with mastery unlocks.
+- [ ] Onboarding first hour (GDD Section 16) polished.
+- [ ] Settings menu with accessibility options (GDD Section 18).
+- [ ] Steam page assets: capsule art, trailer capture from the slice.
+
+**Done when:** 2 hours of polished play that could be shown publicly (demo quality).
+
+---
+
+## M8: Content expansion
+- [ ] Powers: Storm, Wind, Light, Shadow (+ statuses Shock, Knockback, Radiant, Marked).
+- [ ] Villagers: Miller, Baker, Hunter, Scholar.
+- [ ] All 64 combos and 64 Techniques; content integrity test green.
+- [ ] All 28 Fusions and Neighbor bonuses.
+- [ ] Regions: Ember Mines, Frostpeak, Gloam Marsh (enemies, elites, mini-bosses, Wardens).
+- [ ] Weapons: Spear, Bow; mastery 1 to 10 for all 4.
+- [ ] Trinkets (40), events (20+).
+- [ ] Buildings: Town Hall, Tavern (level 1), all workplace levels.
+- [ ] Renown 1 to 10.
+- [ ] Optional: `tools/csv_import.gd` for combos.
+- [ ] Balance pass using metrics.
+
+**Done when:** the full game minus final boss and story is playable for 20+ hours.
+
+---
+
+## M9: Story, endgame, Codex
+- [ ] Narrative beats (GDD 10.4), memory fragments at the Shrine, villager dialogue sets.
+- [ ] The Hoard region and the Hoarder (3 phases, phase 3 with villagers).
+- [ ] Both endings.
+- [ ] Apprentices (Renown 8).
+- [ ] Seasons 1 to 10.
+- [ ] Codex complete (all tabs, hints, rewards).
+- [ ] Early Access readiness review.
+
+**Done when:** a player can finish the game, see credits, and start Season 1.
+
+---
+
+## M10: Local co-op
+- [ ] `InputSource` per device; second hero joins from the village.
+- [ ] Camera that frames both players; leash distance.
+- [ ] Enemy HP scaling, instanced loot.
+- [ ] Shared Fusion.
+- [ ] Save rules for a guest profile.
+- [ ] Decide online transport (ENet vs Steam) and record in `MEMORY.md`.
+
+**Done when:** two players can play a full run on one machine.
+
+---
+
+## M11: Online features
+- [ ] Host-authoritative online co-op runs (MultiplayerSpawner/Synchronizer), lobby via Tavern.
+- [ ] Village snapshot export/import; visiting a friend's village; guest Technique lessons.
+- [ ] Raid help (lend a villager, async).
+- [ ] Network testing with latency simulation.
+
+**Done when:** two players on different machines can complete a run together, and villages can be visited.
+
+---
+
+## M12: Polish and release
+- [ ] Performance pass on Steam Deck (60 FPS in raids).
+- [ ] Controller glyphs, Steam Input, achievements (tied to Codex).
+- [ ] Localization (start with 4 to 6 languages).
+- [ ] Bug bash, crash reporting, save migration tests.
+- [ ] Daily Run with leaderboard (post-launch if needed).
+- [ ] Early Access launch, then 1.0.
+
+---
+
+## Always-on tasks
+- Keep `MEMORY.md` status and decisions current.
+- Keep `docs/GDD.md` balance tables in sync with `data/balance/balance_default.tres`.
+- Every new rule gets a unit test; every new content type gets an integrity check.
+- Playtest at the end of every milestone from M4 on.
