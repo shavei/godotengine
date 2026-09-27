@@ -14,7 +14,7 @@ func enter(_msg: Dictionary = {}) -> void:
 	var hero: Hero = actor
 	_step = hero.combo_step % hero.weapon.combo.size()
 	_attack = hero.weapon.combo[_step]
-	hero.update_facing()
+	hero.facing = hero.attack_direction()
 	_dir = hero.facing
 	_time = 0.0
 	_queued = false

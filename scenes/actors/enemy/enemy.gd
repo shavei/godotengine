@@ -52,6 +52,7 @@ static func create(enemy_data: EnemyData) -> Enemy:
 
 func _ready() -> void:
 	add_to_group(GROUP)
+	add_to_group(AimAssist.GROUP)
 	if data == null:
 		push_error("Enemy %s has no EnemyData" % name)
 		return
@@ -213,6 +214,7 @@ func _on_died() -> void:
 	_dead = true
 	cancel_attack()
 	remove_from_group(GROUP)
+	remove_from_group(AimAssist.GROUP)
 	body_shape.set_deferred("disabled", true)
 	_spawn_splits()
 	died.emit(self)

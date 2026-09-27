@@ -163,3 +163,65 @@ func test_training_dummy_revives_after_dying() -> void:
 	assert_true(dummy.health.is_dead())
 	await wait_physics_frames(30)
 	assert_eq(dummy.health.hp, dummy.health.max_hp)
+
+
+# --- Gamepad feel (M1 PR 3) --------------------------------------------------
+
+func test_stick_attack_turns_toward_close_target() -> void:
+	_add_dummy(Vector2(140, 100))
+	input.aim_assist = true
+	input.aim = Vector2.RIGHT.rotated(deg_to_rad(25))
+	input.press(&"attack")
+	await wait_physics_frames(3)
+	assert_almost_eq(hero.facing.angle(), 0.0, 0.01)
+
+
+func test_mouse_attack_is_not_assisted() -> void:
+	_add_dummy(Vector2(140, 100))
+	input.aim_assist = false
+	input.aim = Vector2.RIGHT.rotated(deg_to_rad(25))
+	input.press(&"attack")
+	await wait_physics_frames(3)
+	assert_almost_eq(hero.facing.angle(), deg_to_rad(25), 0.01)
+
+
+func test_hits_and_getting_hit_rumble() -> void:
+	var dummy: TrainingDummy = _add_dummy(Vector2(122, 100))
+	input.aim = Vector2.RIGHT
+	input.press(&"attack")
+	await wait_physics_frames(20)
+	assert_lt(dummy.health.hp, dummy.health.max_hp)
+	assert_gt(input.last_rumble.x, 0.0, "landing a hit rumbles")
+	input.last_rumble = Vector2.ZERO
+	var slam: AttackData = AttackData.new()
+	slam.damage = 5.0
+	var hitbox: HitboxComponent = HitboxComponent.new()
+	hitbox.attack = slam
+	world.add_child(hitbox)
+	hero.hurtbox.receive_hit(hitbox)
+	assert_almost_eq(input.last_rumble.x, Hero.HURT_RUMBLE.x, 0.001)
+
+
+func test_rumble_strength_zero_turns_it_off() -> void:
+	var old: float = hero.balance.rumble_strength
+	hero.balance.rumble_strength = 0.0
+	hero.rumble(0.8, 0.1)
+	hero.balance.rumble_strength = old
+	assert_eq(input.last_rumble.x, 0.0)
+
+
+func test_dodge_without_stamina_is_denied() -> void:
+	watch_signals(hero)
+	hero.stamina.current = 5.0
+	input.press(&"dodge")
+	await wait_physics_frames(2)
+	assert_signal_emitted(hero, "dodge_denied")
+	assert_true(hero.state_machine.is_in(&"Move"))
+
+
+func test_apply_balance_updates_stamina_regen() -> void:
+	var tuned: BalanceData = hero.balance.duplicate()
+	tuned.stamina_regen = 99.0
+	hero.balance = tuned
+	hero.apply_balance()
+	assert_eq(hero.stamina.regen_per_second, 99.0)

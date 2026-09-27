@@ -7,6 +7,10 @@ extends Node
 var move: Vector2 = Vector2.ZERO
 ## Aim direction, or ZERO to aim where the actor is moving.
 var aim: Vector2 = Vector2.ZERO
+## True if attacks should get stick aim assist (never for a mouse).
+var aim_assist: bool = false
+## The last rumble asked for, as Vector2(strength, duration). A network peer would forward it.
+var last_rumble: Vector2 = Vector2.ZERO
 
 var _pressed: Dictionary = {}
 
@@ -21,6 +25,15 @@ func get_move() -> Vector2:
 
 func get_aim(_origin: Vector2) -> Vector2:
 	return aim.normalized()
+
+
+func wants_aim_assist() -> bool:
+	return aim_assist
+
+
+## Asks the controller behind this source to vibrate. `strength` is 0 to 1.
+func rumble(strength: float, duration: float) -> void:
+	last_rumble = Vector2(strength, duration)
 
 
 ## True once per press. Call once per physics frame per action.
