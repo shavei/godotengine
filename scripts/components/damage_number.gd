@@ -24,11 +24,12 @@ static func spawn(parent: Node, world_pos: Vector2, value: String, color: Color,
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(label)
 	label.global_position = world_pos + Vector2(-20 + randf_range(-4.0, 4.0), -24)
+	label.reset_physics_interpolation()
 	return label
 
 
 func _ready() -> void:
-	var tween: Tween = create_tween().set_parallel()
+	var tween: Tween = create_tween().set_parallel().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	tween.tween_property(self, "position:y", position.y - RISE, LIFETIME).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	tween.tween_property(self, "modulate:a", 0.0, LIFETIME * 0.5).set_delay(LIFETIME * 0.5)
 	tween.chain().tween_callback(queue_free)

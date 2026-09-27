@@ -87,7 +87,7 @@ func _on_hurt(result: DamageResult, source: HitboxComponent) -> void:
 	DamageNumber.spawn(get_parent(), global_position, str(result.amount), color, result.is_crit)
 	# Wobble away from the hit.
 	var side: float = signf(global_position.x - source.global_position.x)
-	var tween: Tween = create_tween()
+	var tween: Tween = create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	tween.tween_property(visual, "rotation", 0.25 * (side if side != 0.0 else 1.0), 0.05)
 	tween.tween_property(visual, "rotation", 0.0, 0.25).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 

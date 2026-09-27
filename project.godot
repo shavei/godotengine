@@ -171,6 +171,10 @@ map={
 2d_physics/layer_8="pickups"
 2d_physics/layer_9="buildings"
 
+[physics]
+
+common/physics_interpolation=true
+
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0

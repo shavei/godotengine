@@ -213,6 +213,7 @@ func fire_projectile(direction: Vector2) -> ThornArrow:
 	var arrow: ThornArrow = ARROW_SCENE.instantiate()
 	get_parent().add_child(arrow)
 	arrow.global_position = global_position + direction * (data.body_radius + 2.0)
+	arrow.reset_physics_interpolation()
 	arrow.launch(direction, data, stats)
 	return arrow
 
@@ -226,6 +227,7 @@ func drop_hazard(world_position: Vector2) -> ThornPatch:
 	patch.color = data.hazard_color
 	get_parent().add_child(patch)
 	patch.global_position = world_position
+	patch.reset_physics_interpolation()
 	patch.setup(data.hazard, data.hazard_lifetime, data.hazard_interval, stats)
 	return patch
 
@@ -298,7 +300,7 @@ func _clear_ground_marker() -> void:
 func _play_death() -> void:
 	HitFlash.play(visual, DEATH_TIME)
 	telegraph.stop()
-	var tween: Tween = create_tween()
+	var tween: Tween = create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	tween.tween_property(visual, "scale", Vector2(1.5, 0.6), 0.08)
 	tween.tween_property(visual, "scale", Vector2.ZERO, DEATH_TIME).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
 	tween.parallel().tween_property(visual, "rotation", visual.rotation + PI, DEATH_TIME)

@@ -15,6 +15,8 @@ extends Resource
 @export var hero_friction: float = 1400.0
 @export var hero_crit_chance: float = 0.05
 @export var hero_crit_multiplier: float = 1.5
+## Move speed multiplier while swinging (the hero steers on top of the swing's lunge).
+@export var attack_move_scale: float = 0.6
 
 @export_group("Dodge and stamina")
 @export var dodge_duration: float = 0.3

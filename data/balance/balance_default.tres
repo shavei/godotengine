@@ -12,6 +12,7 @@ hero_acceleration = 1100.0
 hero_friction = 1400.0
 hero_crit_chance = 0.05
 hero_crit_multiplier = 1.5
+attack_move_scale = 0.6
 dodge_duration = 0.3
 dodge_iframes = 0.22
 dodge_distance = 60.0

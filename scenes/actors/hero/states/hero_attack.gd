@@ -1,6 +1,7 @@
 extends State
 ## One step of the weapon combo: wind-up, active (hitbox on), recovery.
 ## A press during the swing queues the next step; a dodge can cancel the recovery.
+## The move input steers the hero during the whole swing (Balance attack_move_scale).
 
 var _attack: AttackData
 var _step: int = 0
@@ -35,19 +36,22 @@ func physics_update(delta: float) -> void:
 	if hero.consume(&"attack"):
 		_queued = true
 	var hit_end: float = _attack.windup + _attack.active
+	var move: Vector2 = hero.input.get_move()
+	var steer: Vector2 = move * hero.balance.hero_move_speed * hero.balance.attack_move_scale
 
 	if _time < _attack.windup:
-		hero.velocity = _dir * _attack.lunge_speed
+		hero.velocity = _dir * _attack.lunge_speed + steer
 	elif _time < hit_end:
 		if not _hit_started:
 			_hit_started = true
 			hero.hitbox.activate(_attack)
 			var big: bool = _step == hero.weapon.combo.size() - 1
 			hero.swing.play(_attack.reach + _attack.radius * 0.4, 6.0 if big else 4.0, _attack.active + 0.08)
-		hero.velocity = _dir * _attack.lunge_speed * 0.5
+		hero.velocity = _dir * _attack.lunge_speed * 0.5 + steer
 	else:
 		hero.hitbox.deactivate()
-		hero.velocity = hero.velocity.move_toward(Vector2.ZERO, hero.balance.hero_friction * delta)
+		var rate: float = hero.balance.hero_acceleration if move != Vector2.ZERO else hero.balance.hero_friction
+		hero.velocity = hero.velocity.move_toward(steer, rate * delta)
 		# Dodge cancels recovery.
 		if hero.try_dodge():
 			_end_combo_early()
