@@ -1,0 +1,71 @@
+extends State
+## One step of the weapon combo: wind-up, active (hitbox on), recovery.
+## A press during the swing queues the next step; a dodge can cancel the recovery.
+
+var _attack: AttackData
+var _step: int = 0
+var _dir: Vector2 = Vector2.RIGHT
+var _time: float = 0.0
+var _queued: bool = false
+var _hit_started: bool = false
+
+
+func enter(_msg: Dictionary = {}) -> void:
+	var hero: Hero = actor
+	_step = hero.combo_step % hero.weapon.combo.size()
+	_attack = hero.weapon.combo[_step]
+	hero.update_facing()
+	_dir = hero.facing
+	_time = 0.0
+	_queued = false
+	_hit_started = false
+	hero.weapon_pivot.rotation = _dir.angle()
+	hero.hitbox_shape.position = Vector2(_attack.reach, 0)
+	(hero.hitbox_shape.shape as CircleShape2D).radius = _attack.radius
+
+
+func exit() -> void:
+	var hero: Hero = actor
+	hero.hitbox.deactivate()
+
+
+func physics_update(delta: float) -> void:
+	var hero: Hero = actor
+	_time += delta
+	if hero.consume(&"attack"):
+		_queued = true
+	var hit_end: float = _attack.windup + _attack.active
+
+	if _time < _attack.windup:
+		hero.velocity = _dir * _attack.lunge_speed
+	elif _time < hit_end:
+		if not _hit_started:
+			_hit_started = true
+			hero.hitbox.activate(_attack)
+			var big: bool = _step == hero.weapon.combo.size() - 1
+			hero.swing.play(_attack.reach + _attack.radius * 0.4, 6.0 if big else 4.0, _attack.active + 0.08)
+		hero.velocity = _dir * _attack.lunge_speed * 0.5
+	else:
+		hero.hitbox.deactivate()
+		hero.velocity = hero.velocity.move_toward(Vector2.ZERO, hero.balance.hero_friction * delta)
+		# Dodge cancels recovery.
+		if hero.try_dodge():
+			_end_combo_early()
+			return
+		var is_last: bool = _step >= hero.weapon.combo.size() - 1
+		if _queued and not is_last and _time >= hit_end + hero.weapon.chain_after:
+			hero.combo_step = _step + 1
+			machine.transition_to(&"Attack")
+			return
+		if _time >= hit_end + _attack.recovery:
+			hero.combo_step = (_step + 1) % hero.weapon.combo.size()
+			hero.combo_timer = hero.balance.combo_reset
+			machine.transition_to(&"Move")
+			return
+	hero.apply_movement()
+
+
+func _end_combo_early() -> void:
+	var hero: Hero = actor
+	hero.combo_step = (_step + 1) % hero.weapon.combo.size()
+	hero.combo_timer = hero.balance.combo_reset

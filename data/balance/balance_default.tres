@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="BalanceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/balance_data.gd" id="1_balance"]
+
+[resource]
+script = ExtResource("1_balance")
+id = &"default"
+hero_max_hp = 100
+hero_max_stamina = 100.0
+hero_move_speed = 110.0
+hero_acceleration = 1000.0
+hero_friction = 1400.0
+hero_crit_chance = 0.05
+hero_crit_multiplier = 1.5
+dodge_duration = 0.3
+dodge_iframes = 0.22
+dodge_distance = 72.0
+dodge_stamina_cost = 25.0
+stamina_regen = 40.0
+stamina_regen_delay = 0.5
+hurt_stun = 0.2
+hurt_iframes = 0.6
+input_buffer = 0.15
+combo_reset = 0.35
+flask_charges = 3
+flask_heal_fraction = 0.35
+flask_drink_time = 0.4
+flask_move_scale = 0.4

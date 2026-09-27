@@ -37,14 +37,17 @@ Legend: `[ ]` todo, `[x]` done. Update this file as work lands, and log decision
 **Done when:** project opens with no errors, `main.tscn` boots to an empty title screen, CI is green.
 
 ## M1: Combat core
-- [ ] Hero: movement (8-direction, acceleration), aim, 3-hit sword combo, dodge with i-frames and stamina.
-- [ ] Components: Health, Hitbox, Hurtbox, Status, Knockback, StateMachine.
-- [ ] `CombatMath` + unit tests (damage formula, crit, armor cap).
-- [ ] 3 enemies from Mossy Hollow: Sproutling (swarm), Tusk Boar (charger), Thorn Archer (ranged), with telegraphs.
-- [ ] Test room scene with waves; room clear detection.
-- [ ] Game feel: hit flash, hit-stop, screen shake, damage numbers, death animations.
-- [ ] HUD: HP, stamina.
-- [ ] Flasks (3 charges).
+Split into small PRs, each playable: (1) hero combat core in a test room with training dummies, (2) enemies, waves and room clear, (3) remaining game feel and tuning.
+
+- [x] Hero: movement (8-direction, acceleration), aim, 3-hit sword combo, dodge with i-frames and stamina.
+- [x] Components: Health, Hitbox, Hurtbox, Status, Knockback, StateMachine (plus InputSource for multiplayer readiness).
+- [x] `CombatMath` + unit tests (damage formula, crit, armor cap).
+- [ ] 3 enemies from Mossy Hollow: Sproutling (swarm), Tusk Boar (charger), Thorn Archer (ranged), with telegraphs. (Telegraph ring done, used by the sparring dummy.)
+- [ ] Test room scene with waves; room clear detection. (Test room with training dummies done; waves next.)
+- [ ] Game feel: hit flash, hit-stop, screen shake, damage numbers, death animations. (All but enemy death animations done.)
+- [x] HUD: HP, stamina.
+- [x] Flasks (3 charges).
+- Perfect dodge (GDD 7.2) waits for the Fusion meter (M6); only the slow-motion part could come earlier if playtests ask for it.
 
 **Done when:** a 3-wave room is fun to play for 5 minutes with placeholder art. Dodge feels responsive (tested with gamepad).
 

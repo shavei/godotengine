@@ -46,14 +46,18 @@ res://
                    combat_math.gd, modifier_stack.gd, raid_director.gd
     state/         profile_state.gd, hero_state.gd, village_state.gd, villager_state.gd, run_state.gd
     components/    health_component.gd, hitbox_component.gd, hurtbox_component.gd, status_component.gd,
-                   state_machine.gd, state.gd, knockback_component.gd, loot_dropper.gd
+                   state_machine.gd, state.gd, knockback_component.gd, loot_dropper.gd,
+                   input_source.gd, local_input_source.gd, telegraph_ring.gd, placeholder_shape.gd,
+                   game_camera.gd, hit_flash.gd, hit_stop.gd, damage_number.gd
     abilities/     ability.gd (base), ability_ember_bolt.gd ... (one per power + fusions)
     ai/            ai_chaser.gd, ai_charger.gd, ai_ranged.gd, ai_ambusher.gd, ai_tank.gd, ai_summoner.gd ...
   scenes/
     main/          main.tscn (boot), title.tscn
     village/       village.tscn, villager.tscn, shrine.tscn, plot.tscn, gate.tscn
-    run/           run.tscn, floor_map.tscn, room.tscn, rooms/*.tscn, corridor.tscn
-    actors/        hero.tscn, enemies/*.tscn, bosses/*.tscn
+    run/           run.tscn, floor_map.tscn, room.tscn, rooms/*.tscn, corridor.tscn,
+                   test_room.tscn (M1 sandbox), placeholder_room.gd (checkered arena until tilesets)
+    actors/        hero/ (hero.tscn, hero.gd, swing_arc.gd, states/hero_*.gd), training_dummy/,
+                   enemies/*.tscn, bosses/*.tscn
     abilities/     projectiles/*.tscn, areas/*.tscn
     raid/          raid.tscn, tower.tscn, wall_segment.tscn
     ui/            hud.tscn, choice_screen.tscn, gift_ceremony.tscn, village_map.tscn, character_sheet.tscn,
@@ -237,7 +241,9 @@ main.tscn (boot: ContentDB load, SaveManager load)
 
 ## 7. Actors and combat
 
-- **Hero** (`hero.tscn`): `CharacterBody2D` + components. States: Idle, Move, Attack (combo steps), Dodge, Cast, Hurt, Dead. Input comes from an `InputSource` node (see 9) so AI or a network peer can drive it.
+- **Hero** (`hero/hero.tscn`): `CharacterBody2D` + components. States (child nodes of `StateMachine`, one script each in `hero/states/`): Move (includes idle), Attack (one node, re-entered per combo step), Dodge, Drink, Hurt, Dead; Cast arrives with powers in M3. The hero calls `state_machine.physics_update()` from its own `_physics_process` so input buffering, stamina and i-frames update first. Input comes from an `InputSource` child (see 9); if none is present the hero adds a `LocalInputSource`. Tests drive the hero with the scripted base `InputSource`.
+- **Attacks** are `AttackData` resources (damage, wind-up, active, recovery, reach, radius, lunge, knockback, hit-stop, shake). Weapons hold a combo of them; enemies will use the same resource. `CombatStats` carries the numbers `CombatMath` needs for each side.
+- **Damage flow:** an active `HitboxComponent` checks overlapping `HurtboxComponent`s each physics frame and hits each once per `activate()`. The hurtbox runs `CombatMath`, applies the result to its `HealthComponent` and emits `hurt(result, hitbox)`; the hitbox emits `hit_landed`. The victim spawns its own damage number and flash.
 - **Enemies:** `CharacterBody2D` + components + an AI script chosen by `EnemyData`. Telegraphs are `AnimationPlayer` tracks with a `telegraph_started` signal for the attack warning VFX.
 - **Hitboxes and hurtboxes** use collision layers:
 
@@ -254,7 +260,7 @@ main.tscn (boot: ContentDB load, SaveManager load)
 | 9 | Buildings (raids) |
 
 - **Abilities:** each power ability is a scene with an `Ability` script (`cast(caster, aim_dir, level)`), reading numbers from `PowerData` and the hero's `Stats`.
-- **Game feel:** hit-stop (`Engine.time_scale` pulse, respecting the accessibility toggle), hit flash shader, screen shake via a `CameraShake` node, damage numbers.
+- **Game feel:** hit-stop (`HitStop.request()`, an `Engine.time_scale` pulse; the newest request restores speed, and `HitStop.enabled` is the accessibility toggle), hit flash shader (`assets/shaders/hit_flash.gdshader`, material local to scene), screen shake (`GameCamera` listens to `EventBus.camera_shake_requested(trauma)`), damage numbers (`DamageNumber.spawn()`).
 
 ---
 

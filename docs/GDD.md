@@ -496,6 +496,29 @@ See `docs/ARCHITECTURE.md` Section 9. Summary: no per-player state in autoloads,
 | Credits | Hour 20 to 25 |
 | Codex completion | 60+ hours |
 
+### 15.5 Combat feel (M1)
+Live values are in `data/balance/balance_default.tres` and `data/weapons/weapon_sword.tres`.
+
+| Number | Value |
+|---|---|
+| Hero acceleration / friction | 1000 / 1400 px/s per second |
+| Dodge distance | 72 px (about 2 tiles) over 0.3 s |
+| Hurt stagger / grace i-frames after a hit | 0.2 s / 0.6 s |
+| Input buffer (attack, dodge, flask) | 0.15 s |
+| Combo continues if you attack again within | 0.35 s after a swing ends |
+| Flask drink time / move speed while drinking | 0.4 s / 40% |
+| Hit-stop | Sword finisher 0.07 s, crits +0.03 s, hero hit 0.05 s |
+
+| Sword step | Damage | Wind-up | Active | Recovery | Knockback |
+|---|---|---|---|---|---|
+| 1 | 12 | 0.06 s | 0.08 s | 0.20 s | 90 |
+| 2 | 12 | 0.06 s | 0.08 s | 0.20 s | 90 |
+| 3 (finisher) | 20 | 0.12 s | 0.10 s | 0.32 s | 240 |
+
+- The next combo step can start 0.06 s into recovery if attack was pressed during the swing. Dodge cancels recovery.
+- A flask charge is used when the heal lands. Getting hit while drinking cancels the drink and keeps the charge.
+- Enemies do not crit unless their data says so.
+
 All numbers here are starting points for tuning. Update this section when they change.
 
 ---

@@ -4,8 +4,8 @@ Persistent project memory. Read at the start of every session, update at the end
 
 ## Current status
 
-- **Phase:** M0 (project setup) done, in review as a draft PR into `main`.
-- **Next step:** Milestone M1 (combat core) in `docs/ROADMAP.md`, once the owner has opened the project locally.
+- **Phase:** M0 done and merged. M1 (combat core) in progress, split into 3 PRs. PR 1 (hero combat core + test room with training dummies) is in review as a draft PR.
+- **Next step:** Owner plays the test room (title screen > Combat test) with keyboard/mouse and a gamepad and gives feel feedback. Then M1 PR 2: Sproutling, Tusk Boar, Thorn Archer, waves and room clear.
 - **Last updated:** 2026-09-27
 
 ## The game in brief
@@ -51,6 +51,11 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-27 | Compatibility (GL) renderer | 2D pixel art needs nothing from Forward+; Compatibility runs on the widest range of hardware, including older laptops. |
 | 2026-09-27 | Stretch mode `canvas_items` + integer scale (briefly `viewport` in M0, reverted) | Owner found text blurry with `viewport` (text drawn at 640x360 then enlarged). `canvas_items` renders text and UI at screen resolution while pixel art still scales by whole numbers. Verified with before/after screenshots. |
 | 2026-09-27 | Gamepad Fusion button is RT (was LT + RT) | Godot's InputMap cannot express a two-button chord; one trigger is simpler and frees LT. |
+| 2026-09-27 | M1 split into 3 PRs: hero core, enemies and waves, feel and tuning | Matches the one-feature-per-PR workflow; the owner can judge movement and dodge feel before enemies are tuned around them. |
+| 2026-09-27 | Hero scene in `scenes/actors/hero/` with one script per state in `states/`; hero drives its StateMachine explicitly | Keeps the hero's files together; explicit update order (input buffer, stamina, i-frames, then state) avoids frame-order bugs. |
+| 2026-09-27 | Attacks are `AttackData` resources shared by weapons and enemies; tunables in `BalanceData` (`data/balance/balance_default.tres`) | Data-driven rule from CLAUDE.md; tuning feel needs no code changes. |
+| 2026-09-27 | Flask charge is used when the heal lands; a hit while drinking cancels and keeps the charge | Kinder while enemies are untuned. Revisit in M1 PR 3 if drinking mid-fight feels risk-free. |
+| 2026-09-27 | Hit-stop restores speed by request counter, not by clock comparison | Found in a render test: comparing millisecond clocks could leave the game stuck at 5% speed. Regression test added. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 
 ## Rejected ideas (do not re-propose without new info)
@@ -84,10 +89,13 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Art direction specifics (palette, reference games). Proposed: warm cozy village vs saturated dangerous dungeons.
 - Should failed runs still tick villager training? Current answer: yes (training counts runs attempted, not runs won). Revisit after playtest.
 - Is 6 runs to Master the right pace? Tune in M5 playtests.
+- Should the hero roll through enemies during a dodge (currently blocked by enemy bodies)? Decide in M1 PR 2 once real enemies exist.
+- Perfect dodge slow-motion (GDD 7.2): add before the Fusion meter (M6) if playtests want it.
 - Online multiplayer tech: Godot high-level multiplayer over ENet vs Steam networking. Decide at M10.
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
 
+- **2026-09-27 (M1 PR 1):** Hero combat core: movement with acceleration, mouse/stick aim, 3-hit sword combo with input buffer and dodge-cancel, dodge with i-frames and stamina, flasks, hurt and death. Components (Health, Hitbox, Hurtbox, Knockback, Status, StateMachine, InputSource), CombatMath, StaminaPool, FlaskPouch, BalanceData, WeaponData/AttackData. Game feel: hit flash shader, hit-stop, camera shake, damage numbers, telegraph ring. Test room with 2 training dummies and a sparring dummy that telegraphs a slam; HUD with HP, stamina, flasks; title has a Combat test button. 63 tests pass, boot clean, verified with xvfb screenshots (found and fixed a hit-stop freeze bug that way).
 - **2026-09-27 (M0):** Created the Godot project, folders, input map, 6 autoloads, placeholder boot and title scenes, GUT with 18 passing tests, CI workflow. Verified locally in a cloud session with Godot 4.7.2 headless: import clean, all tests pass, game boots to the title screen.
 - **2026-09-27:** Brainstormed and researched ~20 concepts, settled on Pass It On. Wrote CLAUDE.md, MEMORY.md, docs/GDD.md, docs/CONTENT.md, docs/ARCHITECTURE.md, docs/ROADMAP.md, docs/RESEARCH.md.
