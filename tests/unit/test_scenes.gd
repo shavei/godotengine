@@ -8,6 +8,7 @@ const SCENES: Array[String] = [
 	"res://scenes/actors/training_dummy/training_dummy.tscn",
 	"res://scenes/run/test_room.tscn",
 	"res://scenes/run/wave_room.tscn",
+	"res://scenes/run/tuning_room.tscn",
 	"res://scenes/actors/enemy/enemy.tscn",
 	"res://scenes/actors/enemy/thorn_arrow.tscn",
 	"res://scenes/actors/enemy/thorn_patch.tscn",
@@ -56,3 +57,21 @@ func test_wave_room_starts_the_first_wave() -> void:
 	assert_eq(room.get_node("%WaveLabel").text, "Wave 1 / 3")
 	await wait_seconds(1.0)
 	assert_eq(get_tree().get_nodes_in_group(Enemy.GROUP).size(), 3, "three Sproutlings")
+
+
+func test_tuning_room_menu_spawns_enemies_on_demand() -> void:
+	var room: Node = load("res://scenes/run/tuning_room.tscn").instantiate()
+	add_child_autofree(room)
+	await wait_physics_frames(10)
+	var director: WaveDirector = room.get_node("WaveDirector")
+	assert_null(director.tracker, "no enemies until asked")
+	room.open_menu()
+	assert_true(TuningPanel.is_open())
+	assert_true(get_tree().paused)
+	room.spawn_enemies()
+	assert_false(TuningPanel.is_open(), "spawning closes the menu")
+	assert_false(get_tree().paused)
+	assert_eq(director.tracker.current_wave, 0)
+	room.spawn_enemies()
+	assert_eq(director.tracker.current_wave, 0, "no second spawn while enemies are out")
+	TuningPanel.close()

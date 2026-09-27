@@ -48,7 +48,8 @@ Split into small PRs, each playable: (1) hero combat core in a test room with tr
 - [x] HUD: HP, stamina.
 - [x] Flasks (3 charges).
 - [x] Gamepad feel: stick aim assist for melee, rumble, low stamina cue. F4 live tuning panel for the owner's playtests.
-- [ ] Owner playtest with a gamepad: tune with F4 and confirm the done criteria below.
+- [x] Tuning room on the title: controller-driven tuning menu, Save results writes `balance_default.tres` for a GitHub Desktop commit.
+- [ ] Owner playtest with a gamepad: tune in the Tuning room and confirm the done criteria below.
 - Perfect dodge (GDD 7.2) waits for the Fusion meter (M6); only the slow-motion part could come earlier if playtests ask for it.
 
 **Done when:** a 3-wave room is fun to play for 5 minutes with placeholder art. Dodge feels responsive (tested with gamepad).

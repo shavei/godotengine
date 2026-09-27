@@ -70,3 +70,9 @@ func test_gamepad_a_presses_focused_button() -> void:
 		a.pressed = pressed
 		viewport.push_input(a)
 	assert_signal_emitted(button, "pressed", "A on a focused button presses it")
+
+
+func test_title_has_tuning_room_button() -> void:
+	var button: Button = title.get_node("%TuningButton")
+	assert_eq(button.text, "Tuning room")
+	assert_true(button.pressed.is_connected(title._on_tuning_pressed))
