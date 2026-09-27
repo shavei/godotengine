@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="RegionData" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/region_data.gd" id="1_region"]
+[ext_resource type="Script" path="res://scripts/resources/encounter_data.gd" id="2_encounter"]
+[ext_resource type="Resource" path="res://data/encounters/encounter_mossy_test.tres" id="3_test"]
+[ext_resource type="Resource" path="res://data/encounters/encounter_mossy_sprouts.tres" id="4_sprouts"]
+[ext_resource type="Resource" path="res://data/encounters/encounter_mossy_boars.tres" id="5_boars"]
+[ext_resource type="Resource" path="res://data/encounters/encounter_mossy_archers.tres" id="6_archers"]
+[ext_resource type="Resource" path="res://data/encounters/encounter_mossy_elite_standin.tres" id="7_elite"]
+[ext_resource type="Resource" path="res://data/encounters/encounter_mother_toad_standin.tres" id="8_toad"]
+[ext_resource type="Resource" path="res://data/encounters/encounter_warden_standin.tres" id="9_warden"]
+
+[resource]
+script = ExtResource("1_region")
+id = &"mossy_hollow"
+display_name = "Mossy Hollow"
+floor_count = 3
+min_depth = 5
+max_depth = 7
+min_row_width = 2
+max_row_width = 3
+branch_chance = 0.6
+room_weights = Dictionary[StringName, float]({
+&"combat": 50.0,
+&"elite": 12.0,
+&"treasure": 10.0,
+&"rest": 8.0,
+&"merchant": 7.0,
+&"event": 8.0
+})
+elite_min_row = 2
+combat_encounters = Array[ExtResource("2_encounter")]([ExtResource("3_test"), ExtResource("4_sprouts"), ExtResource("5_boars"), ExtResource("6_archers")])
+elite_encounters = Array[ExtResource("2_encounter")]([ExtResource("7_elite")])
+mini_boss_encounter = ExtResource("8_toad")
+boss_encounter = ExtResource("9_warden")
+floor_color = Color(0.2, 0.26, 0.19, 1)

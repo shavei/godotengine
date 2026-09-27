@@ -12,6 +12,8 @@ const SCENES: Array[String] = [
 	"res://scenes/actors/enemy/thorn_arrow.tscn",
 	"res://scenes/actors/enemy/thorn_patch.tscn",
 	"res://scenes/ui/hud.tscn",
+	"res://scenes/run/room.tscn",
+	"res://scenes/ui/run_map.tscn",
 ]
 
 

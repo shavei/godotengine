@@ -30,6 +30,21 @@ func _ready() -> void:
 		_build_collision()
 
 
+## Swaps the pillars at runtime (a run room picks its layout after loading).
+func set_pillars(cells: Array[Vector2i]) -> void:
+	pillars = cells
+	var old: Node = get_node_or_null(^"Walls")
+	if old != null:
+		remove_child(old)
+		old.queue_free()
+	_build_collision()
+
+
+## True for walls and pillars.
+func is_solid(cell: Vector2i) -> bool:
+	return _is_solid(cell)
+
+
 ## Room bounds in local pixels, walls included.
 func get_rect() -> Rect2:
 	return Rect2(Vector2.ZERO, Vector2(size_tiles * tile_size))

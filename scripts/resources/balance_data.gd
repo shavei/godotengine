@@ -46,3 +46,8 @@ extends Resource
 @export var flask_drink_time: float = 0.4
 ## Move speed multiplier while drinking.
 @export var flask_move_scale: float = 0.4
+
+@export_group("Run rooms")
+## A Rest room heals this share of max HP, or refills flasks (docs/GDD.md Section 6.2).
+@export var rest_heal_fraction: float = 0.3
+@export var rest_flask_refill: int = 1

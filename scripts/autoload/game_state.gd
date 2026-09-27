@@ -7,6 +7,9 @@ const LOCAL_PLAYER_ID: int = 0
 
 ## Serializable profile data. Replaced by ProfileState in M4.
 var profile: Dictionary = {}
+## The run in progress, or null in the village and menus. Shared by the whole party;
+## per-hero data inside it is keyed by player_id.
+var run: RunState = null
 
 
 func new_profile() -> void:
