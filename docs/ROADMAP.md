@@ -63,7 +63,7 @@ Split into small PRs, each playable: (1) floor maps, doors and the room flow, (2
 - [x] `RunGenerator`: seeded branching node map per floor (5 to 7 deep), unit tested (connectivity, room type distribution).
 - [x] Floor map UI; door previews of room type.
 - [x] Room types: Combat, Elite, Treasure, Rest, Merchant (basic), Event (2 sample events). (PR 2: Elder Boar and Spore Witch elites, treasure chest, merchant with flask, heal and shard, Mossy Shrine and Wishing Well events. Trinkets join the merchant in M8.)
-- [ ] Mini-boss (Mother Toad) and region boss (Warden of Roots, phase 1 only for now).
+- [x] Mini-boss (Mother Toad) and region boss (Warden of Roots, phase 1 only for now). (PR 3: `BossData`, `BossPattern`, boss bar, root walls; both bosses also in the Tuning room menu.)
 - [x] Coins, Wood, Crystal, Power Shards drops and pickups. (Run wallet per hero; banking at run end is PR 4.)
 - [ ] Results screen; death handling (50% materials rule).
 - [ ] `ProgressionSystem`: XP, level-ups, attribute points (unit tested).

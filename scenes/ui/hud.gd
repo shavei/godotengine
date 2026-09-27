@@ -1,8 +1,8 @@
 class_name Hud
 extends CanvasLayer
 ## Run HUD (docs/GDD.md Section 13): HP, stamina, flasks and, in runs, what the hero
-## has picked up. Call bind_hero() once (and bind_wallet() in runs); the HUD then
-## follows their signals.
+## has picked up and a boss's health. Call bind_hero() once (and bind_wallet() in runs,
+## bind_boss() when a boss appears); the HUD then follows their signals.
 
 const DENIED_COLOR: Color = Color(1.0, 0.3, 0.3)
 
@@ -11,6 +11,9 @@ const DENIED_COLOR: Color = Color(1.0, 0.3, 0.3)
 @onready var stamina_bar: ProgressBar = %StaminaBar
 @onready var flask_label: Label = %FlaskLabel
 @onready var loot_label: RichTextLabel = %LootLabel
+@onready var boss_panel: Control = %BossPanel
+@onready var boss_name: Label = %BossName
+@onready var boss_bar: ProgressBar = %BossBar
 
 var _denied_tween: Tween
 var _wallet: Wallet
@@ -34,6 +37,21 @@ func bind_wallet(wallet: Wallet, currencies: Array[StringName]) -> void:
 	wallet.changed.connect(func(_currency: StringName, _amount: int) -> void: _refresh_loot())
 	loot_label.show()
 	_refresh_loot()
+
+
+## Shows `boss`'s name and health at the top of the screen until it dies.
+func bind_boss(boss: Enemy) -> void:
+	boss_name.text = boss.data.display_name
+	boss_bar.max_value = boss.health.max_hp
+	boss_bar.value = boss.health.hp
+	boss_panel.show()
+	boss.health.health_changed.connect(_on_boss_health_changed)
+	boss.died.connect(func(_enemy: Enemy) -> void: boss_panel.hide())
+
+
+func _on_boss_health_changed(current: int, maximum: int) -> void:
+	boss_bar.max_value = maximum
+	create_tween().tween_property(boss_bar, "value", float(current), 0.12)
 
 
 func _refresh_loot() -> void:

@@ -6,6 +6,8 @@ extends Node2D
 signal wave_started(index: int, total: int)
 signal wave_cleared(index: int)
 signal room_cleared
+## An enemy of the encounter appeared (not split or summoned children).
+signal enemy_spawned(enemy: Enemy)
 ## Every tracked enemy death, before any clear it causes (the room drops loot here).
 signal enemy_died(enemy: Enemy)
 
@@ -92,6 +94,7 @@ func _spawn(data: EnemyData, local_position: Vector2) -> void:
 	enemy.global_position = to_global(local_position)
 	enemy.reset_physics_interpolation()
 	_track(enemy)
+	enemy_spawned.emit(enemy)
 
 
 func _track(enemy: Enemy) -> void:

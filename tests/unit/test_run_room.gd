@@ -339,3 +339,27 @@ func _walk_to_exit(run: RunState) -> void:
 		run.enter(run.next_choices()[0])
 		if run.current_room() != run.map.exit_room():
 			run.mark_cleared()
+
+
+func test_boss_room_is_an_open_arena_with_a_boss_bar() -> void:
+	var run: RunState = RunState.start(region, 5)
+	_walk_to_exit(run)
+	var room: RunRoom = await _spawn_room(run)
+	assert_true(room.map_room.is_boss())
+	for x: int in range(1, 23):
+		for y: int in range(1, 14):
+			assert_false(room.room.is_solid(Vector2i(x, y)), "no pillars in a boss arena")
+	await wait_seconds(0.9)
+	assert_eq(room.banner.text, "Mini-boss: Mother Toad")
+	assert_true(room.hud.boss_panel.visible)
+	assert_eq(room.hud.boss_name.text, "Mother Toad")
+	var bosses: Array[Node] = get_tree().get_nodes_in_group(Enemy.GROUP)
+	assert_eq(bosses.size(), 1)
+	var toad: Enemy = bosses[0]
+	assert_almost_eq(toad.global_position.distance_to(RunRoom.BOSS_SPAWN), 0.0, 1.0)
+	toad.health.take_damage(toad.health.max_hp - 1)
+	await wait_seconds(1.5)
+	assert_eq(room.banner.text, (toad.data as BossData).enrage_line)
+	toad.health.take_damage(1)
+	await wait_physics_frames(2)
+	assert_false(room.hud.boss_panel.visible, "the bar goes with the boss")

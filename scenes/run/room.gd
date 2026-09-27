@@ -35,6 +35,8 @@ const FIGHT_LAYOUTS: Array[Array] = [
 	[Vector2i(4, 7), Vector2i(8, 4), Vector2i(15, 4), Vector2i(19, 7)],
 	[],
 ]
+## Bosses appear at the top middle of an open arena, far from the hero's start.
+const BOSS_SPAWN: Vector2 = Vector2(384, 176)
 const SPAWN_POINTS: Array[Vector2] = [
 	Vector2(96, 96), Vector2(384, 96), Vector2(672, 96), Vector2(96, 384), Vector2(672, 384),
 	Vector2(80, 240), Vector2(688, 240), Vector2(288, 176), Vector2(480, 304), Vector2(288, 304), Vector2(480, 176),
@@ -86,6 +88,7 @@ func _ready() -> void:
 	director.wave_started.connect(_on_wave_started)
 	director.room_cleared.connect(_on_room_cleared)
 	director.enemy_died.connect(_on_enemy_died)
+	director.enemy_spawned.connect(_on_enemy_spawned)
 	room_label.text = _room_title()
 	run_map.show_run(run, run.is_in_corridor())
 	if run.is_in_corridor():
@@ -127,9 +130,10 @@ func _setup_fight() -> void:
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = hash([run.run_seed, run.floor_index, map_room.id, &"layout"])
 	var pillars: Array[Vector2i] = []
-	pillars.assign(FIGHT_LAYOUTS[rng.randi_range(0, FIGHT_LAYOUTS.size() - 1)])
+	if not map_room.is_boss():
+		pillars.assign(FIGHT_LAYOUTS[rng.randi_range(0, FIGHT_LAYOUTS.size() - 1)])
 	room.set_pillars(pillars)
-	director.spawn_points = _free_spawn_points()
+	director.spawn_points = [BOSS_SPAWN] as Array[Vector2] if map_room.is_boss() else _free_spawn_points()
 	director.rng_seed = hash([run.run_seed, run.floor_index, map_room.id, &"spawns"])
 	director.rng.seed = director.rng_seed
 	director.encounter = RunGenerator.pick_encounter(run.region, run.map, map_room, run.run_seed)
@@ -299,9 +303,19 @@ func _on_wave_started(index: int, total: int) -> void:
 	wave_label.text = "Wave %d / %d" % [index + 1, total]
 	if index == 0:
 		var title: String = MapRoom.type_name(map_room.type)
-		if map_room.type == MapRoom.ELITE and director.encounter != null:
-			title = "Elite: %s" % director.encounter.display_name
+		if (map_room.type == MapRoom.ELITE or map_room.is_boss()) and director.encounter != null:
+			title = "%s: %s" % [title, director.encounter.display_name]
 		_show_banner(title, BANNER_TIME)
+
+
+## A boss gets its health bar and a banner when it enrages.
+func _on_enemy_spawned(enemy: Enemy) -> void:
+	var boss: BossData = enemy.data as BossData
+	if boss == null:
+		return
+	hud.bind_boss(enemy)
+	if not boss.enrage_line.is_empty():
+		enemy.enraged.connect(func() -> void: _show_banner(boss.enrage_line, BANNER_TIME))
 
 
 func _on_enemy_died(enemy: Enemy) -> void:

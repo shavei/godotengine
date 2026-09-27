@@ -45,6 +45,11 @@ func is_fight() -> bool:
 	return FIGHT_TYPES.has(type)
 
 
+## A floor exit's fight: the mini-boss or the region boss.
+func is_boss() -> bool:
+	return type == MINI_BOSS or type == BOSS
+
+
 static func type_name(room_type: StringName) -> String:
 	return TYPE_INFO.get(room_type, {}).get("name", String(room_type))
 

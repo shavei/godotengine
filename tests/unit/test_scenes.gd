@@ -12,6 +12,7 @@ const SCENES: Array[String] = [
 	"res://scenes/actors/enemy/enemy.tscn",
 	"res://scenes/actors/enemy/thorn_arrow.tscn",
 	"res://scenes/actors/enemy/thorn_patch.tscn",
+	"res://scenes/actors/enemy/root_wall.tscn",
 	"res://scenes/ui/hud.tscn",
 	"res://scenes/run/room.tscn",
 	"res://scenes/ui/run_map.tscn",
@@ -76,3 +77,16 @@ func test_tuning_room_menu_spawns_enemies_on_demand() -> void:
 	room.spawn_enemies()
 	assert_eq(director.tracker.current_wave, 0, "no second spawn while enemies are out")
 	TuningPanel.close()
+
+
+func test_tuning_room_menu_starts_a_boss_fight() -> void:
+	var room: Node = load("res://scenes/run/tuning_room.tscn").instantiate()
+	add_child_autofree(room)
+	await wait_physics_frames(10)
+	var director: WaveDirector = room.get_node("WaveDirector")
+	room.fight_boss(false)
+	assert_eq(director.encounter.id, &"mother_toad")
+	await wait_seconds(1.0)
+	var hud: Hud = room.get_node("Hud")
+	assert_true(hud.boss_panel.visible, "the boss bar shows")
+	assert_eq(hud.boss_name.text, "Mother Toad")

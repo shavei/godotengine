@@ -54,6 +54,9 @@ extends Resource
 @export var keep_distance: float = 120.0
 @export var projectile_speed: float = 180.0
 @export var projectile_range: float = 220.0
+## Placeholder look of the projectile (a thin arrow, a round seed).
+@export var projectile_size: Vector2 = Vector2(10, 2)
+@export var projectile_color: Color = Color(0.62, 0.86, 0.4)
 ## Hazard a missed projectile leaves behind (thorn patch). Null for none.
 @export var hazard: AttackData
 @export var hazard_lifetime: float = 4.0

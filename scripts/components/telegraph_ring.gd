@@ -4,7 +4,11 @@ extends Node2D
 ## fill grows until the hit lands. play() warns of an area, play_line() of a charge
 ## or shot lane along `direction`.
 
-@export var color: Color = Color(1.0, 0.3, 0.2)
+const DANGER_COLOR: Color = Color(1.0, 0.3, 0.2)
+## A lobbed cloud's landing spot (Spore Witch).
+const SPORE_COLOR: Color = Color(0.75, 0.9, 0.35)
+
+@export var color: Color = DANGER_COLOR
 
 enum Mode { CIRCLE, LINE }
 

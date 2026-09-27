@@ -4,11 +4,10 @@ Persistent project memory. Read at the start of every session, update at the end
 
 ## Current status
 
-- **Phase:** M0 done. M1 (combat core) code done (3 PRs merged); only the owner's gamepad playtest item is still open. M2 (run structure) in progress, split into 4 PRs. PR 1 (floor maps, doors, room flow) merged. PR 2 (drops, pickups, Treasure, Merchant, Event, Elite rooms) open for the owner to play.
+- **Phase:** M0 done. M1 (combat core) code done (3 PRs merged); only the owner's gamepad playtest item is still open. M2 (run structure) in progress, split into 4 PRs. PR 1 (floor maps, room flow) and PR 2 (drops, room types, elites) merged. PR 3 (Mother Toad and the Warden of Roots) open for the owner to play.
 - **Also:** Controls remapping menu (title > Controls) added at the owner's request, ahead of the M7 Settings menu.
-- **Next step:** Owner plays a run and answers the M2 PR 2 questions in the session log. Then M2 PR 3 (Mother Toad and the Warden of Roots). The M1 gamepad tuning can happen any time in the Tuning room (title screen).
-- **Also:** Movement feel fix (smooth camera, wall sliding, move while attacking) from owner feedback, in its own PR.
-- **Last updated:** 2026-09-27 (movement feel fix)
+- **Next step:** Owner fights both bosses (Tuning room menu or a full run) and answers the M2 PR 3 questions in the session log. Then M2 PR 4 (XP, results screen, death rules, mid-run save). The M1 gamepad tuning can happen any time in the Tuning room (title screen).
+- **Last updated:** 2026-09-27 (M2 PR 3)
 
 ## The game in brief
 
@@ -89,6 +88,11 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-27 | Events are `EventData` resources (choices with a cost, HP cost, chance, reward); the last choice is always free; HP costs never kill | Risk for reward (GDD 6.2) without surprise deaths. Two samples for Mossy Hollow: Mossy Shrine (blood for a shard) and Wishing Well (coins or HP for a gamble). |
 | 2026-09-27 | Elites: Elder Boar (ChargerAI with `charge_chain` 3) and Spore Witch (new `SummonerAI`: spore clouds at your feet, calls Sproutlings, capped at 4 alive); one elite plus adds in one wave | From CONTENT 6.1. Chains reuse the charger; a wall stun ends the chain so baiting still pays. The summon cap stops a slow player from being buried. |
 | 2026-09-27 | Synced docs and a test with the owner's latest `balance_default.tres` (dodge 60 px, regen delay 0.7 s, aim assist back to 30 degrees / 64 px, rumble back to 1) | The owner's edit on `main` made `test_default_balance_matches_gdd_core_numbers` fail and left GDD 15.5 out of date. |
+| 2026-09-27 | Bosses use the one enemy scene with `BossData` (extends `EnemyData`) and a boss AI per boss; moves follow a fixed repeating order (`BossPattern`), with one enrage switch | A fixed order is learnable, the core of a fair boss. Same scene keeps hit, loot and wave code shared. A new boss needs its own AI script (unique moves) but its numbers and order are data. |
+| 2026-09-27 | Mother Toad: tongue pulls you in, belly flop leaps to your spot (no hits mid-air), sits still 1.3 s after landing; enrages at 50% and flops twice in a row | CONTENT 6.1 "tongue grabs, belly-flop area attacks". The pull sets up the flop, and the long landing pause is the reward for dodging it. |
+| 2026-09-27 | Warden of Roots phase 1 never walks: seed volleys, root walls on either side of you, a root slam if you stand next to it; walls block seeds too | CONTENT 6.1 "root walls and seed bullets". Walls make a lane the next volley comes down, but also shelter you from the outer seeds: one rule, two uses. The slam stops hugging it from being free. |
+| 2026-09-27 | Boss drops follow GDD 4.3 per-source shards (mini-boss 2, region boss 3), even though a full run then gives 10 to 11 shards vs the 15.3 target of 4 to 6 | Shards have no use until M3, so there is nothing to tune against yet. Flagged in Open questions. |
+| 2026-09-27 | Thorn Archer arrows no longer `monitorable = false` | Found while testing root walls: a non-monitorable Area2D never reports static bodies, so arrows flew through walls and pillars to full range. Regression test added. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 
 ## Rejected ideas (do not re-propose without new info)
@@ -118,6 +122,7 @@ Runner-up ideas still considered original (keep for later or a future project): 
 
 ## Open questions
 
+- Power Shard economy: with bosses a full run gives 10 to 11 shards (GDD 15.6) vs the 15.3 target of 4 to 6. Lower the per-source numbers or raise the target when shard costs exist (M3).
 - Final title. Candidates: Pass It On, Hand-Me-Down Hero, Heirloom, The Giving Blade.
 - Art direction specifics (palette, reference games). Proposed: warm cozy village vs saturated dangerous dungeons.
 - Should failed runs still tick villager training? Current answer: yes (training counts runs attempted, not runs won). Revisit after playtest.
@@ -127,6 +132,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-27 (M2 PR 3):** Mother Toad and the Warden of Roots (phase 1). `BossData`, pure `BossPattern` (move order, enrage), `BossAI`, `MotherToadAI` (tongue pull, belly flop leap), `WardenAI` (seed volley fan, root walls, root slam), `RootWall` scene, boss bar on the HUD, "Mini-boss: / Boss:" banners, open boss arenas. Stand-in encounters removed. Tuning room menu can start either boss. Fixed arrows flying through walls (non-monitorable areas miss static bodies). 229 tests pass, no warnings, boot clean, checked with xvfb screenshots (tongue lane, flop ring, volley fan, root wall lane). Questions for the owner: is the tongue pull fair or does it feel like a cheap grab? Is the toad's landing pause long enough to punish? Is the Warden too easy to stand next to, or the slam too punishing? Are root walls readable before they burst? Does a boss take about the right time (target: under a minute or so each)?
 
 - **2026-09-27 (M2 PR 2):** Drops, pickups and the other room types. `Wallet` (per hero in `RunState`), `DropTable`/`DropEntry`, pure `LootRoller`, `Pickup`, HUD loot line (coins, Wood, Crystal, shards). Every enemy drops loot; Treasure rooms have a chest; Merchant sells a flask, a heal and a shard; Event rooms (`EventData`, pure `EventResolver`) with Mossy Shrine and Wishing Well. Elites: Elder Boar (3 charges in a row) and Spore Witch (`SummonerAI`), gold outline, "Elite: name" banner. `RestSpot` became `InteractSpot`. Also fixed the red `main` test after the owner's balance edit. 205 tests pass, no warnings, boot clean, checked with xvfb screenshots (merchant, event, treasure loot, elite room). Questions for the owner: are the Merchant prices tempting or too steep? Do the events feel like a real risk? Is the Elder Boar's third charge fair? Is the Spore Witch too much with a Boar beside her? Does loot flying to you after a fight feel good?
 
