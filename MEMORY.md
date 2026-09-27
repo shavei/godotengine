@@ -4,8 +4,8 @@ Persistent project memory. Read at the start of every session, update at the end
 
 ## Current status
 
-- **Phase:** Pre-production. Design and plan written, no code yet.
-- **Next step:** Milestone M0 (project setup) in `docs/ROADMAP.md`.
+- **Phase:** M0 (project setup) done, in review as a draft PR into `main`.
+- **Next step:** Milestone M1 (combat core) in `docs/ROADMAP.md`, once the owner has opened the project locally.
 - **Last updated:** 2026-09-27
 
 ## The game in brief
@@ -18,6 +18,11 @@ Persistent project memory. Read at the start of every session, update at the end
 - Village grows through Villager Ranks, Buildings, Neighbor Bonuses and Renown.
 - Villain: The Hoarder, an ancient hero who kept every power and became a monster.
 - Single player first; co-op runs, village visits and raid help come later.
+
+## Local environment (owner's machine)
+
+- Windows. Godot 4.7.2 standard build at `C:\Godot\Godot_v4.7.2-stable_win64.exe` (console build `Godot_v4.7.2-stable_win64_console.exe` in the same folder, use it for MCP and command-line runs).
+- Planned: clone the repo locally with GitHub Desktop, run Claude Code locally with a Godot MCP server (Coding-Solo/godot-mcp recommended) so Claude can run the game and read errors.
 
 ## User preferences (from the owner, shavei)
 
@@ -39,6 +44,10 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-27 | Raids never kill villagers or remove powers; failure only damages buildings | Losing a gift would punish the core fantasy and push players back to hoarding. |
 | 2026-09-27 | Godot 4, GDScript, 2D top-down pixel art at 640x360 | Fits the scope of a small team, fast iteration, good 2D tooling. |
 | 2026-09-27 | Content as Resources, rules as pure RefCounted classes | Add content without code; unit-test rules headless. |
+| 2026-09-27 | Pinned Godot 4.7.2 (standard build) and GUT 9.7.1 | Owner installed 4.7.2; GUT 9.7.1 is the release built for 4.7. |
+| 2026-09-27 | Compatibility (GL) renderer | 2D pixel art needs nothing from Forward+; Compatibility runs on the widest range of hardware, including older laptops. |
+| 2026-09-27 | Stretch mode `viewport` + integer scale (instead of `canvas_items`) | True pixel-perfect rendering for pixel art; UI is designed at 640x360 anyway. |
+| 2026-09-27 | Gamepad Fusion button is RT (was LT + RT) | Godot's InputMap cannot express a two-button chord; one trigger is simpler and frees LT. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 
 ## Rejected ideas (do not re-propose without new info)
@@ -77,4 +86,5 @@ Runner-up ideas still considered original (keep for later or a future project): 
 
 ## Session log
 
+- **2026-09-27 (M0):** Created the Godot project, folders, input map, 6 autoloads, placeholder boot and title scenes, GUT with 18 passing tests, CI workflow. Verified locally in a cloud session with Godot 4.7.2 headless: import clean, all tests pass, game boots to the title screen.
 - **2026-09-27:** Brainstormed and researched ~20 concepts, settled on Pass It On. Wrote CLAUDE.md, MEMORY.md, docs/GDD.md, docs/CONTENT.md, docs/ARCHITECTURE.md, docs/ROADMAP.md, docs/RESEARCH.md.

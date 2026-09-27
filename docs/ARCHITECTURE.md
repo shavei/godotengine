@@ -1,6 +1,6 @@
 # Pass It On: Technical Architecture
 
-Godot 4 (latest stable 4.x), GDScript with static typing. 2D top-down.
+Godot 4.7.2 (pinned), Compatibility renderer, GDScript with static typing. 2D top-down.
 
 ---
 
