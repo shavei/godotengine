@@ -4,9 +4,9 @@ Persistent project memory. Read at the start of every session, update at the end
 
 ## Current status
 
-- **Phase:** M0 done. M1 (combat core) in progress, split into 3 PRs. PR 1 (hero core) and PR 2 (enemies, waves, room clear) merged. PR 3 (gamepad feel and F4 tuning panel) open for the owner to play.
-- **Next step:** Owner plays the Wave room with a gamepad, tunes with F4 and reports feel (see the questions in the M1 PR 3 session log). Then close M1 and start M2.
-- **Last updated:** 2026-09-27 (M1 PR 3)
+- **Phase:** M0 done. M1 (combat core) code done (3 PRs merged); only the owner's gamepad playtest item is still open. M2 (run structure) in progress, split into 4 PRs. PR 1 (floor maps, doors, room flow) open for the owner to play.
+- **Next step:** Owner plays a run from the title ("Start a run") and answers the M2 PR 1 questions in the session log. Then M2 PR 2 (drops, pickups, Treasure, Merchant, Event, Elite rooms). The M1 gamepad and F4 feedback is still welcome at any time.
+- **Last updated:** 2026-09-27 (M2 PR 1)
 
 ## The game in brief
 
@@ -65,6 +65,14 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-27 | Melee aim assist for sticks only (30 degrees, 64 px), never for the mouse | A melee swing aimed by the move stick misses targets a few degrees off, which reads as the game's fault. Mouse aim is already precise. Pure `AimAssist` rules with tests; angle 0 turns it off. |
 | 2026-09-27 | Rumble goes through `InputSource.rumble()` | The source knows which gamepad (and later which player or peer) the hero belongs to, so rumble stays per player for co-op. |
 | 2026-09-27 | F4 `TuningPanel` edits the live `BalanceData`, Enter saves the `.tres` | Claude cannot feel a gamepad; the owner tunes while playing and the saved file (or the printed lines) comes back in the PR. |
+| 2026-09-27 | Started M2 with the M1 gamepad playtest still open | Owner asked to start M2. All M1 code is merged; feel tuning can continue with F4 in any run room. |
+| 2026-09-27 | M2 split into 4 PRs: maps and room flow, drops and room types, bosses, XP/results/death/save | Same one-feature-per-PR workflow as M1; the owner can judge map pacing before loot is tuned around it. |
+| 2026-09-27 | One `room.tscn` for every run room, reloaded through SceneRouter per room; `RunState` in `GameState.run` carries the run between rooms | Simple, every room starts clean, and the fade doubles as the room transition. Hero HP and flasks carry over via `RunState.heroes[player_id]`. |
+| 2026-09-27 | Doors sit in the room's top wall in map lane order, signed with a room type letter and name | GDD 6.1 "the next room's type is shown on its door". Same order as the map so the map and the room agree. Letters keep types readable without color. |
+| 2026-09-27 | Map rules: first row always a fight, no Elites before row 3, no duplicate non-fight room in a row, paths never cross | Each is one sentence and tested. A run should open with a fight, not a shop; duplicates in a row would make the door choice empty. |
+| 2026-09-27 | Map action on Back (gamepad) and Tab | Back was unused; Tab is the common map key. |
+| 2026-09-27 | Elite, Mother Toad and Warden rooms use stand-in wave encounters in M2 PR 1 | A full run can be played end to end now; the real enemies replace the `.tres` references in PR 2 and PR 3 without code changes. |
+| 2026-09-27 | Esc leaves the run straight to the title (no confirm) for now | A pause menu is not in the design docs yet; revisit when the results screen and mid-run save land (M2 PR 4). |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 
 ## Rejected ideas (do not re-propose without new info)
@@ -103,6 +111,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-27 (M2 PR 1):** Floor maps and room flow. `RegionData` (Mossy Hollow: 3 floors, 5 to 7 rows, 2 to 3 rooms per row, room weights, encounter pools), pure `RunGenerator`, `FloorMap`, `MapRoom`, `RunState` in `GameState.run`. One `room.tscn` builds the corridor, fights (seeded pillar layouts and encounters), Rest (heal 30% or +1 flask) and signposts for Treasure, Merchant and Event. Doors in the top wall show the next rooms' types and stay barred until a fight is won. Floor exits lead down; the Warden stand-in ends the run. `RunMap` overlay (Tab / Back). Title has "Start a run". 3 new Mossy encounters plus stand-ins for elite and bosses. 140 tests pass, no warnings, boot clean, checked with xvfb screenshots (corridor, doors, fight, map, rest, stairs). Questions for the owner: is a floor too long or too short? Is the map readable at a glance? Do the doors make the next room clear enough? Does walking to the top wall to leave feel fine?
 
 - **2026-09-27 (M1 PR 3):** Gamepad feel. `AimAssist` (stick swings turn toward the target nearest the aim line), rumble on hits and when hurt (`InputSource.rumble`, scaled by `rumble_strength`), stamina bar blinks red when a dodge is denied, `Hero.apply_balance()` for live changes. F4 `TuningPanel` autoload for live tuning. 114 tests pass, no warnings, boot clean, panel checked with an xvfb screenshot. Rumble and aim assist could not be felt in the cloud. Questions for the owner: does the dodge feel responsive on the pad? Is aim assist noticeable or too sticky? Is rumble too strong? Does drinking mid-fight feel risk-free (flask rule from PR 1)?
 - **2026-09-27 (gamepad A fix):** Owner reported A does nothing on the title. Godot 4.7's default `ui_accept` has no gamepad button; `project.godot` now adds A (Enter and Space kept). Tests for the binding and for A pressing a focused title button.

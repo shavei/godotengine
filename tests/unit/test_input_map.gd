@@ -5,7 +5,7 @@ extends GutTest
 const ACTIONS_WITH_BOTH: Array[StringName] = [
 	&"move_left", &"move_right", &"move_up", &"move_down",
 	&"attack", &"dodge", &"power_1", &"power_2", &"power_3",
-	&"fusion", &"flask", &"interact", &"pause",
+	&"fusion", &"flask", &"interact", &"pause", &"map",
 ]
 const GAMEPAD_ONLY: Array[StringName] = [&"aim_left", &"aim_right", &"aim_up", &"aim_down"]
 

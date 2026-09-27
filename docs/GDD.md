@@ -234,7 +234,9 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 - Pick a region at the village gate. Each region has 3 floors.
 - Each floor is a **branching node map** (like Slay the Spire): 5 to 7 rooms deep, 2 to 3 choices per step. The next room's type is shown on its door.
 - Floors 1 and 2 end in a **mini-boss**. Floor 3 ends in the **region boss**.
-- Between floors: a short safe corridor with the floor's merchant chance and a full view of the next map.
+- Between floors: a short safe corridor with the floor's merchant chance and a full view of the next map. The run also starts in the first floor's corridor.
+- Doors to the next rooms sit in the top wall, left to right in the same order as the map. The Map button (Back / Tab) shows the whole floor.
+- Map rules (tested in `test_run_generator.gd`): paths never cross; every room is reachable; the first row is always a fight; no Elites before the third row; a row never offers the same non-fight room twice. Room type chances per region are in Section 15.6.
 
 ### 6.2 Room types
 | Room | Frequency | Content |
@@ -271,6 +273,7 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 | Fusion | RT | F |
 | Flask | D-pad up | 1 |
 | Interact | B / Circle | Shift |
+| Map (in runs) | Back / View | Tab |
 
 ### 7.2 Core numbers
 - Dodge: 0.3 s roll, 0.22 s invincibility, 25 stamina. Stamina regen 40 per second after 0.5 s delay.
@@ -533,6 +536,20 @@ Live values are in `data/balance/balance_default.tres` and `data/weapons/weapon_
 
 - Waves: enemies appear 0.7 s after a spawn marker, away from the hero when possible. The next wave starts 1.2 s after a clear. The M1 test room is 3 Sproutlings; a Boar and 2 Sproutlings; 2 Archers, a Boar and a Sproutling.
 - Live values: `data/enemies/*.tres` and `data/encounters/encounter_mossy_test.tres`.
+
+### 15.6 Runs (M2)
+Live values: `data/regions/region_mossy_hollow.tres` and `data/balance/balance_default.tres`.
+
+| Number | Value |
+|---|---|
+| Floors per region | 3 |
+| Rows per floor before the exit | 5 to 7 |
+| Rooms per row | 2 to 3 |
+| Chance of each extra door between rows | 60% |
+| Room type weights (rows 2+) | Fight 50, Elite 12, Treasure 10, Event 8, Rest 8, Merchant 7 (Village Echo 5 arrives with powered villagers in M4+) |
+| Rest room | Heal 30% max HP, or +1 flask charge |
+
+- Mossy Hollow fight rooms draw from 4 encounters (2 to 3 waves). Elite, Mother Toad and Warden rooms use stand-in wave encounters until those enemies exist (M2 PR 3).
 
 All numbers here are starting points for tuning. Update this section when they change.
 

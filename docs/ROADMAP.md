@@ -56,10 +56,12 @@ Split into small PRs, each playable: (1) hero combat core in a test room with tr
 ---
 
 ## M2: Run structure
-- [ ] `RegionData` for Mossy Hollow; room weights.
-- [ ] `RunGenerator`: seeded branching node map per floor (5 to 7 deep), unit tested (connectivity, room type distribution).
-- [ ] Floor map UI; door previews of room type.
-- [ ] Room types: Combat, Elite, Treasure, Rest, Merchant (basic), Event (2 sample events).
+Split into small PRs, each playable: (1) floor maps, doors and the room flow, (2) drops, pickups and the other room types, (3) Mother Toad and the Warden of Roots, (4) XP, results, death rules and mid-run save.
+
+- [x] `RegionData` for Mossy Hollow; room weights.
+- [x] `RunGenerator`: seeded branching node map per floor (5 to 7 deep), unit tested (connectivity, room type distribution).
+- [x] Floor map UI; door previews of room type.
+- [ ] Room types: Combat, Elite, Treasure, Rest, Merchant (basic), Event (2 sample events). (PR 1: Combat and Rest work; Elite uses a stand-in encounter; Treasure, Merchant and Event are signposts.)
 - [ ] Mini-boss (Mother Toad) and region boss (Warden of Roots, phase 1 only for now).
 - [ ] Coins, Wood, Crystal, Power Shards drops and pickups.
 - [ ] Results screen; death handling (50% materials rule).
