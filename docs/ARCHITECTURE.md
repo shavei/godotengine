@@ -33,6 +33,7 @@ res://
     techniques/    technique_ember_step.tres ... (64)
     weapons/       weapon_sword.tres ...
     enemies/       enemy_sproutling.tres ...
+    encounters/    encounter_mossy_test.tres (waves for a room)
     regions/       region_mossy_hollow.tres ...
     buildings/     building_forge.tres ...
     trinkets/
@@ -40,7 +41,7 @@ res://
   scripts/
     autoload/      event_bus.gd, game_state.gd, save_manager.gd, scene_router.gd, audio_manager.gd, content_db.gd
     resources/     power_data.gd, villager_data.gd, combo_data.gd, fusion_data.gd, technique_data.gd,
-                   weapon_data.gd, enemy_data.gd, region_data.gd, building_data.gd, trinket_data.gd, balance_data.gd
+                   weapon_data.gd, enemy_data.gd, encounter_data.gd, wave_data.gd, region_data.gd, building_data.gd, trinket_data.gd, balance_data.gd
     systems/       gift_system.gd, training_system.gd, fusion_system.gd, neighbor_system.gd,
                    renown_system.gd, progression_system.gd, economy_system.gd, run_generator.gd,
                    combat_math.gd, modifier_stack.gd, raid_director.gd
@@ -245,7 +246,8 @@ main.tscn (boot: ContentDB load, SaveManager load)
 - **Hero** (`hero/hero.tscn`): `CharacterBody2D` + components. States (child nodes of `StateMachine`, one script each in `hero/states/`): Move (includes idle), Attack (one node, re-entered per combo step), Dodge, Drink, Hurt, Dead; Cast arrives with powers in M3. The hero calls `state_machine.physics_update()` from its own `_physics_process` so input buffering, stamina and i-frames update first. Input comes from an `InputSource` child (see 9); if none is present the hero adds a `LocalInputSource`. Tests drive the hero with the scripted base `InputSource`.
 - **Attacks** are `AttackData` resources (damage, wind-up, active, recovery, reach, radius, lunge, knockback, hit-stop, shake). Weapons hold a combo of them; enemies will use the same resource. `CombatStats` carries the numbers `CombatMath` needs for each side.
 - **Damage flow:** an active `HitboxComponent` checks overlapping `HurtboxComponent`s each physics frame and hits each once per `activate()`. The hurtbox runs `CombatMath`, applies the result to its `HealthComponent` and emits `hurt(result, hitbox)`; the hitbox emits `hit_landed`. The victim spawns its own damage number and flash.
-- **Enemies:** `CharacterBody2D` + components + an AI script chosen by `EnemyData`. Telegraphs are `AnimationPlayer` tracks with a `telegraph_started` signal for the attack warning VFX.
+- **Enemies:** one scene (`actors/enemy/enemy.tscn`, `Enemy`) + components + an `EnemyAI` script (`scripts/ai/`: `SwarmAI`, `ChargerAI`, `RangedAI`) chosen by `EnemyData.ai_script`. The AI is a `RefCounted` phase machine that calls the enemy's verbs (move, face, telegraph, attack, shoot). Telegraphs use `TelegraphRing` (a ring for areas, a lane for charges and shots) and emit `telegraph_started`. Splitting (`split_into`, `split_count`) spawns children and emits `spawned` before `died`.
+- **Waves:** `EncounterData` holds `WaveData` lists. `WaveDirector` (in the room) shows spawn markers, spawns enemies, tracks splits and emits `wave_started`, `wave_cleared`, `room_cleared` (also on `EventBus`). The clear rules live in `WaveTracker` (pure, tested).
 - **Hitboxes and hurtboxes** use collision layers:
 
 | Layer | Use |

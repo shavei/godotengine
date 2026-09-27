@@ -42,9 +42,9 @@ Split into small PRs, each playable: (1) hero combat core in a test room with tr
 - [x] Hero: movement (8-direction, acceleration), aim, 3-hit sword combo, dodge with i-frames and stamina.
 - [x] Components: Health, Hitbox, Hurtbox, Status, Knockback, StateMachine (plus InputSource for multiplayer readiness).
 - [x] `CombatMath` + unit tests (damage formula, crit, armor cap).
-- [ ] 3 enemies from Mossy Hollow: Sproutling (swarm), Tusk Boar (charger), Thorn Archer (ranged), with telegraphs. (Telegraph ring done, used by the sparring dummy.)
-- [ ] Test room scene with waves; room clear detection. (Test room with training dummies done; waves next.)
-- [ ] Game feel: hit flash, hit-stop, screen shake, damage numbers, death animations. (All but enemy death animations done.)
+- [x] 3 enemies from Mossy Hollow: Sproutling (swarm), Tusk Boar (charger), Thorn Archer (ranged), with telegraphs.
+- [x] Test room scene with waves; room clear detection. (Wave room with 3 waves; the dummy test room stays for practice.)
+- [x] Game feel: hit flash, hit-stop, screen shake, damage numbers, death animations.
 - [x] HUD: HP, stamina.
 - [x] Flasks (3 charges).
 - Perfect dodge (GDD 7.2) waits for the Fusion meter (M6); only the slow-motion part could come earlier if playtests ask for it.

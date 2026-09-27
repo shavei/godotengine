@@ -1,0 +1,60 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scenes/actors/enemy/enemy.gd" id="1_enemy"]
+[ext_resource type="Script" path="res://scripts/components/placeholder_shape.gd" id="2_shape"]
+[ext_resource type="Shader" path="res://assets/shaders/hit_flash.gdshader" id="3_flash"]
+[ext_resource type="Script" path="res://scripts/components/telegraph_ring.gd" id="4_telegraph"]
+[ext_resource type="Script" path="res://scripts/components/hitbox_component.gd" id="5_hitbox"]
+[ext_resource type="Script" path="res://scripts/components/hurtbox_component.gd" id="6_hurtbox"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="7_health"]
+[ext_resource type="Script" path="res://scripts/components/knockback_component.gd" id="8_knockback"]
+[ext_resource type="Script" path="res://scripts/components/status_component.gd" id="9_status"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_flash"]
+resource_local_to_scene = true
+shader = ExtResource("3_flash")
+shader_parameter/flash = 0.0
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+
+[node name="Enemy" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 5
+motion_mode = 1
+script = ExtResource("1_enemy")
+
+[node name="Shape" type="CollisionShape2D" parent="."]
+
+[node name="Telegraph" type="Node2D" parent="."]
+z_index = -1
+script = ExtResource("4_telegraph")
+
+[node name="Visual" type="Node2D" parent="."]
+material = SubResource("ShaderMaterial_flash")
+script = ExtResource("2_shape")
+show_notch = true
+
+[node name="AttackPivot" type="Node2D" parent="."]
+
+[node name="Hitbox" type="Area2D" parent="AttackPivot"]
+collision_layer = 16
+collision_mask = 32
+script = ExtResource("5_hitbox")
+
+[node name="Shape" type="CollisionShape2D" parent="AttackPivot/Hitbox"]
+
+[node name="Hurtbox" type="Area2D" parent="." node_paths=PackedStringArray("health")]
+collision_layer = 64
+collision_mask = 0
+script = ExtResource("6_hurtbox")
+health = NodePath("../Health")
+
+[node name="Shape" type="CollisionShape2D" parent="Hurtbox"]
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("7_health")
+
+[node name="Knockback" type="Node" parent="."]
+script = ExtResource("8_knockback")
+
+[node name="Status" type="Node" parent="."]
+script = ExtResource("9_status")

@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_enemy"]
+[ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="2_attack"]
+[ext_resource type="Script" path="res://scripts/ai/ranged_ai.gd" id="3_ai"]
+
+[sub_resource type="Resource" id="Resource_arrow"]
+script = ExtResource("2_attack")
+damage = 8.0
+windup = 0.6
+active = 0.0
+recovery = 0.4
+reach = 0.0
+radius = 4.0
+knockback = 90.0
+
+[sub_resource type="Resource" id="Resource_thorns"]
+script = ExtResource("2_attack")
+damage = 4.0
+windup = 0.0
+active = 0.0
+recovery = 0.0
+reach = 0.0
+radius = 14.0
+knockback = 0.0
+
+[resource]
+script = ExtResource("1_enemy")
+id = &"thorn_archer"
+display_name = "Thorn Archer"
+archetype = &"ranged"
+ai_script = ExtResource("3_ai")
+max_hp = 30
+move_speed = 55.0
+body_radius = 6.0
+weight_scale = 1.0
+hit_stun = 0.3
+color = Color(0.3, 0.5, 0.36, 1)
+attack = SubResource("Resource_arrow")
+attack_range = 210.0
+attack_cooldown = 1.6
+keep_distance = 130.0
+projectile_speed = 190.0
+projectile_range = 240.0
+hazard = SubResource("Resource_thorns")
+hazard_lifetime = 4.0
+hazard_interval = 0.8
