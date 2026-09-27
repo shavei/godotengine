@@ -20,6 +20,12 @@ signal run_ended(success: bool)
 signal raid_started(faction_id: StringName)
 signal raid_ended(success: bool)
 
+# Game feel
+signal camera_shake_requested(trauma: float)
+
+# Combat
+signal hero_died(player_id: int)
+
 # Saving
 signal game_saved(slot: int)
 signal game_loaded(slot: int)

@@ -1,0 +1,110 @@
+[gd_scene load_steps=21 format=3]
+
+[ext_resource type="Script" path="res://scenes/actors/hero/hero.gd" id="1_hero"]
+[ext_resource type="Script" path="res://scripts/components/placeholder_shape.gd" id="2_shape"]
+[ext_resource type="Shader" path="res://assets/shaders/hit_flash.gdshader" id="3_flash"]
+[ext_resource type="Script" path="res://scenes/actors/hero/swing_arc.gd" id="4_swing"]
+[ext_resource type="Script" path="res://scripts/components/hitbox_component.gd" id="5_hitbox"]
+[ext_resource type="Script" path="res://scripts/components/hurtbox_component.gd" id="6_hurtbox"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="7_health"]
+[ext_resource type="Script" path="res://scripts/components/knockback_component.gd" id="8_knockback"]
+[ext_resource type="Script" path="res://scripts/components/status_component.gd" id="9_status"]
+[ext_resource type="Script" path="res://scripts/components/state_machine.gd" id="10_sm"]
+[ext_resource type="Script" path="res://scenes/actors/hero/states/hero_move.gd" id="11_move"]
+[ext_resource type="Script" path="res://scenes/actors/hero/states/hero_attack.gd" id="12_attack"]
+[ext_resource type="Script" path="res://scenes/actors/hero/states/hero_dodge.gd" id="13_dodge"]
+[ext_resource type="Script" path="res://scenes/actors/hero/states/hero_drink.gd" id="14_drink"]
+[ext_resource type="Script" path="res://scenes/actors/hero/states/hero_hurt.gd" id="15_hurt"]
+[ext_resource type="Script" path="res://scenes/actors/hero/states/hero_dead.gd" id="16_dead"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_body"]
+radius = 6.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_flash"]
+resource_local_to_scene = true
+shader = ExtResource("3_flash")
+shader_parameter/flash = 0.0
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hit"]
+radius = 16.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hurt"]
+radius = 7.0
+
+[node name="Hero" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 5
+motion_mode = 1
+script = ExtResource("1_hero")
+
+[node name="Shape" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_body")
+
+[node name="Visual" type="Node2D" parent="."]
+material = SubResource("ShaderMaterial_flash")
+script = ExtResource("2_shape")
+size = Vector2(16, 16)
+color = Color(0.96, 0.78, 0.48, 1)
+show_notch = true
+
+[node name="WeaponPivot" type="Node2D" parent="."]
+
+[node name="Swing" type="Node2D" parent="WeaponPivot"]
+script = ExtResource("4_swing")
+
+[node name="AimDot" type="Node2D" parent="WeaponPivot"]
+modulate = Color(1, 1, 1, 0.5)
+position = Vector2(22, 0)
+script = ExtResource("2_shape")
+size = Vector2(3, 3)
+outline_color = Color(0, 0, 0, 0)
+
+[node name="Hitbox" type="Area2D" parent="WeaponPivot"]
+collision_layer = 8
+collision_mask = 64
+script = ExtResource("5_hitbox")
+
+[node name="Shape" type="CollisionShape2D" parent="WeaponPivot/Hitbox"]
+position = Vector2(18, 0)
+shape = SubResource("CircleShape2D_hit")
+
+[node name="Hurtbox" type="Area2D" parent="." node_paths=PackedStringArray("health")]
+collision_layer = 32
+collision_mask = 0
+script = ExtResource("6_hurtbox")
+health = NodePath("../Health")
+
+[node name="Shape" type="CollisionShape2D" parent="Hurtbox"]
+shape = SubResource("CircleShape2D_hurt")
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("7_health")
+
+[node name="Knockback" type="Node" parent="."]
+script = ExtResource("8_knockback")
+
+[node name="Status" type="Node" parent="."]
+script = ExtResource("9_status")
+
+[node name="StateMachine" type="Node" parent="." node_paths=PackedStringArray("initial_state")]
+script = ExtResource("10_sm")
+initial_state = NodePath("Move")
+
+[node name="Move" type="Node" parent="StateMachine"]
+script = ExtResource("11_move")
+
+[node name="Attack" type="Node" parent="StateMachine"]
+script = ExtResource("12_attack")
+
+[node name="Dodge" type="Node" parent="StateMachine"]
+script = ExtResource("13_dodge")
+
+[node name="Drink" type="Node" parent="StateMachine"]
+script = ExtResource("14_drink")
+
+[node name="Hurt" type="Node" parent="StateMachine"]
+script = ExtResource("15_hurt")
+
+[node name="Dead" type="Node" parent="StateMachine"]
+script = ExtResource("16_dead")
