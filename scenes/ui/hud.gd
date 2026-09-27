@@ -1,7 +1,8 @@
 class_name Hud
 extends CanvasLayer
-## Run HUD (docs/GDD.md Section 13). M1 shows HP, stamina and flasks.
-## Call bind_hero() once; the HUD then follows the hero's signals.
+## Run HUD (docs/GDD.md Section 13): HP, stamina, flasks and, in runs, what the hero
+## has picked up. Call bind_hero() once (and bind_wallet() in runs); the HUD then
+## follows their signals.
 
 const DENIED_COLOR: Color = Color(1.0, 0.3, 0.3)
 
@@ -9,8 +10,11 @@ const DENIED_COLOR: Color = Color(1.0, 0.3, 0.3)
 @onready var hp_label: Label = %HpLabel
 @onready var stamina_bar: ProgressBar = %StaminaBar
 @onready var flask_label: Label = %FlaskLabel
+@onready var loot_label: RichTextLabel = %LootLabel
 
 var _denied_tween: Tween
+var _wallet: Wallet
+var _currencies: Array[StringName] = []
 
 
 func bind_hero(hero: Hero) -> void:
@@ -21,6 +25,23 @@ func bind_hero(hero: Hero) -> void:
 	_on_health_changed(hero.health.hp, hero.health.max_hp)
 	_on_stamina_changed(hero.stamina.current, hero.stamina.maximum)
 	_on_flasks_changed(hero.flasks.charges, hero.flasks.max_charges)
+
+
+## Shows `currencies` from `wallet`, in that order (coins, region material, Crystal, shards).
+func bind_wallet(wallet: Wallet, currencies: Array[StringName]) -> void:
+	_wallet = wallet
+	_currencies = currencies
+	wallet.changed.connect(func(_currency: StringName, _amount: int) -> void: _refresh_loot())
+	loot_label.show()
+	_refresh_loot()
+
+
+func _refresh_loot() -> void:
+	var parts: PackedStringArray = []
+	for currency: StringName in _currencies:
+		var color: String = Wallet.currency_color(currency).to_html(false)
+		parts.append("[color=#%s]%s %d[/color]" % [color, Wallet.currency_name(currency), _wallet.amount(currency)])
+	loot_label.text = "   ".join(parts)
 
 
 func _on_health_changed(current: int, maximum: int) -> void:

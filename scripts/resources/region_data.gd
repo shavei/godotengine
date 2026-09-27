@@ -1,7 +1,8 @@
 class_name RegionData
 extends Resource
 ## A run region (docs/GDD.md Section 6, docs/CONTENT.md Section 6): floor shape, how
-## often each room type appears, and the encounters its fight rooms draw from.
+## often each room type appears, the encounters its fight rooms draw from, and its
+## loot and events.
 
 @export var id: StringName
 @export var display_name: String
@@ -30,3 +31,11 @@ extends Resource
 ## The last floor ends here.
 @export var boss_encounter: EncounterData
 @export var floor_color: Color = Color(0.2, 0.26, 0.19)
+
+@export_group("Loot")
+## The region's building material (docs/CONTENT.md Section 6): Wood or Ore.
+@export var material: StringName = Wallet.WOOD
+## What a Treasure room's chest holds (docs/GDD.md Section 6.2).
+@export var treasure_drops: DropTable
+## Event rooms draw one of these.
+@export var events: Array[EventData] = []

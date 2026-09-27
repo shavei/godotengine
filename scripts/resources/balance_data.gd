@@ -51,3 +51,10 @@ extends Resource
 ## A Rest room heals this share of max HP, or refills flasks (docs/GDD.md Section 6.2).
 @export var rest_heal_fraction: float = 0.3
 @export var rest_flask_refill: int = 1
+
+@export_group("Merchant")
+## A basic Merchant room's wares, in coins (docs/GDD.md Section 15.6). Each sells once.
+@export var merchant_flask_price: int = 30
+@export var merchant_heal_price: int = 25
+@export var merchant_heal_fraction: float = 0.25
+@export var merchant_shard_price: int = 60

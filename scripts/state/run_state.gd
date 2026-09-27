@@ -1,8 +1,8 @@
 class_name RunState
 extends RefCounted
 ## The current run only (docs/ARCHITECTURE.md Section 4.2): region, seed, the floor map,
-## where the party is, and what each hero carries between rooms. Hero entries are keyed
-## by player_id so co-op can add heroes later.
+## where the party is, and what each hero carries between rooms (HP, flasks and the
+## run's loot Wallet). Hero entries are keyed by player_id so co-op can add heroes later.
 ##
 ## Before the first room of a floor the party is in the floor's safe corridor
 ## (current_room_id == -1).
@@ -18,6 +18,8 @@ var room_cleared: bool = true
 var path: Array[int] = []
 ## player_id -> { "hp": int, "max_hp": int, "flasks": int }
 var heroes: Dictionary = {}
+## player_id -> Wallet: what each hero picked up this run.
+var wallets: Dictionary[int, Wallet] = {}
 var rooms_cleared: int = 0
 
 
@@ -89,6 +91,13 @@ func save_hero(player_id: int, hp: int, max_hp: int, flasks: int) -> void:
 ## What the hero carried out of the last room, or an empty Dictionary at the start.
 func hero_snapshot(player_id: int) -> Dictionary:
 	return heroes.get(player_id, {})
+
+
+## The hero's loot for this run. Made empty the first time it is asked for.
+func wallet(player_id: int) -> Wallet:
+	if not wallets.has(player_id):
+		wallets[player_id] = Wallet.new()
+	return wallets[player_id]
 
 
 func _build_floor(index: int) -> void:

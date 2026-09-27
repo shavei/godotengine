@@ -6,6 +6,8 @@ extends Node2D
 signal wave_started(index: int, total: int)
 signal wave_cleared(index: int)
 signal room_cleared
+## Every tracked enemy death, before any clear it causes (the room drops loot here).
+signal enemy_died(enemy: Enemy)
 
 @export var encounter: EncounterData
 ## Where enemies may appear, in this node's local space. Place them clear of pillars.
@@ -101,7 +103,8 @@ func _on_enemy_spawned(child: Enemy) -> void:
 	_track(child)
 
 
-func _on_enemy_died(_enemy: Enemy) -> void:
+func _on_enemy_died(enemy: Enemy) -> void:
+	enemy_died.emit(enemy)
 	match tracker.remove_alive():
 		WaveTracker.Event.WAVE_CLEARED:
 			wave_cleared.emit(tracker.current_wave)

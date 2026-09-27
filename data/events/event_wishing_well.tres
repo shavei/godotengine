@@ -1,0 +1,68 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/resources/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/resources/drop_table.gd" id="3_table"]
+[ext_resource type="Script" path="res://scripts/resources/drop_entry.gd" id="4_entry"]
+
+[sub_resource type="Resource" id="Resource_crystal"]
+script = ExtResource("4_entry")
+currency = &"crystal"
+chance = 1.0
+min_amount = 1
+max_amount = 1
+
+[sub_resource type="Resource" id="Resource_coins_back"]
+script = ExtResource("4_entry")
+currency = &"coins"
+chance = 1.0
+min_amount = 20
+max_amount = 30
+
+[sub_resource type="Resource" id="Resource_toss_reward"]
+script = ExtResource("3_table")
+entries = Array[ExtResource("4_entry")]([SubResource("Resource_crystal"), SubResource("Resource_coins_back")])
+
+[sub_resource type="Resource" id="Resource_coins_found"]
+script = ExtResource("4_entry")
+currency = &"coins"
+chance = 1.0
+min_amount = 15
+max_amount = 30
+
+[sub_resource type="Resource" id="Resource_reach_reward"]
+script = ExtResource("3_table")
+entries = Array[ExtResource("4_entry")]([SubResource("Resource_coins_found")])
+
+[sub_resource type="Resource" id="Resource_toss"]
+script = ExtResource("2_choice")
+label = "Toss coins"
+cost = Dictionary[StringName, int]({
+&"coins": 25
+})
+success_chance = 0.5
+reward = SubResource("Resource_toss_reward")
+success_text = "A splash, then a glint. The well gives back more than you gave."
+fail_text = "A splash. Nothing. The well keeps its secrets."
+
+[sub_resource type="Resource" id="Resource_reach"]
+script = ExtResource("2_choice")
+label = "Reach in"
+hp_cost_fraction = 0.1
+success_chance = 0.6
+reward = SubResource("Resource_reach_reward")
+success_text = "Cold water, then cold coins."
+fail_text = "Only cold water and a nibbled finger."
+
+[sub_resource type="Resource" id="Resource_walk"]
+script = ExtResource("2_choice")
+label = "Walk on"
+success_text = "You leave the well to its wishes."
+
+[resource]
+script = ExtResource("1_event")
+id = &"wishing_well"
+title = "Wishing Well"
+text = "A wishing well, half full of old coins.
+Something glitters at the bottom."
+choices = Array[ExtResource("2_choice")]([SubResource("Resource_toss"), SubResource("Resource_reach"), SubResource("Resource_walk")])

@@ -31,3 +31,7 @@ flask_drink_time = 0.4
 flask_move_scale = 0.4
 rest_heal_fraction = 0.3
 rest_flask_refill = 1
+merchant_flask_price = 30
+merchant_heal_price = 25
+merchant_heal_fraction = 0.25
+merchant_shard_price = 60

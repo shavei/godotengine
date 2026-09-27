@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/encounter_data.gd" id="1_encounter"]
+[ext_resource type="Script" path="res://scripts/resources/wave_data.gd" id="2_wave"]
+[ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="3_enemy"]
+[ext_resource type="Resource" path="res://data/enemies/enemy_elder_boar.tres" id="4_elder"]
+[ext_resource type="Resource" path="res://data/enemies/enemy_sproutling.tres" id="5_sproutling"]
+[ext_resource type="Resource" path="res://data/enemies/enemy_thorn_archer.tres" id="6_archer"]
+
+[sub_resource type="Resource" id="Resource_wave1"]
+script = ExtResource("2_wave")
+enemies = Array[ExtResource("3_enemy")]([ExtResource("4_elder"), ExtResource("5_sproutling"), ExtResource("5_sproutling"), ExtResource("6_archer")])
+
+[resource]
+script = ExtResource("1_encounter")
+id = &"mossy_elder_boar"
+display_name = "Elder Boar"
+waves = Array[ExtResource("2_wave")]([SubResource("Resource_wave1")])
+wave_delay = 1.2

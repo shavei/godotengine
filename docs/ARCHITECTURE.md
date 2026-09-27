@@ -55,7 +55,7 @@ res://
   scenes/
     main/          main.tscn (boot), title.tscn
     village/       village.tscn, villager.tscn, shrine.tscn, plot.tscn, gate.tscn
-    run/           room.tscn (every run room, reloaded per room), room_door.gd, rest_spot.gd,
+    run/           room.tscn (every run room, reloaded per room), room_door.gd, interact_spot.gd, pickup.gd,
                    test_room.tscn (M1 sandbox), tuning_room.tscn (feel tuning with a controller), placeholder_room.gd (checkered arena until tilesets)
     actors/        hero/ (hero.tscn, hero.gd, swing_arc.gd, states/hero_*.gd), training_dummy/,
                    enemies/*.tscn, bosses/*.tscn
@@ -152,7 +152,7 @@ class_name FusionData extends Resource    # one per power pair (28)
 @export var neighbor_service: ServiceData
 ```
 
-Also `WeaponData`, `EnemyData` (stats, AI script, drops), `RegionData` (power pool, enemy pool, room weights, bosses, tileset, music), `BuildingData` (levels, costs, effects), `TrinketData`, `BalanceData` (every tunable number from GDD Section 15).
+Also `WeaponData`, `EnemyData` (stats, AI script, `DropTable` drops, elite flag), `DropTable` of `DropEntry` lines (currency, chance, min, max; inline in the resource that drops them), `EventData` with `EventChoiceData` (cost, HP cost, chance, reward `DropTable`, result lines) in `data/events/`, `RegionData` (power pool, enemy pool, room weights, bosses, material, treasure drops, events, tileset, music), `BuildingData` (levels, costs, effects), `TrinketData`, `BalanceData` (every tunable number from GDD Section 15).
 
 **Most effects are data (`ModifierData`).** Only unusual behaviors get a `behavior_script`. Target: at least 70% of combos and techniques are pure modifiers.
 
@@ -201,7 +201,7 @@ var rank: int                  # 0 none, 1 Novice, 2 Adept, 3 Master
 var technique_taught: bool
 ```
 
-`RunState` (`scripts/state/run_state.gd`) holds only the current run: region, seed, floor, `FloorMap`, current room (-1 = the floor's corridor), path, and per-hero carry-over (hp, flasks; later trinkets, fusion meter) keyed by `player_id`. It is saved at room boundaries for crash safety but is not part of long-term progression.
+`RunState` (`scripts/state/run_state.gd`) holds only the current run: region, seed, floor, `FloorMap`, current room (-1 = the floor's corridor), path, and per-hero carry-over (hp, flasks, the run loot `Wallet`; later trinkets, fusion meter) keyed by `player_id`. It is saved at room boundaries for crash safety but is not part of long-term progression.
 
 ---
 
@@ -217,8 +217,9 @@ var technique_taught: bool
 | `ProgressionSystem` | XP curve, level-ups, attribute points, mastery curve | Formulas from `BalanceData`. |
 | `ModifierStack` | `collect(hero, village, run) -> Stats` | Gathers modifiers from techniques, services, neighbor bonuses, meals, trinkets; computes final stats. One place for all stat math. |
 | `CombatMath` | `damage(attacker_stats, defender_stats, hit) -> DamageResult` | Crit, armor, statuses. Deterministic given an RNG seed. |
-| `EconomySystem` | Costs, drops, death penalty | |
-| `RunGenerator` | `generate_floor(region, floor_idx, seed) -> FloorMap`, `pick_encounter(region, map, room, seed)` | Seeded RNG so co-op peers and daily runs can reproduce maps. A `FloorMap` holds rows of `MapRoom`s (type, lane, links to the next row) and one exit room. Rules in GDD 6.1. |
+| `EconomySystem` | Costs, drops, death penalty | M2 PR 2 has the run side: `Wallet` (a hero's run loot: add, spend, spend_all, to_dict; one per `player_id` in `RunState.wallets`) and `LootRoller` (`roll(DropTable, rng)`, `split_piles`, `rng_for(run_seed, floor, room, salt)`). Banking into the profile and the death rule come in M2 PR 4. |
+| `EventResolver` | `can_choose(choice, wallet)`, `resolve(choice, wallet, hp, max_hp, rng) -> EventOutcome` | Event rooms: pay the cost first (an HP cost never kills), then roll success and the reward. Rewards are returned so the room drops them as pickups. |
+| `RunGenerator` | `generate_floor(region, floor_idx, seed) -> FloorMap`, `pick_encounter(region, map, room, seed)`, `pick_event(region, map, room, seed)` | Seeded RNG so co-op peers and daily runs can reproduce maps. A `FloorMap` holds rows of `MapRoom`s (type, lane, links to the next row) and one exit room. Rules in GDD 6.1. |
 | `RaidDirector` | Wave composition from run count and faction | |
 
 All randomness uses a `RandomNumberGenerator` passed in with an explicit seed. No `randi()` globals in systems.
@@ -249,7 +250,8 @@ main.tscn (boot: ContentDB load, SaveManager load)
 - **Hero** (`hero/hero.tscn`): `CharacterBody2D` + components. States (child nodes of `StateMachine`, one script each in `hero/states/`): Move (includes idle), Attack (one node, re-entered per combo step), Dodge, Drink, Hurt, Dead; Cast arrives with powers in M3. The hero calls `state_machine.physics_update()` from its own `_physics_process` so input buffering, stamina and i-frames update first. Input comes from an `InputSource` child (see 9); if none is present the hero adds a `LocalInputSource`. Tests drive the hero with the scripted base `InputSource`.
 - **Attacks** are `AttackData` resources (damage, wind-up, active, recovery, reach, radius, lunge, knockback, hit-stop, shake). Weapons hold a combo of them; enemies will use the same resource. `CombatStats` carries the numbers `CombatMath` needs for each side.
 - **Damage flow:** an active `HitboxComponent` checks overlapping `HurtboxComponent`s each physics frame and hits each once per `activate()`. The hurtbox runs `CombatMath`, applies the result to its `HealthComponent` and emits `hurt(result, hitbox)`; the hitbox emits `hit_landed`. The victim spawns its own damage number and flash.
-- **Enemies:** one scene (`actors/enemy/enemy.tscn`, `Enemy`) + components + an `EnemyAI` script (`scripts/ai/`: `SwarmAI`, `ChargerAI`, `RangedAI`) chosen by `EnemyData.ai_script`. The AI is a `RefCounted` phase machine that calls the enemy's verbs (move, face, telegraph, attack, shoot). Telegraphs use `TelegraphRing` (a ring for areas, a lane for charges and shots) and emit `telegraph_started`. Splitting (`split_into`, `split_count`) spawns children and emits `spawned` before `died`.
+- **Enemies:** one scene (`actors/enemy/enemy.tscn`, `Enemy`) + components + an `EnemyAI` script (`scripts/ai/`: `SwarmAI`, `ChargerAI`, `RangedAI`, `SummonerAI`) chosen by `EnemyData.ai_script`. The AI is a `RefCounted` phase machine that calls the enemy's verbs (move, face, telegraph, attack, shoot, drop a hazard, summon). Telegraphs use `TelegraphRing` (a ring for areas, a lane for charges and shots, a ring on the floor for a lobbed cloud) and emit `telegraph_started`. Splitting (`split_into`, `split_count`) and summoning both spawn children and emit `spawned`, so the `WaveDirector` counts them. `ChargerAI` chains `charge_chain` charges (Elder Boar). `WaveDirector.enemy_died` lets the room drop each enemy's loot before a clear.
+- **Run rooms:** `InteractSpot` (stand on it, press Interact) is every offer: rest comforts, the chest, merchant wares, event choices. `Pickup` (a `Node2D`, no physics) drifts to a nearby hero, is collected by distance and reports `collected`; the room adds it to that hero's `Wallet`.
 - **Waves:** `EncounterData` holds `WaveData` lists. `WaveDirector` (in the room) shows spawn markers, spawns enemies, tracks splits and emits `wave_started`, `wave_cleared`, `room_cleared` (also on `EventBus`). The clear rules live in `WaveTracker` (pure, tested).
 - **Hitboxes and hurtboxes** use collision layers:
 

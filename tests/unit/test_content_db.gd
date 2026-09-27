@@ -29,7 +29,7 @@ func test_default_balance_matches_gdd_core_numbers() -> void:
 	assert_eq(balance.dodge_iframes, 0.22)
 	assert_eq(balance.dodge_stamina_cost, 25.0)
 	assert_eq(balance.stamina_regen, 40.0)
-	assert_eq(balance.stamina_regen_delay, 0.5)
+	assert_eq(balance.stamina_regen_delay, 0.7)
 	assert_eq(balance.hero_crit_chance, 0.05)
 	assert_eq(balance.hero_crit_multiplier, 1.5)
 	assert_eq(balance.flask_charges, 3)

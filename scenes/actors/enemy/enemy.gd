@@ -12,12 +12,16 @@ signal died(enemy: Enemy)
 const GROUP: StringName = &"enemies"
 const SCENE_PATH: String = "res://scenes/actors/enemy/enemy.tscn"
 const ARROW_SCENE: PackedScene = preload("res://scenes/actors/enemy/thorn_arrow.tscn")
+const PATCH_SCENE: PackedScene = preload("res://scenes/actors/enemy/thorn_patch.tscn")
+const ELITE_OUTLINE: Color = Color(1.0, 0.82, 0.3)
 const WORLD_LAYER: int = 1
 ## px/s per second when speeding up or slowing down.
 const ACCELERATION: float = 700.0
 const DEATH_TIME: float = 0.35
 ## Distance split children pop out to.
 const SPLIT_SPREAD: float = 10.0
+## Distance summoned minions appear at.
+const SUMMON_SPREAD: float = 22.0
 
 @export var data: EnemyData
 
@@ -28,6 +32,8 @@ var facing: Vector2 = Vector2.DOWN
 
 var _stun_time: float = 0.0
 var _dead: bool = false
+## A warning placed on the floor away from the enemy (a Spore Witch's cloud spot).
+var _ground_marker: TelegraphRing = null
 
 @onready var body_shape: CollisionShape2D = $Shape
 @onready var visual: PlaceholderShape = $Visual
@@ -62,6 +68,8 @@ func _ready() -> void:
 	hitbox_shape.shape = _circle(data.attack.radius if data.attack != null else 8.0)
 	visual.size = Vector2.ONE * data.body_radius * 2.0
 	visual.color = data.color
+	if data.is_elite:
+		visual.outline_color = ELITE_OUTLINE
 	health.set_max_hp(data.max_hp, true)
 	knockback.weight_scale = data.weight_scale
 	stats.armor = data.armor
@@ -158,6 +166,24 @@ func telegraph_attack(attack: AttackData) -> void:
 	telegraph_started.emit()
 
 
+## Warns of a cast from the enemy itself (a summon): a ring around its body.
+func telegraph_attack_self(radius: float, duration: float) -> void:
+	telegraph.position = Vector2.ZERO
+	telegraph.play(radius, duration)
+	telegraph_started.emit()
+
+
+## Warns of something landing at a spot on the floor (world position).
+func telegraph_at(world_position: Vector2, radius: float, duration: float) -> void:
+	_clear_ground_marker()
+	_ground_marker = TelegraphRing.new()
+	_ground_marker.color = Color(0.75, 0.9, 0.35)
+	get_parent().add_child(_ground_marker)
+	_ground_marker.global_position = world_position
+	_ground_marker.play(radius, duration)
+	telegraph_started.emit()
+
+
 ## Warns of a charge or shot along a lane starting at the enemy.
 func telegraph_line(direction: Vector2, length: float, width: float, duration: float) -> void:
 	telegraph.position = Vector2.ZERO
@@ -180,6 +206,7 @@ func end_attack() -> void:
 func cancel_attack() -> void:
 	hitbox.deactivate()
 	telegraph.stop()
+	_clear_ground_marker()
 
 
 func fire_projectile(direction: Vector2) -> ThornArrow:
@@ -188,6 +215,25 @@ func fire_projectile(direction: Vector2) -> ThornArrow:
 	arrow.global_position = global_position + direction * (data.body_radius + 2.0)
 	arrow.launch(direction, data, stats)
 	return arrow
+
+
+## Leaves the data's hazard (thorns, spore cloud) at a world position.
+func drop_hazard(world_position: Vector2) -> ThornPatch:
+	_clear_ground_marker()
+	if data.hazard == null:
+		return null
+	var patch: ThornPatch = PATCH_SCENE.instantiate()
+	patch.color = data.hazard_color
+	get_parent().add_child(patch)
+	patch.global_position = world_position
+	patch.setup(data.hazard, data.hazard_lifetime, data.hazard_interval, stats)
+	return patch
+
+
+## Calls `count` minions around the enemy. Each is announced with `spawned` so the
+## room's WaveDirector counts it before the room can clear.
+func summon_minions(minion_data: EnemyData, count: int) -> Array[Enemy]:
+	return _spawn_children(minion_data, count, SUMMON_SPREAD)
 
 
 ## Shake and flash for a self-inflicted stun (a boar hitting a wall).
@@ -224,13 +270,28 @@ func _on_died() -> void:
 func _spawn_splits() -> void:
 	if data.split_into == null or data.split_count <= 0:
 		return
-	for i: int in data.split_count:
-		var child: Enemy = Enemy.create(data.split_into)
-		var offset: Vector2 = Vector2.RIGHT.rotated(TAU * i / data.split_count + randf() * 0.5) * SPLIT_SPREAD
+	_spawn_children(data.split_into, data.split_count, SPLIT_SPREAD)
+
+
+func _spawn_children(child_data: EnemyData, count: int, spread: float) -> Array[Enemy]:
+	var children: Array[Enemy] = []
+	if child_data == null:
+		return children
+	for i: int in count:
+		var child: Enemy = Enemy.create(child_data)
+		var offset: Vector2 = Vector2.RIGHT.rotated(TAU * i / count + randf() * 0.5) * spread
 		get_parent().add_child.call_deferred(child)
 		child.position = position + offset
 		child.ready.connect(func() -> void: child.knockback.apply(offset.normalized() * 140.0), CONNECT_ONE_SHOT)
+		children.append(child)
 		spawned.emit(child)
+	return children
+
+
+func _clear_ground_marker() -> void:
+	if _ground_marker != null and is_instance_valid(_ground_marker):
+		_ground_marker.queue_free()
+	_ground_marker = null
 
 
 ## Squash, spin and fade, then free.

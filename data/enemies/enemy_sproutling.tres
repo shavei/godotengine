@@ -1,9 +1,11 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_enemy"]
 [ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="2_attack"]
 [ext_resource type="Script" path="res://scripts/ai/swarm_ai.gd" id="3_ai"]
 [ext_resource type="Resource" path="res://data/enemies/enemy_seedling.tres" id="4_seedling"]
+[ext_resource type="Script" path="res://scripts/resources/drop_table.gd" id="90_table"]
+[ext_resource type="Script" path="res://scripts/resources/drop_entry.gd" id="91_entry"]
 
 [sub_resource type="Resource" id="Resource_bite"]
 script = ExtResource("2_attack")
@@ -14,6 +16,24 @@ recovery = 0.4
 reach = 13.0
 radius = 11.0
 knockback = 120.0
+
+[sub_resource type="Resource" id="Resource_drop_0"]
+script = ExtResource("91_entry")
+currency = &"coins"
+chance = 0.8
+min_amount = 1
+max_amount = 2
+
+[sub_resource type="Resource" id="Resource_drop_1"]
+script = ExtResource("91_entry")
+currency = &"wood"
+chance = 0.15
+min_amount = 1
+max_amount = 1
+
+[sub_resource type="Resource" id="Resource_drops"]
+script = ExtResource("90_table")
+entries = Array[ExtResource("91_entry")]([SubResource("Resource_drop_0"), SubResource("Resource_drop_1")])
 
 [resource]
 script = ExtResource("1_enemy")
@@ -32,3 +52,4 @@ attack_range = 24.0
 attack_cooldown = 0.8
 split_into = ExtResource("4_seedling")
 split_count = 2
+drops = SubResource("Resource_drops")

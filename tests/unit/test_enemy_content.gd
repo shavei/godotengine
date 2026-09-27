@@ -40,3 +40,29 @@ func test_test_encounter_has_three_waves_of_known_enemies() -> void:
 		assert_gt(wave.enemies.size(), 0)
 		for enemy: EnemyData in wave.enemies:
 			assert_not_null(ContentDB.get_item(&"enemies", enemy.id), "encounter uses unknown enemy")
+
+
+func test_mossy_elites_are_one_elite_plus_adds() -> void:
+	var region: RegionData = ContentDB.get_item(&"regions", &"mossy_hollow")
+	assert_eq(region.elite_encounters.size(), 2, "Elder Boar and Spore Witch (docs/CONTENT.md 6.1)")
+	for encounter: EncounterData in region.elite_encounters:
+		var elites: int = 0
+		var adds: int = 0
+		for wave: WaveData in encounter.waves:
+			for enemy: EnemyData in wave.enemies:
+				if enemy.is_elite:
+					elites += 1
+				else:
+					adds += 1
+		assert_eq(elites, 1, "%s has one elite" % encounter.id)
+		assert_gt(adds, 0, "%s has adds" % encounter.id)
+
+
+func test_follow_up_telegraphs_are_long_enough() -> void:
+	for res: Resource in ContentDB.get_all(&"enemies"):
+		var data: EnemyData = res as EnemyData
+		if data.charge_chain > 1:
+			assert_between(data.chain_windup, 0.4, 0.8, "%s chain telegraph" % data.id)
+		if data.summon != null:
+			assert_between(data.summon_windup, 0.4, 0.8, "%s summon telegraph" % data.id)
+			assert_gt(data.summon_max_alive, 0)
