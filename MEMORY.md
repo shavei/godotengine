@@ -23,8 +23,9 @@ Persistent project memory. Read at the start of every session, update at the end
 
 - Windows. Godot 4.7.2 standard build at `C:\Godot\Godot_v4.7.2-stable_win64.exe` (console build `Godot_v4.7.2-stable_win64_console.exe` in the same folder, use it for MCP and command-line runs).
 - Repo clone: `C:\Users\yosef\Documents\GitHub\godotengine` (GitHub Desktop).
-- Moving to local development: Claude Code on Windows in the repo folder, with the Godot MCP server `@coding-solo/godot-mcp` (via npx, `GODOT_PATH` set to the console exe) so Claude can run the game and read errors.
-- Local workflow: still use a branch plus PR into `main` for each change, so CI runs and the owner reviews before merging.
+- **Workflow (chosen 2026-09-27):** Claude works in a cloud session (installs Godot 4.7.2 headless there, runs tests, boot check and screenshots via xvfb), pushes one small feature per PR into `main`. Owner pulls the branch in GitHub Desktop, plays it with F5 in local Godot, gives feel feedback, and merges.
+- Opening the project in the local editor can make Godot rewrite files (it re-saved `project.godot` in full format once). Such changes should go on the PR branch, not straight to `main`, to avoid conflicts.
+- Option kept for later: Claude Code locally with the Godot MCP server `@coding-solo/godot-mcp`.
 
 ## User preferences (from the owner, shavei)
 
