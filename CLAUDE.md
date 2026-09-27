@@ -33,8 +33,8 @@ If code and docs disagree, stop and ask, or fix the doc in the same change. Neve
 
 ## Tech stack and conventions
 
-- **Engine:** Godot 4 (latest stable 4.x). **Language:** GDScript with static typing everywhere (`var hp: int = 10`, typed function signatures, typed arrays).
-- **Resolution:** 640x360 base, integer scaling, 32x32 tiles, pixel art. `texture_filter = nearest`.
+- **Engine:** Godot **4.7.2** (standard build, not .NET). Pinned: do not upgrade without logging it in `MEMORY.md`. **Renderer:** Compatibility (GL). **Language:** GDScript with static typing everywhere (`var hp: int = 10`, typed function signatures, typed arrays).
+- **Resolution:** 640x360 base, stretch mode `viewport` with integer scaling (1280x720 default window), 32x32 tiles, pixel art. `texture_filter = nearest`.
 - **Naming:**
   - Files and folders: `snake_case` (`gift_system.gd`, `power_fire.tres`).
   - Classes: `PascalCase` with `class_name`.
@@ -46,13 +46,18 @@ If code and docs disagree, stop and ask, or fix the doc in the same change. Neve
 - **No per-player state in autoloads.** Anything that belongs to "the player" is keyed by a `player_id`, so co-op can be added later without a rewrite (see `docs/ARCHITECTURE.md`, Multiplayer readiness).
 - **Composition over inheritance** for actors: `HealthComponent`, `HitboxComponent`, `HurtboxComponent`, `StatusComponent`, `StateMachine`.
 - **Scenes:** one root script per scene, same name as the scene (`player.tscn` + `player.gd`).
-- **Commit `.import` files**, ignore `.godot/`.
+- **Commit `.import` and `.uid` files**, ignore `.godot/`.
 
 ## Testing
 
-- Unit tests use **GUT** (Godot Unit Test) in `tests/unit/`. Every rule in `scripts/systems/` gets tests (gift rules, training timers, fusion eligibility, neighbor bonuses, save/load round trip).
-- Run headless: `godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -gexit`.
-- Before committing gameplay code: run the tests, and launch the affected scene once.
+- Unit tests use **GUT 9.7.1** (the release for Godot 4.7) in `tests/unit/`, configured by `.gutconfig.json`. Every rule in `scripts/systems/` gets tests (gift rules, training timers, fusion eligibility, neighbor bonuses, save/load round trip). Every new scene goes in `tests/unit/test_scenes.gd`.
+- Commands (run from the repo root):
+  - Import (needed once after clone or after adding assets): `godot --headless --import`
+  - Tests: `godot --headless -s addons/gut/gut_cmdln.gd -gexit`
+  - Boot check: `godot --headless --quit-after 180` (must print no errors)
+- CI (`.github/workflows/tests.yml`) runs the same three steps on every push to `main` and every PR.
+- Cloud sessions: Godot is not preinstalled. Download the Linux build from `https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip` and put it on the PATH as `godot`.
+- Before committing gameplay code: run the tests and the boot check, and launch the affected scene once.
 
 ## Writing rules
 

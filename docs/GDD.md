@@ -268,7 +268,7 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 | Attack | X / Square | Left click |
 | Dodge | A / Cross | Space |
 | Power 1 / 2 / 3 | LB / RB / Y | Q / E / R |
-| Fusion | LT + RT | F |
+| Fusion | RT | F |
 | Flask | D-pad up | 1 |
 | Interact | B / Circle | Shift |
 

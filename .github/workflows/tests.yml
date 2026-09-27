@@ -1,0 +1,46 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  gut:
+    name: GUT unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux
+
+      - name: Download Godot
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip -d ~/godot
+          mv ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot/godot
+          chmod +x ~/godot/godot
+
+      - name: Import project
+        run: ~/godot/godot --headless --import
+
+      - name: Run tests
+        run: |
+          ~/godot/godot --headless -s addons/gut/gut_cmdln.gd -gexit 2>&1 | tee gut.log
+          grep -q "All tests passed" gut.log
+
+      - name: Boot the game
+        run: |
+          ~/godot/godot --headless --quit-after 180 2>&1 | tee boot.log
+          if grep -qE "SCRIPT ERROR|^ERROR" boot.log; then exit 1; fi

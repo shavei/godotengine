@@ -23,19 +23,18 @@ Legend: `[ ]` todo, `[x]` done. Update this file as work lands, and log decision
 ---
 
 ## M0: Project setup
-- [ ] Create Godot 4 project (`project.godot`) at repo root: 640x360 viewport, `canvas_items` stretch, integer scaling, nearest filter, 60 FPS physics.
-- [ ] Folder structure from `docs/ARCHITECTURE.md` Section 2.
-- [ ] `.gitignore` for Godot (`.godot/`, exports), `.gitattributes` for line endings and LFS for large binaries if needed.
-- [ ] Input map (GDD Section 7.1) for gamepad and keyboard/mouse.
-- [ ] Autoload stubs: `EventBus`, `ContentDB`, `GameState`, `SaveManager`, `SceneRouter`, `AudioManager`.
-- [ ] Install GUT, one passing sample test.
-- [ ] GitHub Actions workflow: headless import plus GUT run.
-- [ ] Collision layer names (ARCHITECTURE Section 7).
-- [ ] Placeholder art: colored rectangles and circles are fine until M7.
+- [x] Create Godot 4.7.2 project (`project.godot`) at repo root: 640x360 viewport, `viewport` stretch, integer scaling, nearest filter, Compatibility renderer.
+- [x] Folder structure from `docs/ARCHITECTURE.md` Section 2.
+- [x] `.gitignore` for Godot (`.godot/`, builds), `.gitattributes` for line endings and binary assets.
+- [x] Input map (GDD Section 7.1) for gamepad and keyboard/mouse.
+- [x] Autoloads: `EventBus`, `ContentDB`, `GameState`, `SaveManager` (JSON, backup, migration hook), `SceneRouter` (fades, context), `AudioManager`.
+- [x] Install GUT 9.7.1, unit tests for project settings, input map, save manager, content DB, scenes.
+- [x] GitHub Actions workflow: headless import, GUT run, boot check.
+- [x] Collision layer names (ARCHITECTURE Section 7).
+- [x] Boot scene hands off to a placeholder title screen.
+- Placeholder art: colored rectangles and circles are fine until M7.
 
 **Done when:** project opens with no errors, `main.tscn` boots to an empty title screen, CI is green.
-
----
 
 ## M1: Combat core
 - [ ] Hero: movement (8-direction, acceleration), aim, 3-hit sword combo, dodge with i-frames and stamina.

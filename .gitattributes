@@ -1,0 +1,14 @@
+# Normalize line endings (Windows contributors)
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.webp binary
+*.wav binary
+*.ogg binary
+*.mp3 binary
+*.ttf binary
+*.otf binary
+*.aseprite binary
+*.ase binary
