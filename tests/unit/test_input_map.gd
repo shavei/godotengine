@@ -20,6 +20,14 @@ func test_actions_have_keyboard_and_gamepad_bindings() -> void:
 		assert_true(events.any(_is_gamepad), "%s has no gamepad binding" % action)
 
 
+func test_gamepad_a_confirms_menus() -> void:
+	# Godot's default ui_accept has no gamepad button; project.godot adds A.
+	var events: Array[InputEvent] = InputMap.action_get_events(&"ui_accept")
+	assert_true(events.any(func(e: InputEvent) -> bool:
+		return e is InputEventJoypadButton and (e as InputEventJoypadButton).button_index == JOY_BUTTON_A))
+	assert_true(events.any(_is_keyboard_or_mouse), "Enter and Space still confirm")
+
+
 func test_aim_actions_have_gamepad_bindings() -> void:
 	for action: StringName in GAMEPAD_ONLY:
 		assert_true(InputMap.has_action(action), "missing action %s" % action)

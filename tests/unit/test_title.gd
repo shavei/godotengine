@@ -56,3 +56,17 @@ func test_router_ignores_missing_scene_without_locking() -> void:
 	SceneRouter.go("res://no/such/scene.tscn")
 	assert_push_error("no scene at")
 	assert_false(SceneRouter.is_busy(), "a bad path must not lock the router")
+
+
+func test_gamepad_a_presses_focused_button() -> void:
+	await wait_process_frames(2)
+	var button: Button = title.get_node("%PlayButton")
+	button.pressed.disconnect(title._on_play_pressed)
+	button.grab_focus()
+	watch_signals(button)
+	for pressed: bool in [true, false]:
+		var a: InputEventJoypadButton = InputEventJoypadButton.new()
+		a.button_index = JOY_BUTTON_A
+		a.pressed = pressed
+		viewport.push_input(a)
+	assert_signal_emitted(button, "pressed", "A on a focused button presses it")
