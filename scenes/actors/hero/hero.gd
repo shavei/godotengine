@@ -4,9 +4,14 @@ extends CharacterBody2D
 ## Reads commands from an InputSource child, so tests, AI or a network peer can drive it.
 ## States live under StateMachine: Move, Attack, Dodge, Drink, Hurt, Dead.
 
+## Dodge was pressed without enough stamina (the HUD flashes the bar).
+signal dodge_denied
+
 const GROUP: StringName = &"heroes"
 ## Physics layer number of enemy bodies (docs/ARCHITECTURE.md Section 7).
 const ENEMY_BODY_LAYER: int = 3
+## Rumble (strength, seconds) when the hero is hit.
+const HURT_RUMBLE: Vector2 = Vector2(0.6, 0.18)
 
 @export var player_id: int = 0
 ## Left empty, these load from ContentDB (weapon_sword, balance_default).
@@ -52,8 +57,7 @@ func _ready() -> void:
 	flasks = FlaskPouch.new(balance.flask_charges, balance.flask_heal_fraction)
 	health.set_max_hp(balance.hero_max_hp, true)
 	stats.weapon_tier = weapon.tier_multiplier if weapon != null else 1.0
-	stats.crit_chance = balance.hero_crit_chance
-	stats.crit_multiplier = balance.hero_crit_multiplier
+	apply_balance()
 	# Each hero gets its own shape because attacks resize it.
 	hitbox_shape.shape = CircleShape2D.new()
 	hitbox.stats = stats
@@ -100,6 +104,32 @@ func aim_direction() -> Vector2:
 
 func update_facing() -> void:
 	facing = aim_direction()
+
+
+## Aim for a new swing: stick aim turns toward a close target (AimAssist).
+func attack_direction() -> Vector2:
+	var aim: Vector2 = aim_direction()
+	if not input.wants_aim_assist():
+		return aim
+	var targets: Array[Vector2] = []
+	for node: Node in get_tree().get_nodes_in_group(AimAssist.GROUP):
+		var target: Node2D = node as Node2D
+		if target != null:
+			targets.append(target.global_position)
+	return AimAssist.pick(global_position, aim, targets, balance.aim_assist_angle, balance.aim_assist_range)
+
+
+## Copies live BalanceData numbers into the helpers that keep their own copy
+## (the F4 tuning panel calls this after a change).
+func apply_balance() -> void:
+	stamina.regen_per_second = balance.stamina_regen
+	stamina.regen_delay = balance.stamina_regen_delay
+	stats.crit_chance = balance.hero_crit_chance
+	stats.crit_multiplier = balance.hero_crit_multiplier
+
+
+func rumble(strength: float, duration: float) -> void:
+	input.rumble(strength * balance.rumble_strength, duration)
 
 
 ## Starts a dodge, attack or flask if one is buffered and allowed. Returns true if it did.
@@ -163,6 +193,7 @@ func _on_hurt(result: DamageResult, source: HitboxComponent) -> void:
 	DamageNumber.spawn(get_parent(), global_position, str(result.amount), DamageNumber.COLOR_HERO, result.is_crit)
 	EventBus.camera_shake_requested.emit(0.4)
 	HitStop.request(get_tree(), 0.05)
+	rumble(HURT_RUMBLE.x, HURT_RUMBLE.y)
 	combo_step = 0
 	if not health.is_dead():
 		state_machine.transition_to(&"Hurt")
@@ -173,6 +204,8 @@ func _on_hit_landed(_hurtbox: HurtboxComponent, result: DamageResult) -> void:
 	var shake: float = attack.shake + (0.15 if result.is_crit else 0.0)
 	EventBus.camera_shake_requested.emit(shake)
 	HitStop.request(get_tree(), attack.hit_stop + (0.03 if result.is_crit else 0.0))
+	# Rumble follows the shake: light taps for slashes, a thump for the finisher.
+	rumble(clampf(shake * 1.5, 0.1, 1.0), 0.06 + attack.hit_stop)
 
 
 func _on_died() -> void:
@@ -190,6 +223,8 @@ func _read_input(delta: float) -> void:
 	for action: StringName in [&"attack", &"dodge", &"flask"]:
 		if input.just_pressed(action):
 			_buffers[action] = balance.input_buffer
+			if action == &"dodge" and not stamina.can_spend(balance.dodge_stamina_cost):
+				dodge_denied.emit()
 
 
 func _update_visuals() -> void:

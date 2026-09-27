@@ -33,6 +33,12 @@ extends Resource
 @export var input_buffer: float = 0.15
 ## After a combo ends, pressing attack within this time continues it.
 @export var combo_reset: float = 0.35
+## Stick attacks turn toward a target this many degrees either side of the aim (0 = off).
+@export var aim_assist_angle: float = 30.0
+## Aim assist only looks this far (px).
+@export var aim_assist_range: float = 64.0
+## Controller rumble strength multiplier (0 = off).
+@export var rumble_strength: float = 1.0
 
 @export_group("Flasks")
 @export var flask_charges: int = 3

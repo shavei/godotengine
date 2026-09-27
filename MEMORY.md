@@ -4,9 +4,9 @@ Persistent project memory. Read at the start of every session, update at the end
 
 ## Current status
 
-- **Phase:** M0 done. M1 (combat core) in progress, split into 3 PRs. PR 1 (hero core) and PR 2 (enemies, waves, room clear) merged. Owner played PR 2: everything worked except gamepad A on the title (fixed in a small PR).
-- **Next step:** M1 PR 3: feel and tuning, checked with a gamepad.
-- **Last updated:** 2026-09-27 (M1 PR 2)
+- **Phase:** M0 done. M1 (combat core) in progress, split into 3 PRs. PR 1 (hero core) and PR 2 (enemies, waves, room clear) merged. PR 3 (gamepad feel and F4 tuning panel) open for the owner to play.
+- **Next step:** Owner plays the Wave room with a gamepad, tunes with F4 and reports feel (see the questions in the M1 PR 3 session log). Then close M1 and start M2.
+- **Last updated:** 2026-09-27 (M1 PR 3)
 
 ## The game in brief
 
@@ -62,6 +62,9 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-27 | Waves count split children as part of the wave; enemies count as alive from their spawn marker | A wave can never clear while seedlings or pending spawns remain. Rules in `WaveTracker` with tests. |
 | 2026-09-27 | Thorn Archer arrows leave a thorn patch only when they miss | A hit already punishes; the patch punishes dodging carelessly and shrinks the room while the archer lives. |
 | 2026-09-27 | Wave room is a separate scene (title: "Wave room"); the dummy test room stays | Dummies are still useful for practicing combos and dodge timing without enemies around. |
+| 2026-09-27 | Melee aim assist for sticks only (30 degrees, 64 px), never for the mouse | A melee swing aimed by the move stick misses targets a few degrees off, which reads as the game's fault. Mouse aim is already precise. Pure `AimAssist` rules with tests; angle 0 turns it off. |
+| 2026-09-27 | Rumble goes through `InputSource.rumble()` | The source knows which gamepad (and later which player or peer) the hero belongs to, so rumble stays per player for co-op. |
+| 2026-09-27 | F4 `TuningPanel` edits the live `BalanceData`, Enter saves the `.tres` | Claude cannot feel a gamepad; the owner tunes while playing and the saved file (or the printed lines) comes back in the PR. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 
 ## Rejected ideas (do not re-propose without new info)
@@ -101,6 +104,7 @@ Runner-up ideas still considered original (keep for later or a future project): 
 
 ## Session log
 
+- **2026-09-27 (M1 PR 3):** Gamepad feel. `AimAssist` (stick swings turn toward the target nearest the aim line), rumble on hits and when hurt (`InputSource.rumble`, scaled by `rumble_strength`), stamina bar blinks red when a dodge is denied, `Hero.apply_balance()` for live changes. F4 `TuningPanel` autoload for live tuning. 114 tests pass, no warnings, boot clean, panel checked with an xvfb screenshot. Rumble and aim assist could not be felt in the cloud. Questions for the owner: does the dodge feel responsive on the pad? Is aim assist noticeable or too sticky? Is rumble too strong? Does drinking mid-fight feel risk-free (flask rule from PR 1)?
 - **2026-09-27 (gamepad A fix):** Owner reported A does nothing on the title. Godot 4.7's default `ui_accept` has no gamepad button; `project.godot` now adds A (Enter and Space kept). Tests for the binding and for A pressing a focused title button.
 - **2026-09-27 (M1 PR 2):** Enemies and waves. `EnemyData`, one `Enemy` scene, `SwarmAI`, `ChargerAI`, `RangedAI`. Sproutling (splits into 2 Seedlings), Tusk Boar (lane telegraph, charge, stuns on walls, not interrupted by hits), Thorn Archer (keeps distance, shot lane, arrows leave thorn patches on a miss). Enemy death animation. `EncounterData`/`WaveData`, `WaveDirector` with spawn markers, pure `WaveTracker`, `EventBus.room_cleared`. New Wave room (3 waves) on the title. Hero dodges through enemies. Numbers in GDD 15.5. 93 tests pass, no warnings, boot clean, checked with xvfb screenshots (lanes, thorn patch, waves advancing).
 - **2026-09-27 (debug overlay):** Owner's Output showed only editor undo lines ("Set mouse_filter" etc.), so they edited properties in the Inspector; nothing was pushed. Added the F3 `DebugOverlay` so the owner can see on their machine where clicks go and paste the Output lines.

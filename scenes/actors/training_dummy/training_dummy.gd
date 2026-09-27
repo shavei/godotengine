@@ -28,6 +28,7 @@ var _since_hit: float = 0.0
 
 
 func _ready() -> void:
+	add_to_group(AimAssist.GROUP)
 	hurtbox.hurt.connect(_on_hurt)
 	health.died.connect(_on_died)
 	if counterattack != null:

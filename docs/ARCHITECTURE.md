@@ -83,6 +83,7 @@ res://
 | `SceneRouter` | Scene transitions (fade), passes a context dictionary to the next scene | No |
 | `AudioManager` | Music layers (village layering by powered villagers), SFX pools, buses | No |
 | `DebugOverlay` | Debug builds only: F3 input inspector (mouse position, control under the mouse, last click and key, window focus, router state); logs clicks to Output while shown | No |
+| `TuningPanel` | Debug builds only: F4 live tuning of combat feel numbers in the loaded `BalanceData`; prints every change to Output, Enter saves the `.tres` | No |
 
 Rule: autoloads never reference scene nodes directly. Scenes subscribe to `EventBus` and query `GameState`.
 
@@ -307,7 +308,7 @@ Transport decision (ENet vs Steam networking) is deferred to M10 (see MEMORY.md 
 - Run locally: `godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -gexit`.
 - **Warnings check:** `tools/check_warnings.gd` compiles every project script (addons excluded) with warnings raised to errors, via a temporary `override.cfg`. Signals on `EventBus` are exempt from the unused-signal warning (`@warning_ignore_start`) because other scripts emit them.
 - **CI (GitHub Actions, M0):** download Godot headless, import the project, check warnings, run GUT, fail on any error. Later: export builds for Windows, Linux, macOS on tags.
-- Debug tools (dev builds only): F3 input inspector (`DebugOverlay`, added for the title click report); console commands `give_power fire`, `set_tp smith 7`, `add_renown 10`, `skip_room`, `god_mode`.
+- Debug tools (dev builds only): F3 input inspector (`DebugOverlay`, added for the title click report); F4 tuning panel (`TuningPanel`: Page Up / Page Down pick a number, - and = change it, Shift for 5x, Backspace resets, Enter saves); console commands `give_power fire`, `set_tp smith 7`, `add_renown 10`, `skip_room`, `god_mode`.
 
 ---
 
