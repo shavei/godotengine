@@ -66,7 +66,7 @@ res://
     unit/          test_gift_system.gd, test_training_system.gd, test_fusion_system.gd, test_neighbor_system.gd,
                    test_renown_system.gd, test_progression.gd, test_combat_math.gd, test_save_roundtrip.gd,
                    test_content_integrity.gd
-  tools/           content_validator.gd (EditorScript), csv_import.gd (optional: combos from CSV)
+  tools/           check_warnings.gd (CI), content_validator.gd (EditorScript), csv_import.gd (optional: combos from CSV)
 ```
 
 ---
@@ -302,7 +302,8 @@ Transport decision (ENet vs Steam networking) is deferred to M10 (see MEMORY.md 
   - every combo references an existing technique,
   - no duplicate ids.
 - Run locally: `godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -gexit`.
-- **CI (GitHub Actions, M0):** download Godot headless, import the project, run GUT, fail on any error. Later: export builds for Windows, Linux, macOS on tags.
+- **Warnings check:** `tools/check_warnings.gd` compiles every project script (addons excluded) with warnings raised to errors, via a temporary `override.cfg`. Signals on `EventBus` are exempt from the unused-signal warning (`@warning_ignore_start`) because other scripts emit them.
+- **CI (GitHub Actions, M0):** download Godot headless, import the project, check warnings, run GUT, fail on any error. Later: export builds for Windows, Linux, macOS on tags.
 - Debug tools (dev builds only): console commands `give_power fire`, `set_tp smith 7`, `add_renown 10`, `skip_room`, `god_mode`.
 
 ---

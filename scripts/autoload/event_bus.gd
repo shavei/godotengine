@@ -2,6 +2,10 @@ extends Node
 ## Global signals only. No state lives here.
 ## Systems and scenes emit and subscribe; nothing references scene nodes directly.
 
+# Other scripts emit these signals, so Godot's "declared but never used in the class"
+# warning is expected here and silenced for the whole file.
+@warning_ignore_start("unused_signal")
+
 # The Choice
 signal power_kept(player_id: int, power_id: StringName)
 signal power_given(player_id: int, power_id: StringName, villager_index: int)
