@@ -15,14 +15,14 @@ func _ready() -> void:
 ## Clears and reloads all content from `root`. Returns the number of resources loaded.
 func load_all(root: String) -> int:
 	_by_category.clear()
-	var count: int = 0
+	var total: int = 0
 	var dir: DirAccess = DirAccess.open(root)
 	if dir == null:
 		push_warning("ContentDB: data folder not found: %s" % root)
 		return 0
 	for category: String in dir.get_directories():
-		count += _load_category(root.path_join(category), StringName(category))
-	return count
+		total += _load_category(root.path_join(category), StringName(category))
+	return total
 
 
 func get_item(category: StringName, id: StringName) -> Resource:

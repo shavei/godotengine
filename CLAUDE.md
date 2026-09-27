@@ -54,8 +54,9 @@ If code and docs disagree, stop and ask, or fix the doc in the same change. Neve
 - Commands (run from the repo root):
   - Import (needed once after clone or after adding assets): `godot --headless --import`
   - Tests: `godot --headless -s addons/gut/gut_cmdln.gd -gexit`
+  - Warnings: `godot --headless -s tools/check_warnings.gd` (must report no warnings; the editor shows them in the debugger's Errors tab, headless runs do not)
   - Boot check: `godot --headless --quit-after 180` (must print no errors)
-- CI (`.github/workflows/tests.yml`) runs the same three steps on every push to `main` and every PR.
+- CI (`.github/workflows/tests.yml`) runs the same four steps on every push to `main` and every PR.
 - Cloud sessions: Godot is not preinstalled. Download the Linux build from `https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip` and put it on the PATH as `godot`.
 - Before committing gameplay code: run the tests and the boot check, and launch the affected scene once.
 

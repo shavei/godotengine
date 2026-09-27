@@ -11,9 +11,9 @@ const COLOR_HEAL: Color = Color(0.5, 1.0, 0.55)
 
 
 ## `parent` is usually the current room so numbers do not move with the actor.
-static func spawn(parent: Node, world_pos: Vector2, text: String, color: Color, big: bool = false) -> DamageNumber:
+static func spawn(parent: Node, world_pos: Vector2, value: String, color: Color, big: bool = false) -> DamageNumber:
 	var label: DamageNumber = DamageNumber.new()
-	label.text = text
+	label.text = value
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.05))
 	label.add_theme_constant_override("outline_size", 3)

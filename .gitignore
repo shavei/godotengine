@@ -9,3 +9,6 @@
 Thumbs.db
 *.swp
 .vscode/
+
+# Temporary file written by tools/check_warnings.gd
+override.cfg

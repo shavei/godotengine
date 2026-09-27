@@ -35,6 +35,9 @@ jobs:
       - name: Import project
         run: ~/godot/godot --headless --import
 
+      - name: Check GDScript warnings
+        run: ~/godot/godot --headless -s tools/check_warnings.gd
+
       - name: Run tests
         run: |
           ~/godot/godot --headless -s addons/gut/gut_cmdln.gd -gexit 2>&1 | tee gut.log
