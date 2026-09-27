@@ -4,8 +4,8 @@ Persistent project memory. Read at the start of every session, update at the end
 
 ## Current status
 
-- **Phase:** M0 done. M1 (combat core) in progress, split into 3 PRs. PR 1 (hero core) merged. PR 2 (enemies, waves, room clear) open for the owner to play.
-- **Next step:** Owner plays the Wave room (title screen button) and gives feel feedback. Then M1 PR 3: feel and tuning, checked with a gamepad.
+- **Phase:** M0 done. M1 (combat core) in progress, split into 3 PRs. PR 1 (hero core) and PR 2 (enemies, waves, room clear) merged. Owner played PR 2: everything worked except gamepad A on the title (fixed in a small PR).
+- **Next step:** M1 PR 3: feel and tuning, checked with a gamepad.
 - **Last updated:** 2026-09-27 (M1 PR 2)
 
 ## The game in brief
@@ -101,6 +101,7 @@ Runner-up ideas still considered original (keep for later or a future project): 
 
 ## Session log
 
+- **2026-09-27 (gamepad A fix):** Owner reported A does nothing on the title. Godot 4.7's default `ui_accept` has no gamepad button; `project.godot` now adds A (Enter and Space kept). Tests for the binding and for A pressing a focused title button.
 - **2026-09-27 (M1 PR 2):** Enemies and waves. `EnemyData`, one `Enemy` scene, `SwarmAI`, `ChargerAI`, `RangedAI`. Sproutling (splits into 2 Seedlings), Tusk Boar (lane telegraph, charge, stuns on walls, not interrupted by hits), Thorn Archer (keeps distance, shot lane, arrows leave thorn patches on a miss). Enemy death animation. `EncounterData`/`WaveData`, `WaveDirector` with spawn markers, pure `WaveTracker`, `EventBus.room_cleared`. New Wave room (3 waves) on the title. Hero dodges through enemies. Numbers in GDD 15.5. 93 tests pass, no warnings, boot clean, checked with xvfb screenshots (lanes, thorn patch, waves advancing).
 - **2026-09-27 (debug overlay):** Owner's Output showed only editor undo lines ("Set mouse_filter" etc.), so they edited properties in the Inspector; nothing was pushed. Added the F3 `DebugOverlay` so the owner can see on their machine where clicks go and paste the Output lines.
 - **2026-09-27 (title click):** Owner reported mouse clicks not registering on the title. Could not reproduce (real clicks work in xvfb and in a new GUT test). Fixed a real SceneRouter bug found while checking: a failed scene load waited forever and locked the router. Added title click tests. Likely cause on the owner's side: the editor's embedded Game tab in a selection mode instead of Input mode. Waiting on the owner's answer.
