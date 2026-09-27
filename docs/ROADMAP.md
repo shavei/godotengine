@@ -146,7 +146,7 @@ If the gate fails: iterate on numbers (TP thresholds, slot count, service streng
 - [ ] Full Mossy Hollow content: 5 enemies, 2 elites, mini-boss, Warden of Roots both phases.
 - [ ] Sword and Hammer weapons with mastery unlocks.
 - [ ] Onboarding first hour (GDD Section 16) polished.
-- [ ] Settings menu with accessibility options (GDD Section 18).
+- [ ] Settings menu with accessibility options (GDD Section 18). (Controls remapping landed early at the owner's request: Controls on the title.)
 - [ ] Steam page assets: capsule art, trailer capture from the slice.
 
 **Done when:** 2 hours of polished play that could be shown publicly (demo quality).

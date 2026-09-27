@@ -275,6 +275,8 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 | Interact | B / Circle | Shift |
 | Map (in runs) | Back / View | Tab |
 
+- Every action above except Aim can be remapped in **Controls** (title screen): one keyboard/mouse input and one gamepad input each. Taking an input another action uses swaps the two, so no action is left without one. The right stick always aims and cannot be taken. On-screen hints show the current inputs.
+
 ### 7.2 Core numbers
 - Dodge: 0.3 s roll, 0.22 s invincibility, 25 stamina. Stamina regen 40 per second after 0.5 s delay.
 - **Perfect dodge:** dodging within 0.12 s of a hit gives a brief slow-motion (0.3 s) and +10 Fusion meter.

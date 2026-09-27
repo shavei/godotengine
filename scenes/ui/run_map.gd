@@ -1,7 +1,7 @@
 class_name RunMap
 extends CanvasLayer
 ## The floor map (docs/GDD.md Section 13, Run map): rooms bottom to top, the path taken,
-## where you are and which rooms you can reach next. Map (Tab / Back) toggles it.
+## where you are and which rooms you can reach next. The Map action toggles it.
 
 const PANEL_RECT: Rect2 = Rect2(464.0, 30.0, 170.0, 300.0)
 const ROOM_RADIUS: float = 7.0

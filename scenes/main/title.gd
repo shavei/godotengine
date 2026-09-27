@@ -8,6 +8,7 @@ const START_REGION: StringName = &"mossy_hollow"
 const TEST_ROOM_SCENE: String = "res://scenes/run/test_room.tscn"
 const WAVE_ROOM_SCENE: String = "res://scenes/run/wave_room.tscn"
 const TUNING_ROOM_SCENE: String = "res://scenes/run/tuning_room.tscn"
+const CONTROLS_SCENE: String = "res://scenes/ui/controls_menu.tscn"
 
 
 func _ready() -> void:
@@ -19,6 +20,7 @@ func _ready() -> void:
 	%PlayButton.pressed.connect(_on_play_pressed)
 	%WaveButton.pressed.connect(_on_wave_pressed)
 	%TuningButton.pressed.connect(_on_tuning_pressed)
+	%ControlsButton.pressed.connect(_on_controls_pressed)
 	%RunButton.grab_focus()
 
 
@@ -40,3 +42,7 @@ func _on_wave_pressed() -> void:
 
 func _on_tuning_pressed() -> void:
 	SceneRouter.go(TUNING_ROOM_SCENE)
+
+
+func _on_controls_pressed() -> void:
+	SceneRouter.go(CONTROLS_SCENE)

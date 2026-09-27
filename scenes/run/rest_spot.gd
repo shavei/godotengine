@@ -58,6 +58,6 @@ func _draw() -> void:
 	draw_circle(Vector2.ZERO, RADIUS, Color(color, 0.18 + 0.12 * glow))
 	draw_arc(Vector2.ZERO, RADIUS, 0.0, TAU, 32, color, 2.0)
 	var font: Font = ThemeDB.fallback_font
-	var text: String = caption + ("\nShift / B" if _hero != null else "")
+	var text: String = caption + ("\n" + InputBindings.hint(&"interact") if _hero != null else "")
 	draw_multiline_string_outline(font, Vector2(-50.0, RADIUS + 12.0), text, HORIZONTAL_ALIGNMENT_CENTER, 100.0, 8, -1, 3, Color(0.05, 0.03, 0.05))
 	draw_multiline_string(font, Vector2(-50.0, RADIUS + 12.0), text, HORIZONTAL_ALIGNMENT_CENTER, 100.0, 8, -1, color)

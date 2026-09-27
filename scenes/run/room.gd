@@ -61,6 +61,7 @@ func _ready() -> void:
 	hero.global_position = HERO_START
 	_restore_hero()
 	hud.bind_hero(hero)
+	$Overlay/Help.text = InputBindings.combat_help([["Map", &"map"], ["Leave run", &"pause"]])
 	room.floor_a = run.region.floor_color
 	room.floor_b = run.region.floor_color.darkened(0.08)
 	_fit_camera()
@@ -92,7 +93,7 @@ func _setup_corridor() -> void:
 	room.set_pillars([] as Array[Vector2i])
 	wave_label.text = ""
 	_show_banner("%s\nFloor %d" % [run.region.display_name, run.floor_index + 1], BANNER_TIME * 1.5)
-	sign_label.text = "Pick a door. The sign shows what waits behind it.\nTab / Back shows the map."
+	sign_label.text = "Pick a door. The sign shows what waits behind it.\n%s shows the map." % InputBindings.hint(&"map")
 	_open_exits()
 
 
@@ -221,7 +222,7 @@ func _on_rest_chosen(spot: RestSpot, who: Hero) -> void:
 func _finish_run() -> void:
 	EventBus.run_ended.emit(true)
 	sign_label.text = ""
-	_show_banner("%s cleared!\nThe run is complete.\nShift / B to return" % run.region.display_name, 0.0)
+	_show_banner("%s cleared!\nThe run is complete.\n%s to return" % [run.region.display_name, InputBindings.hint(&"interact")], 0.0)
 
 
 func _on_hero_died(_player_id: int) -> void:
