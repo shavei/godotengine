@@ -122,6 +122,31 @@ func test_three_hit_combo_deals_12_12_20() -> void:
 	assert_true(hero.state_machine.is_in(&"Move"))
 
 
+
+func test_each_combo_step_slashes_its_own_way() -> void:
+	var combo: Array[AttackData] = hero.weapon.combo
+	assert_eq(combo[0].slash_sweep, 1.0)
+	assert_eq(combo[1].slash_sweep, -1.0, "the second swing comes back the other way")
+	assert_gt(combo[2].slash_arc, combo[0].slash_arc, "the finisher is the widest")
+
+
+func test_the_slash_sweeps_then_fades() -> void:
+	var arc: SwingArc = SwingArc.new()
+	add_child_autofree(arc)
+	arc.play(20.0, 4.0, 0.2, -1.0, 1.2)
+	var start: Vector2 = arc.drawn_span()
+	assert_almost_eq(start.y - start.x, 0.0, 0.001, "nothing drawn yet")
+	arc._process(0.06)
+	var mid: Vector2 = arc.drawn_span()
+	assert_almost_eq(mid.y, 1.2, 0.001, "a backward sweep starts on the other side")
+	assert_lt(mid.x, 1.2)
+	assert_gt(mid.x, -1.2)
+	arc._process(0.1)
+	assert_eq(arc.drawn_span(), Vector2(-1.2, 1.2), "the whole arc once the sweep ends")
+	arc._process(0.1)
+	assert_false(arc.is_playing())
+
+
 func test_attack_misses_when_aiming_away() -> void:
 	var dummy: TrainingDummy = _add_dummy(Vector2(122, 100))
 	input.aim = Vector2.LEFT

@@ -60,7 +60,8 @@ func physics_update(delta: float) -> void:
 			_hit_started = true
 			hero.hitbox.activate(_attack)
 			var big: bool = _step == hero.weapon.combo.size() - 1
-			hero.swing.play(_attack.reach + _attack.radius * 0.4, 6.0 if big else 4.0, _attack.active + SLASH_LINGER)
+			hero.swing.play(_attack.reach + _attack.radius * 0.4, 6.0 if big else 4.0, _attack.active + SLASH_LINGER,
+					_attack.slash_sweep, _attack.slash_arc, big)
 		hero.velocity = _move_velocity + _dir * _attack.lunge_speed * 0.5
 	else:
 		hero.hitbox.deactivate()

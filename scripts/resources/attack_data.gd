@@ -22,6 +22,13 @@ extends Resource
 ## Camera shake trauma added on hit (0 to 1).
 @export var shake: float = 0.0
 
+@export_group("Slash")
+## Which way a melee slash sweeps: 1 clockwise, -1 the other way, 0 all at once. Steps of
+## a combo alternate so each swing reads as its own.
+@export var slash_sweep: float = 1.0
+## Half the slash's angle in radians (1.2 is about 140 degrees in all).
+@export var slash_arc: float = 1.2
+
 @export_group("Status")
 ## Status this hit applies (&"burn", &"chill", &"root"; see StatusEffects). Empty for none.
 @export var status: StringName = &""
