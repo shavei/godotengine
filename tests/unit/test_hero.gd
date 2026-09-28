@@ -62,6 +62,22 @@ func test_steers_while_attacking() -> void:
 	assert_gt(hero.position.y, 110.0, "moved down during the swing")
 
 
+func test_turns_toward_aim_while_swinging() -> void:
+	input.aim = Vector2.RIGHT
+	input.press(&"attack")
+	await wait_physics_frames(2)
+	assert_true(hero.state_machine.is_in(&"Attack"))
+	input.aim = Vector2.DOWN
+	await wait_physics_frames(2)
+	assert_true(hero.state_machine.is_in(&"Attack"), "still swinging")
+	assert_eq(hero.facing, Vector2.DOWN, "the hero turns during the swing")
+	assert_almost_eq(hero.weapon_pivot.rotation, 0.0, 0.01, "the strike stays where it was aimed")
+	var first: AttackData = hero.weapon.combo[0]
+	await wait_physics_frames(int((first.active + 0.08) * 60.0) + 2)
+	assert_true(hero.state_machine.is_in(&"Attack"), "still in recovery")
+	assert_almost_eq(hero.weapon_pivot.rotation, Vector2.DOWN.angle(), 0.01, "the weapon follows the aim after the strike")
+
+
 func test_attack_move_scale_zero_roots_the_swing() -> void:
 	hero.balance = hero.balance.duplicate()
 	hero.balance.attack_move_scale = 0.0
@@ -206,7 +222,7 @@ func test_stick_attack_turns_toward_close_target() -> void:
 	input.aim = Vector2.RIGHT.rotated(deg_to_rad(25))
 	input.press(&"attack")
 	await wait_physics_frames(3)
-	assert_almost_eq(hero.facing.angle(), 0.0, 0.01)
+	assert_almost_eq(hero.weapon_pivot.rotation, 0.0, 0.01)
 
 
 func test_mouse_attack_is_not_assisted() -> void:
@@ -215,7 +231,7 @@ func test_mouse_attack_is_not_assisted() -> void:
 	input.aim = Vector2.RIGHT.rotated(deg_to_rad(25))
 	input.press(&"attack")
 	await wait_physics_frames(3)
-	assert_almost_eq(hero.facing.angle(), deg_to_rad(25), 0.01)
+	assert_almost_eq(hero.weapon_pivot.rotation, deg_to_rad(25), 0.01)
 
 
 func test_hits_and_getting_hit_rumble() -> void:

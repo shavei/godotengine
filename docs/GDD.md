@@ -536,7 +536,7 @@ Live values are in `data/balance/balance_default.tres` and `data/weapons/weapon_
 - A flask charge is used when the heal lands. Getting hit while drinking cancels the drink and keeps the charge.
 - Enemies do not crit unless their data says so.
 - The hero rolls through enemy bodies during a dodge (walls still block).
-- The hero can move while swinging (at the speed above); the swing's direction stays where it was aimed.
+- The hero can move and turn while swinging (at the speed above); only the strike (hitbox and slash) stays where it was aimed. The weapon and aim dot follow the aim again once the slash fades, and each new swing takes the current aim.
 - The hero slides along walls at any angle, never sticks on a wall it touches at a slant.
 - **Facing and aim:** with no aim input the hero faces where the move stick points, but only when it is pushed past half tilt, so letting go of the stick never turns the hero. A released right stick keeps its aim for 0.25 s (flick, then attack). A mouse cursor within 6 px of the hero keeps the last aim.
 - **Stick aim assist:** with a gamepad, a new swing turns toward the target closest to the aim line within 30 degrees either side and 64 px (owner set it back from a 60 degree, 84 px trial). Mouse aim is never assisted. Set the angle to 0 to turn it off.
