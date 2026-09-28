@@ -78,6 +78,7 @@ func _ready() -> void:
 	village = GameState.profile.village
 	balance = hero.balance
 	hero.apply_progress(GameState.hero_state(hero.player_id))
+	hero.stamina.unlimited = true
 	if SceneRouter.context.get("from", "") == "shrine":
 		hero.position = $Spots/Shrine.position + SHRINE_STEP
 	hero.reset_physics_interpolation()

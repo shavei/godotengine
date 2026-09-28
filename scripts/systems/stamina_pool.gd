@@ -9,6 +9,9 @@ var maximum: float
 var current: float
 var regen_per_second: float
 var regen_delay: float
+## True: every spend succeeds and takes nothing (the village, where nothing can hurt you
+## and no stamina bar shows).
+var unlimited: bool = false
 
 var _delay_left: float = 0.0
 
@@ -21,13 +24,15 @@ func _init(max_value: float = 100.0, regen: float = 40.0, delay: float = 0.5) ->
 
 
 func can_spend(amount: float) -> bool:
-	return current >= amount
+	return unlimited or current >= amount
 
 
 ## Spends `amount` if there is enough. Returns false (and spends nothing) otherwise.
 func try_spend(amount: float) -> bool:
 	if not can_spend(amount):
 		return false
+	if unlimited:
+		return true
 	current -= amount
 	_delay_left = regen_delay
 	changed.emit(current, maximum)

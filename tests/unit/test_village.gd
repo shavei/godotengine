@@ -208,6 +208,13 @@ func test_walking_off_a_villager_brings_back_the_welcome_line() -> void:
 	assert_eq(scene.sign_label.text, "Welcome home to Emberwick.")
 
 
+func test_the_hero_never_runs_out_of_stamina_in_the_village() -> void:
+	var scene: Village = await _open()
+	assert_true(scene.hero.stamina.unlimited, "no stamina bar shows in the village, so there is no limit")
+	for i: int in 10:
+		assert_true(scene.hero.stamina.try_spend(scene.balance.dodge_stamina_cost))
+
+
 func test_the_sign_and_help_lines_never_cover_walkable_ground() -> void:
 	var scene: Village = await _open()
 	var sign_top: float = scene.camera.limit_bottom + scene.sign_label.offset_top

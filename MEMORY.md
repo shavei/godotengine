@@ -165,6 +165,7 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-28 | Playtest builds: Windows and Linux release exports with the PCK embedded, made by a GitHub workflow (by hand or on a `v*` tag); release builds hide the test rooms and debug tools; macOS later | The owner is on Windows; builds from CI need no local export templates. macOS needs signing and notarization to open without warnings. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 | 2026-09-28 | Village camera may look `HUD_BAND` (32 px) below the room; the sign and help lines sit over the bottom wall and the dark below it | Owner's screenshots: captions near the bottom (the gate, Maren's Use hint) hid under the sign. Moving one caption fixed one spot; the band fixes every spot, since a 3-line sign now ends above the floor's bottom edge. |
+| 2026-09-28 | Unlimited stamina and no stamina bar in the village (`StaminaPool.unlimited`); runs keep the bar and the limit | Owner: pick one, the village had a hidden limit with no bar. Nothing can hurt you in the village (a cozy place), so a limit there only gets in the way. Raids (M6) get their own HUD. |
 
 ## Rejected ideas (do not re-propose without new info)
 
@@ -211,6 +212,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-28 (village stamina):** Owner: the village had limited stamina but no bar, pick one. Chose unlimited with no bar: `StaminaPool.unlimited`, set by the village. GDD 13 notes it. 535 tests pass (2 new).
 
 - **2026-09-28 (village fixes 2):** Owner's second village screenshot: Maren's Use hint hid under a 2-line sign, the hero covered Maren's name, and the sign kept Brann's line after walking away. `Village.HUD_BAND` (camera `limit_bottom`), `Villager.name_position()` (above the head while the spot is occupied), `Village._say_for` / `_speaker` (walking off the spot that spoke brings back `welcome()`). 533 tests pass (2 new), no warnings, boot clean, checked with xvfb screenshots.
 
