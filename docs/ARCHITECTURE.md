@@ -78,7 +78,7 @@ res://
 |---|---|---|
 | `EventBus` | Global signals only (`power_given`, `villager_ranked_up`, `technique_learned`, `run_ended`, `raid_started` ...) | No |
 | `ContentDB` | Loads every `.tres` under `data/` at boot, indexes by id, validates references | No |
-| `GameState` | Owns the current `ProfileState` (heroes by `player_id`; the village joins in M4) and the `RunState` in progress (`GameState.run`, null outside runs). Loads the profile at boot, saves it after a run, and writes, loads and deletes the mid-run save | Via `ProfileState.heroes` and `RunState`, keyed by id |
+| `GameState` | Owns the current `ProfileState` (heroes by `player_id`, and the shared village) and the `RunState` in progress (`GameState.run`, null outside runs). Loads the profile at boot, saves it after a run, and writes, loads and deletes the mid-run save | Via `ProfileState.heroes` and `RunState`, keyed by id |
 | `SaveManager` | Serialize/deserialize `ProfileState` to JSON, versioned, with migrations and backup slot | No |
 | `SceneRouter` | Scene transitions (fade), passes a context dictionary to the next scene | No |
 | `AudioManager` | Music layers (village layering by powered villagers), SFX pools, buses | No |
@@ -111,26 +111,30 @@ class_name PowerData extends Resource   # built in M3 PR 1
 # Level 5 group (M3 PR 2): level5_attack, level5_radius, level5_duration, level5_interval, level5_spread
 # Later: raid_spell_scene (M6)
 
-class_name VillagerData extends Resource
+class_name VillagerData extends Resource   # built in M4 PR 1
 @export var id: StringName            # &"smith"
-@export var display_name: String
-@export var job_name: String
+@export var display_name: String      # "Brann"
+@export var job_name: String          # "Smith"
+@export var workplace: String         # "Forge" (a BuildingData with levels in M6)
 @export var base_service: ServiceData
-@export var workplace: BuildingData
+@export var color: Color              # placeholder body color until sprites
 @export var arrives_at_renown: int
-@export var sprite_frames: SpriteFrames
-@export var visual_variants: Dictionary   # power_id -> palette/prop overrides
+@export var home_plot: int            # plot taken on arrival if free
+@export var greeting: String
+# Later: sprite_frames, visual_variants (power_id -> palette/prop overrides) in M7
 
-class_name ComboData extends Resource     # one per villager+power (64)
+class_name ComboData extends Resource     # one per villager+power (64); 16 prototype ones in M4 PR 1
+@export var id: StringName            # &"smith_fire" (ComboData.id_for(villager, power))
 @export var villager_id: StringName
 @export var power_id: StringName
 @export var novice: ServiceData
 @export var adept: ServiceData
-@export var technique: TechniqueData
-@export var gift_line: String         # villager line at the ceremony
-@export var master_line: String
+@export var technique_name: String    # text stub until `technique: TechniqueData` (M5)
+@export var technique_text: String
+@export var gift_line: String         # villager line when given the power
+# Later: master_line (M5)
 
-class_name ServiceData extends Resource
+class_name ServiceData extends Resource  # M4 PR 1: description only; modifiers in PR 2
 @export var description: String
 @export var modifiers: Array[ModifierData]  # stat changes applied to hero, run or village
 @export var shop_items: Array[Resource]
@@ -191,7 +195,7 @@ var last_leveled_run: int      # fusion tie-break
 
 class_name VillageState extends RefCounted
 var villagers: Array[VillagerState]
-var plots: Dictionary          # plot_id -> villager index or -1
+var plot_count: int            # 6 at the start
 var buildings: Dictionary      # building_id -> level
 var damaged_buildings: Array[StringName]
 var renown_points: int
@@ -199,16 +203,16 @@ var runs_until_raid: int
 
 class_name VillagerState extends RefCounted
 var villager_id: StringName
+var plot: int                  # the house plot they live on
 var is_apprentice: bool
 var power_id: StringName       # &"" if none
-var training_points: int
-var rank: int                  # 0 none, 1 Novice, 2 Adept, 3 Master
+var training_points: int       # rank is TrainingSystem.rank(): 0 none, 1 Novice, 2 Adept, 3 Master
 var technique_taught: bool
 ```
 
 `RunState` (`scripts/state/run_state.gd`) holds only the current run: region, seed, floor, `FloorMap`, current room (-1 = the floor's corridor), path, rooms cleared, time played, and per-hero carry-over (hp, flasks, the run loot `Wallet`, XP earned, damage dealt per weapon; later trinkets, fusion meter) keyed by `player_id`. It is saved at room boundaries for crash safety but is not part of long-term progression.
 
-**Built so far (M2 PR 4):** `ProfileState` holds `run_count`, `runs_won` and `heroes` (player_id -> `HeroState`). `HeroState` holds level, XP toward the next level, unspent attribute points, attributes, weapon mastery XP and `bank` (a `Wallet` of banked coins, materials, Crystal and shards; the `coins`, `materials` and `shards` fields above are this one Wallet). Both have `to_dict()` / `from_dict()`. `RunState.to_dict()` / `from_dict(data, region)` is the mid-run save; the floor map is rebuilt from the seed, so only ids are stored. M3 PR 1: `HeroState.kept_powers` (`KeptPower`: power_id, level, last_leveled_run) in slot order, saved with the hero. M3 PR 3: `HeroState.power_offer` (power ids): the region boss's orbs until one is taken, then the taken power until it is kept, merged or left; saved with the hero so a quit never loses it.
+**Built so far (M2 PR 4):** `ProfileState` holds `run_count`, `runs_won` and `heroes` (player_id -> `HeroState`). `HeroState` holds level, XP toward the next level, unspent attribute points, attributes, weapon mastery XP and `bank` (a `Wallet` of banked coins, materials, Crystal and shards; the `coins`, `materials` and `shards` fields above are this one Wallet). Both have `to_dict()` / `from_dict()`. `RunState.to_dict()` / `from_dict(data, region)` is the mid-run save; the floor map is rebuilt from the seed, so only ids are stored. M3 PR 1: `HeroState.kept_powers` (`KeptPower`: power_id, level, last_leveled_run) in slot order, saved with the hero. M3 PR 3: `HeroState.power_offer` (power ids): the region boss's orbs until one is taken, then the taken power until it is kept, merged, given or left; saved with the hero so a quit never loses it. M4 PR 1: `ProfileState.village` (`VillageState`: `plot_count` and `villagers`, each a `VillagerState` with villager_id, plot, power_id, training_points). `VillageState.admit(roster, renown_level)` moves in villagers whose Renown level is reached (home plot if free); `GameState` calls it for a new profile and after loading, so old saves get the starting villagers. Buildings, damaged buildings, Renown and raid timing join later.
 
 ---
 
@@ -216,12 +220,12 @@ var technique_taught: bool
 
 | System | API sketch | Notes |
 |---|---|---|
-| `GiftSystem` | `can_keep(hero, power) -> bool`, `keep(hero, power)`, `give(village, hero, power, villager_idx)`, `merge(hero, power)` | Enforces slot cap, one power per villager, TP carry-over `level - 1`. Emits via returned result, callers emit `EventBus` signals. Built (M3 PR 1): `slot_count`, `find`, `can_keep`/`keep`, `can_merge`/`merge` (+1 level up to the cap), `release` (frees a slot). M3 PR 2: `level_up_cost`, `can_level_up`/`level_up` (spends banked Power Shards for +1 level; callers emit `EventBus.power_leveled`). M3 PR 3: `replace(hero, old, new)` (every slot full: the new power takes the old one's slot at level 1). `give` joins in M4. |
+| `GiftSystem` | `can_keep(hero, power) -> bool`, `keep(hero, power)`, `give(village, hero, power, villager_idx)`, `merge(hero, power)` | Enforces slot cap, one power per villager, TP carry-over `level - 1`. Emits via returned result, callers emit `EventBus` signals. Built (M3 PR 1): `slot_count`, `find`, `can_keep`/`keep`, `can_merge`/`merge` (+1 level up to the cap), `release` (frees a slot). M3 PR 2: `level_up_cost`, `can_level_up`/`level_up` (spends banked Power Shards for +1 level; callers emit `EventBus.power_leveled`). M3 PR 3: `replace(hero, old, new)` (every slot full: the new power takes the old one's slot at level 1). M4 PR 1: `starting_tp(level)`, `can_give`, `open_villagers`, `give(village, villager_idx, power, level)`, `give_kept(village, hero, power, villager_idx)` (leaves its slot, keeps its level), `give_kept_to_make_room(village, hero, old, new, villager_idx)`. |
 | `PowerOffer` | `rng_for(run_seed)`, `roll(pool, hero, balance, rng)`, `take`, `is_picking`, `waiting_power`, `choice_for` (KEEP, MERGE, REPLACE, MAXED), `clear` | The region boss's reward (M3 PR 3): `boss_orb_count` different powers from `RegionData.power_pool`, seeded by the run; a kept power at the level cap is offered only when too few others are left. `RunEnd.finish` rolls it on a clear. |
 | `PowerRules` | `level_multiplier`, `attack_at_level(power, level)`, `scaled_attack(attack, level)`, `has_upgrade(level, 3 or 5)`, `level_up_cost(level)`, `total_cost(level)`, `focus_damage_bonus`, `cooldown(power, focus)` | Power damage, upgrade, shard cost and cooldown math (GDD 4.1, 4.3). |
 | `PowerLoadout` | `set_powers`, `slot(i)`, `is_ready`, `start_cooldown`, `cooldown_fraction`, `tick` | A hero's power slots in a fight: power, level, cooldown. The hero ticks it, the HUD draws it. |
 | `StatusEffects` | `apply(id, count)`, `add_stagger`, `tick -> burn damage`, `move_scale`, `action_scale`, `is_held` | Burn, Chill/Freeze, Root, Stagger/Stun and the boss rules (GDD 7.3). `StatusComponent` wraps one per actor. |
-| `TrainingSystem` | `tick(village, balance) -> Array[RankUpEvent]` | +1 TP each powered villager, applies threshold reductions, returns rank-ups and techniques to teach. |
+| `TrainingSystem` | `tick(village, balance) -> Array[RankUpEvent]` | +1 TP each powered villager, applies threshold reductions, returns rank-ups and techniques to teach. Built (M4 PR 1): `rank(villager, balance)`, `rank_for_points`, `rank_name` (thresholds `adept_tp`, `master_tp` in `BalanceData`); `tick` joins in M5. |
 | `FusionSystem` | `get_active_fusion(hero) -> FusionData` | Two highest-level distinct kept powers, both >= 3, tie-break by `last_leveled_run`. |
 | `NeighborSystem` | `get_active_bonuses(village) -> Array[ServiceData]` | Plot adjacency graph from the village map resource; Adept+ checks; Resonance. |
 | `RenownSystem` | `add(village, reason)`, `level_for(points)`, `new_unlocks(before, after)` | Drives villager arrivals and region unlocks. |
@@ -253,7 +257,7 @@ main.tscn (boot: ContentDB load, SaveManager load)
 
 `SceneRouter.go(scene_path, context: Dictionary)` handles fades and passes context (region id, seed, results).
 
-**Runs (M2):** starting a run puts a `RunState` in `GameState.run`. `room.tscn` (`RunRoom`) reads it and builds the current room: the floor's safe corridor, a fight (`WaveDirector` with the encounter from `RunGenerator.pick_encounter`, a seeded pillar layout), a Rest room, or a signpost for room types not built yet. When the room is done, doors in the top wall open, one per next room, left to right in map lane order, each signed with its room type. Walking into a door saves the hero's HP and flasks to the `RunState`, moves it, and reloads `room.tscn`. The floor exit opens stairs to the next floor's corridor. Every room saves the run as it loads (mid-run save). A cleared fight adds XP to the run; hero hits add weapon damage. When the region boss falls, or the hero does, `RunEnd.finish` banks the run at once, the profile is saved, the run save is deleted, and `results.tscn` (`ResultsScreen`) opens with the `RunSummary` in the router context. After a clear the boss room shows the power orbs (`InteractSpot`s of kind `power_orb`); the hero takes one first. Results then continue to `choice_screen.tscn` (`ChoiceScreen`, M3 PR 3: the keep screen, Give joins in M4) while `HeroState.power_offer` is not empty: take an orb if none was taken, then Keep, Merge, let a kept power go (full slots) or leave it. The title shows "A power is waiting" for an offer left unsettled. Esc is Save and quit: the title then shows Continue run. `RunMap` (`scenes/ui/run_map.tscn`) draws the floor map; the Map action toggles it. Playing `room.tscn` alone (F6) starts a test run.
+**Runs (M2):** starting a run puts a `RunState` in `GameState.run`. `room.tscn` (`RunRoom`) reads it and builds the current room: the floor's safe corridor, a fight (`WaveDirector` with the encounter from `RunGenerator.pick_encounter`, a seeded pillar layout), a Rest room, or a signpost for room types not built yet. When the room is done, doors in the top wall open, one per next room, left to right in map lane order, each signed with its room type. Walking into a door saves the hero's HP and flasks to the `RunState`, moves it, and reloads `room.tscn`. The floor exit opens stairs to the next floor's corridor. Every room saves the run as it loads (mid-run save). A cleared fight adds XP to the run; hero hits add weapon damage. When the region boss falls, or the hero does, `RunEnd.finish` banks the run at once, the profile is saved, the run save is deleted, and `results.tscn` (`ResultsScreen`) opens with the `RunSummary` in the router context. After a clear the boss room shows the power orbs (`InteractSpot`s of kind `power_orb`); the hero takes one first. Results then continue to the village (`village.tscn`, M4 PR 1), where the Shrine glows while `HeroState.power_offer` is not empty and opens `choice_screen.tscn` (`ChoiceScreen`): take an orb if none was taken, then Keep, Merge, Give to a villager, give a kept power away to make room (full slots), or leave it. The Choice screen returns to the village. The title goes to the village (its line says when a power waits at the Shrine); the village gate starts a run or continues the saved one. Esc is Save and quit: the title then shows Continue run. `RunMap` (`scenes/ui/run_map.tscn`) draws the floor map; the Map action toggles it. Playing `room.tscn` alone (F6) starts a test run.
 
 ---
 
@@ -288,6 +292,7 @@ main.tscn (boot: ContentDB load, SaveManager load)
 
 ## 8. Village
 
+- **Built so far (M4 PR 1):** `village.tscn` (`Village`): a placeholder ground (`PlaceholderRoom`, 30x17 tiles) with 6 `VillagePlot`s (index, draws the resident's house in their color, with the workplace sign; a gift trims the roof in the power's color; houses block like walls), one `Villager` (`villager.tscn`: placeholder body, name and rank at the feet, a glow and icon in the power's color, an `InteractSpot` without a ring to talk) in front of each lived-in plot, and `InteractSpot`s for the Shrine (opens the Choice screen), the gate (starts or continues a run) and the notice board (village news until raid warnings in M6). The hero walks it with the combat controls; Esc goes to the title.
 - Tile-based map (`TileMapLayer`) with **plot** nodes; plot adjacency defined in a `VillageLayoutData` resource (list of plot ids and edges) so `NeighborSystem` can use it without scenes.
 - Villager visuals update from `VillagerState` (power palette swap via shader uniform, prop sprites per rank).
 - Village music layers: `AudioManager` enables one stem per powered villager.

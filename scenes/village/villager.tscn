@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/village/villager.gd" id="1_villager"]
+[ext_resource type="Script" path="res://scenes/run/interact_spot.gd" id="2_spot"]
+
+[node name="Villager" type="Node2D"]
+script = ExtResource("1_villager")
+
+[node name="Spot" type="Area2D" parent="."]
+position = Vector2(0, 6)
+script = ExtResource("2_spot")

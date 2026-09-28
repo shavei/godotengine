@@ -4,11 +4,10 @@ extends Control
 ## weapon mastery, and the loot found and kept. Level-ups give attribute points to spend
 ## here, and banked Power Shards level up kept powers (docs/GDD.md Section 4.3).
 ## Reads SceneRouter.context["summary"] (a RunSummary for the local hero).
-## Continue goes to the Choice screen while a boss's power offer waits, else to the
-## title until the village exists (M4).
+## Continue goes back to the village, where the Shrine glows while a boss's power offer
+## waits (docs/GDD.md Section 3.1).
 
-const TITLE_SCENE: String = "res://scenes/main/title.tscn"
-const CHOICE_SCENE: String = "res://scenes/ui/choice_screen.tscn"
+const VILLAGE_SCENE: String = "res://scenes/village/village.tscn"
 const GOLD: Color = Color(1, 0.78, 0.45)
 const INK: Color = Color(0.95, 0.9, 0.78)
 const DIM: Color = Color(0.72, 0.67, 0.6)
@@ -155,7 +154,7 @@ func _build() -> void:
 
 	_continue = Button.new()
 	_continue.name = "ContinueButton"
-	_continue.text = "Choose your power" if not hero.power_offer.is_empty() else "Continue"
+	_continue.text = "Back to the village: a power waits" if not hero.power_offer.is_empty() else "Back to the village"
 	_continue.add_theme_font_size_override("font_size", 10)
 	_continue.pressed.connect(continue_on)
 	_place(_continue, Vector2(250, 320), Vector2(140, 24), false)
@@ -254,9 +253,9 @@ func continue_on() -> void:
 	SceneRouter.go(next_scene(), {"player_id": summary.player_id})
 
 
-## The Choice screen while a power offer waits, else the title.
+## Always the village; the Shrine there opens the Choice.
 func next_scene() -> String:
-	return CHOICE_SCENE if not hero.power_offer.is_empty() else TITLE_SCENE
+	return VILLAGE_SCENE
 
 
 func _loot_rows() -> Array[StringName]:

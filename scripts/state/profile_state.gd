@@ -1,11 +1,12 @@
 class_name ProfileState
 extends RefCounted
 ## Everything a save slot keeps between runs (docs/ARCHITECTURE.md Section 4.2).
-## Heroes are keyed by player_id; player 0 is the local owner. The village joins in M4.
+## Heroes are keyed by player_id; player 0 is the local owner. The village is shared.
 
 var run_count: int = 0
 var runs_won: int = 0
 var heroes: Dictionary[int, HeroState] = {}
+var village: VillageState = VillageState.new()
 
 
 ## The hero's progress. Made fresh (level 1) the first time it is asked for.
@@ -23,6 +24,7 @@ func to_dict() -> Dictionary:
 		"run_count": run_count,
 		"runs_won": runs_won,
 		"heroes": hero_data,
+		"village": village.to_dict(),
 	}
 
 
@@ -34,4 +36,6 @@ static func from_dict(data: Dictionary) -> ProfileState:
 	for key: Variant in hero_data:
 		if hero_data[key] is Dictionary:
 			profile.heroes[int(str(key))] = HeroState.from_dict(hero_data[key])
+	var village_data: Variant = data.get("village", {})
+	profile.village = VillageState.from_dict(village_data if village_data is Dictionary else {})
 	return profile

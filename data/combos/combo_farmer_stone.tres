@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ComboData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/combo_data.gd" id="1_combo"]
+[ext_resource type="Script" path="res://scripts/resources/service_data.gd" id="2_service"]
+
+[sub_resource type="Resource" id="Resource_novice"]
+script = ExtResource("2_service")
+description = "Terraces: +40 coins every run."
+
+[sub_resource type="Resource" id="Resource_adept"]
+script = ExtResource("2_service")
+description = "+80 coins and +10 Wood every run."
+
+[resource]
+script = ExtResource("1_combo")
+id = &"farmer_stone"
+villager_id = &"farmer"
+power_id = &"stone"
+novice = SubResource("Resource_novice")
+adept = SubResource("Resource_adept")
+technique_name = "Rooted Stance"
+technique_text = "You cannot be knocked back while attacking."
+gift_line = "Terraces on the hill! The slope will pay us in coin now."

@@ -1,6 +1,7 @@
 extends GutTest
-## The Choice screen (keep screen in M3): take one orb, then keep, merge, let a kept
-## power go, or leave the new power behind.
+## The Choice screen: take one orb, then keep, merge, give to a villager, give a kept
+## power away to make room (or let it go when no villager is free), or leave the new
+## power behind. With no offer, the Shrine gives kept powers away.
 
 const CHOICE_SCENE: PackedScene = preload("res://scenes/ui/choice_screen.tscn")
 
@@ -37,6 +38,16 @@ func _button(screen: ChoiceScreen, node_name: String) -> Button:
 
 func _text(screen: ChoiceScreen, node_name: String) -> String:
 	return (screen.find_child(node_name, true, false) as Label).text
+
+
+func _village() -> VillageState:
+	return GameState.profile.village
+
+
+## Every villager holds a power, so nobody can take a gift.
+func _fill_villagers() -> void:
+	for villager: VillagerState in _village().villagers:
+		villager.power_id = &"stone"
 
 
 func _ids() -> Array:
@@ -90,6 +101,7 @@ func test_merge_raises_the_kept_power() -> void:
 
 
 func test_full_slots_let_a_kept_power_go_after_a_second_press() -> void:
+	_fill_villagers()
 	for id: StringName in [&"fire", &"frost", &"stone"]:
 		hero.kept_powers.append(KeptPower.create(id, 2))
 	hero.power_offer = [&"growth"] as Array[StringName]
@@ -108,6 +120,7 @@ func test_full_slots_let_a_kept_power_go_after_a_second_press() -> void:
 
 
 func test_arming_another_button_disarms_the_first() -> void:
+	_fill_villagers()
 	for id: StringName in [&"fire", &"frost", &"stone"]:
 		hero.kept_powers.append(KeptPower.create(id, 1))
 	hero.power_offer = [&"growth"] as Array[StringName]
@@ -159,3 +172,127 @@ func test_slots_show_kept_powers_and_empty_slots() -> void:
 	assert_eq(slots.get_child_count(), 3)
 	assert_eq((slots.get_child(0).get_child(0) as Label).text, "Stone  lv 4\nBulwark")
 	assert_eq((slots.get_child(1).get_child(0) as Label).text, "Empty slot")
+
+
+# --- Give (M4) ------------------------------------------------------------------
+
+func test_give_shows_villager_cards_with_previews() -> void:
+	hero.power_offer = [&"fire"] as Array[StringName]
+	var screen: ChoiceScreen = await _open()
+	_button(screen, "GiveButton").pressed.emit()
+	await wait_process_frames(1)
+	assert_eq(_text(screen, "Headline"), "Give Fire to a villager")
+	var smith: Button = _button(screen, "SmithCard")
+	assert_not_null(smith)
+	for id: String in ["FarmerCard", "GuardCard", "HealerCard"]:
+		assert_not_null(_button(screen, id), id)
+	var novice: Label = smith.find_child("Novice", true, false) as Label
+	assert_true(novice.text.begins_with("Novice: Sells a Fire infusion"), novice.text)
+	assert_eq((smith.find_child("Master", true, false) as Label).text, "Master: ???", "Techniques stay hidden until the Codex")
+	assert_null(smith.find_child("Start", true, false), "a level 1 gift starts at 0 TP")
+	assert_false(screen.find_child("Slots", true, false).visible, "cards cover the slot row")
+	assert_eq(screen.get_viewport().gui_get_focus_owner(), smith, "the first card has focus")
+
+
+func test_giving_needs_a_second_press_and_is_forever() -> void:
+	hero.power_offer = [&"growth"] as Array[StringName]
+	watch_signals(EventBus)
+	var screen: ChoiceScreen = await _open()
+	_button(screen, "GiveButton").pressed.emit()
+	await wait_process_frames(1)
+	var farmer: Button = _button(screen, "FarmerCard")
+	farmer.pressed.emit()
+	assert_false(_village().find(&"farmer").has_power(), "the first press only arms the card")
+	assert_eq(_text(screen, "Note"), "Press again to give Growth to Tilly the Farmer. It is theirs forever.")
+	farmer.pressed.emit()
+	await wait_process_frames(1)
+	var state: VillagerState = _village().find(&"farmer")
+	assert_eq(state.power_id, &"growth")
+	assert_eq(state.training_points, 0)
+	assert_true(hero.power_offer.is_empty())
+	assert_true(hero.kept_powers.is_empty(), "a gift is not kept")
+	assert_signal_emitted_with_parameters(EventBus, "power_given", [0, &"growth", _village().index_of(&"farmer")])
+	assert_eq(_text(screen, "Subline"), "Tilly the Farmer now holds Growth.")
+	assert_true(_text(screen, "Note").begins_with("\"Look, the seeds"), "the villager's line")
+	assert_not_null(_button(screen, "ContinueButton"))
+
+
+func test_a_villager_with_a_power_cannot_take_another() -> void:
+	_village().find(&"smith").power_id = &"frost"
+	hero.power_offer = [&"fire"] as Array[StringName]
+	var screen: ChoiceScreen = await _open()
+	_button(screen, "GiveButton").pressed.emit()
+	await wait_process_frames(1)
+	var smith: Button = _button(screen, "SmithCard")
+	assert_true(smith.disabled)
+	assert_eq(screen.get_viewport().gui_get_focus_owner(), _button(screen, "FarmerCard"), "focus skips a villager who cannot take it")
+	assert_eq((smith.find_child("Holds", true, false) as Label).text, "Holds Frost (Novice).")
+	assert_false(screen.give(_village().index_of(&"smith")))
+	assert_eq(_village().find(&"smith").power_id, &"frost")
+
+
+func test_back_returns_to_the_offer() -> void:
+	hero.power_offer = [&"fire"] as Array[StringName]
+	var screen: ChoiceScreen = await _open()
+	_button(screen, "GiveButton").pressed.emit()
+	await wait_process_frames(1)
+	_button(screen, "BackButton").pressed.emit()
+	await wait_process_frames(1)
+	assert_eq(_text(screen, "Headline"), "A new power: Fire")
+	assert_not_null(_button(screen, "KeepButton"))
+
+
+func test_no_free_villager_hides_give() -> void:
+	_fill_villagers()
+	hero.power_offer = [&"fire"] as Array[StringName]
+	var screen: ChoiceScreen = await _open()
+	assert_null(_button(screen, "GiveButton"))
+	assert_not_null(_button(screen, "KeepButton"))
+
+
+func test_full_slots_give_a_kept_power_away_to_make_room() -> void:
+	for id: StringName in [&"fire", &"frost", &"stone"]:
+		hero.kept_powers.append(KeptPower.create(id, 3))
+	hero.power_offer = [&"growth"] as Array[StringName]
+	watch_signals(EventBus)
+	var screen: ChoiceScreen = await _open()
+	assert_null(_button(screen, "LetFrostGoButton"), "a free villager means no power is simply lost")
+	_button(screen, "GiveKeptButton").pressed.emit()
+	await wait_process_frames(1)
+	assert_eq(_text(screen, "Headline"), "Give a kept power away")
+	assert_eq(_text(screen, "Subline"), "Growth takes its slot at level 1.")
+	_button(screen, "GiveFrostButton").pressed.emit()
+	await wait_process_frames(1)
+	assert_eq(_text(screen, "Headline"), "Give Frost to a villager")
+	var guard: Button = _button(screen, "GuardCard")
+	assert_eq((guard.find_child("Start", true, false) as Label).text, "Starts at 2 TP (Novice).", "level 3 carries 2 TP")
+	guard.pressed.emit()
+	guard.pressed.emit()
+	await wait_process_frames(1)
+	assert_eq(_village().find(&"guard").power_id, &"frost")
+	assert_eq(_village().find(&"guard").training_points, 2)
+	assert_eq(_ids(), [&"fire", &"growth", &"stone"], "Growth takes Frost's slot")
+	assert_true(hero.power_offer.is_empty())
+	assert_signal_emitted_with_parameters(EventBus, "power_kept", [0, &"growth"])
+	assert_eq(_text(screen, "Subline"), "Maren the Guard now holds Frost. Growth takes its slot.")
+
+
+func test_the_shrine_gives_a_kept_power_away_with_no_offer() -> void:
+	hero.kept_powers.append(KeptPower.create(&"stone", 5))
+	var screen: ChoiceScreen = await _open()
+	assert_eq(_text(screen, "Headline"), "No power is waiting")
+	_button(screen, "GiveStoneButton").pressed.emit()
+	await wait_process_frames(1)
+	var healer: Button = _button(screen, "HealerCard")
+	assert_eq((healer.find_child("Start", true, false) as Label).text, "Starts at 4 TP (Adept).")
+	healer.pressed.emit()
+	healer.pressed.emit()
+	await wait_process_frames(1)
+	assert_eq(_village().find(&"healer").power_id, &"stone")
+	assert_eq(_village().find(&"healer").training_points, 4)
+	assert_true(hero.kept_powers.is_empty())
+	assert_eq(_text(screen, "Subline"), "Osk the Healer now holds Stone.")
+
+
+func test_continue_goes_back_to_the_village() -> void:
+	assert_eq(ChoiceScreen.VILLAGE_SCENE, "res://scenes/village/village.tscn")

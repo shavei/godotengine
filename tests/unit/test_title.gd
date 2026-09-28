@@ -89,22 +89,21 @@ func test_continue_run_shows_only_with_a_saved_run() -> void:
 	var continue_button: Button = with_run.get_node("%ContinueButton")
 	assert_true(continue_button.visible)
 	assert_true(continue_button.has_focus(), "Continue is the first choice")
-	assert_eq(with_run.get_node("%RunButton").text, "Start a new run")
+	assert_true(with_run.get_node("%VillageButton").visible)
 	assert_true(with_run.get_node("%Profile").text.begins_with("Level "))
 	SaveManager.delete_slot(GameState.slot)
 	SaveManager.save_dir = original_dir
 
 
-func test_a_waiting_power_shows_first() -> void:
-	assert_false(title.get_node("%ClaimButton").visible, "no offer, no button")
+func test_a_waiting_power_is_mentioned_and_the_village_comes_first() -> void:
 	var original_profile: ProfileState = GameState.profile
 	GameState.new_profile()
 	GameState.hero_state(GameState.LOCAL_PLAYER_ID).power_offer = [&"fire"] as Array[StringName]
 	var with_offer: Control = TITLE_SCENE.instantiate()
 	viewport.add_child(with_offer)
 	await wait_process_frames(2)
-	var claim: Button = with_offer.get_node("%ClaimButton")
-	assert_true(claim.visible)
-	assert_true(claim.has_focus(), "the waiting power is the first choice")
-	assert_true(claim.pressed.is_connected(with_offer._on_claim_pressed))
+	assert_true(with_offer.get_node("%Profile").text.ends_with("A power waits at the Shrine."))
+	var village: Button = with_offer.get_node("%VillageButton")
+	assert_true(village.has_focus() or with_offer.get_node("%ContinueButton").visible, "the village is the first choice")
+	assert_true(village.pressed.is_connected(with_offer._on_village_pressed))
 	GameState.profile = original_profile
