@@ -197,14 +197,14 @@ func test_ember_bolt_hits_and_burns() -> void:
 
 
 func test_level_and_focus_raise_power_damage() -> void:
-	_equip([&"fire"], 3)
+	_equip([&"fire"], 2)
 	hero.power_stats.damage_bonus = 0.1
 	var dummy: TrainingDummy = _dummy(Vector2(180, 100))
 	input.aim = Vector2.RIGHT
 	await _cast(0)
 	await wait_physics_frames(25)
-	# 20 * 1.4 (level 3) * 1.1 (Focus) = 30.8 -> 31
-	assert_eq(dummy.health.max_hp - dummy.health.hp, 31)
+	# 20 * 1.2 (level 2, no explosion yet) * 1.1 (Focus) = 26.4 -> 26
+	assert_eq(dummy.health.max_hp - dummy.health.hp, 26)
 
 
 func test_frost_shards_fan_out_and_freeze_up_close() -> void:
@@ -296,7 +296,7 @@ func test_bramble_heals_the_hero_inside_then_withers() -> void:
 	await wait_seconds(2.0)
 	assert_between(hero.health.hp, hero.health.max_hp - 27, hero.health.max_hp - 25, "about 2 HP a second")
 	await wait_seconds(2.5)
-	var patches: Array[Node] = world.get_children().filter(func(n: Node) -> bool: return n is BramblePatch)
+	var patches: Array[Node] = world.get_children().filter(func(n: Node) -> bool: return n is PowerPatch)
 	assert_eq(patches.size(), 0, "the patch withers")
 
 
@@ -308,6 +308,250 @@ func test_stagger_stun_interrupts_a_boss() -> void:
 	assert_true(toad.status.has(StatusEffects.STUN))
 	assert_eq((toad.ai as MotherToadAI).phase, MotherToadAI.Phase.IDLE)
 	assert_false(toad.hitbox.active)
+
+
+# --- Level 3 and 5 upgrades (docs/CONTENT.md Section 1) ------------------------
+
+func _patches() -> Array[PowerPatch]:
+	var list: Array[PowerPatch] = []
+	for node: Node in world.get_children():
+		if node is PowerPatch:
+			list.append(node)
+	return list
+
+
+func _break_shield() -> void:
+	var hit: HitboxComponent = HitboxComponent.new()
+	world.add_child(hit)
+	var attack: AttackData = AttackData.new()
+	attack.damage = 50.0
+	hit.attack = attack
+	hero.hurtbox.receive_hit(hit)
+
+
+func test_every_prototype_power_has_its_upgrade_numbers() -> void:
+	assert_not_null(_power(&"fire").level3_attack, "Fire explodes")
+	assert_not_null(_power(&"fire").level5_attack, "Fire leaves burning ground")
+	assert_gt(_power(&"fire").level5_duration, 0.0)
+	assert_not_null(_power(&"frost").level5_attack, "Frost shatters")
+	assert_not_null(_power(&"stone").level3_attack, "Stone throws spikes")
+	assert_gt(_power(&"stone").level3_count, 0)
+	assert_gt(_power(&"growth").level3_area_scale, 1.0, "Growth grows bigger")
+	assert_gt(_power(&"growth").level3_duration_scale, 1.0, "and lasts longer")
+	assert_not_null(_power(&"growth").level5_attack, "Growth roots deal damage")
+	assert_gt(_power(&"growth").level5_spread, 1.0, "and spread")
+
+
+func test_upgrade_hits_scale_with_level() -> void:
+	var balance: BalanceData = BalanceData.new()
+	var blast: AttackData = PowerRules.scaled_attack(_power(&"fire").level3_attack, 3, balance)
+	assert_almost_eq(blast.damage, _power(&"fire").level3_attack.damage * 1.4, 0.001)
+	assert_null(PowerRules.scaled_attack(null, 3, balance))
+	assert_false(PowerRules.has_upgrade(2, 3))
+	assert_true(PowerRules.has_upgrade(3, 3))
+	assert_false(PowerRules.has_upgrade(4, 5))
+
+
+func test_ember_bolt_level_1_hits_only_its_target() -> void:
+	_equip([&"fire"], 1)
+	var target: TrainingDummy = _dummy(Vector2(180, 100))
+	var beside: TrainingDummy = _dummy(Vector2(185, 125))
+	input.aim = Vector2.RIGHT
+	await _cast(0)
+	await wait_physics_frames(25)
+	assert_eq(target.health.hp, target.health.max_hp - 20)
+	assert_eq(beside.health.hp, beside.health.max_hp, "no explosion before level 3")
+
+
+func test_ember_bolt_level_3_explodes_on_impact() -> void:
+	_equip([&"fire"], 3)
+	var target: TrainingDummy = _dummy(Vector2(180, 100))
+	var beside: TrainingDummy = _dummy(Vector2(185, 125))
+	input.aim = Vector2.RIGHT
+	await _cast(0)
+	await wait_physics_frames(25)
+	# Bolt 20 * 1.4 = 28, explosion 8 * 1.4 = 11.2 -> 11.
+	assert_eq(target.health.hp, target.health.max_hp - 39)
+	assert_eq(beside.health.hp, beside.health.max_hp - 11, "the blast reaches the enemy beside it")
+	assert_true(beside.status.has(StatusEffects.BURN), "and burns it")
+	assert_eq(_patches().size(), 0, "burning ground waits for level 5")
+
+
+func test_ember_bolt_level_3_explodes_on_a_wall() -> void:
+	_equip([&"fire"], 3)
+	var wall: StaticBody2D = StaticBody2D.new()
+	var shape: CollisionShape2D = CollisionShape2D.new()
+	var rect: RectangleShape2D = RectangleShape2D.new()
+	rect.size = Vector2(16, 80)
+	shape.shape = rect
+	wall.add_child(shape)
+	wall.position = Vector2(200, 100)
+	world.add_child(wall)
+	var near_wall: TrainingDummy = _dummy(Vector2(180, 122))
+	input.aim = Vector2.RIGHT
+	await _cast(0)
+	await wait_physics_frames(30)
+	assert_eq(near_wall.health.hp, near_wall.health.max_hp - 11, "the bolt bursts against the wall")
+
+
+func test_ember_bolt_level_5_leaves_burning_ground() -> void:
+	_equip([&"fire"], 5)
+	var target: TrainingDummy = _dummy(Vector2(180, 100))
+	input.aim = Vector2.RIGHT
+	await _cast(0)
+	await wait_physics_frames(25)
+	var patches: Array[PowerPatch] = _patches()
+	assert_eq(patches.size(), 1)
+	if patches.is_empty():
+		return
+	assert_false(patches[0].vines, "flames, not vines")
+	assert_almost_eq(patches[0].current_radius(), _power(&"fire").level5_radius, 0.01)
+	assert_eq(patches[0].heal_per_second, 0.0, "burning ground never heals")
+	assert_true(target.status.has(StatusEffects.BURN))
+	await wait_seconds(_power(&"fire").level5_duration + 0.6)
+	assert_eq(_patches().size(), 0, "it burns out")
+
+
+func test_frost_level_1_shards_stop_at_the_first_enemy() -> void:
+	_equip([&"frost"], 1)
+	var front: TrainingDummy = _dummy(Vector2(140, 100))
+	var back: TrainingDummy = _dummy(Vector2(220, 100))
+	input.aim = Vector2.RIGHT
+	await _cast(0)
+	await wait_physics_frames(30)
+	assert_lt(front.health.hp, front.health.max_hp)
+	assert_eq(back.health.hp, back.health.max_hp)
+
+
+func test_frost_level_3_shards_pierce() -> void:
+	_equip([&"frost"], 3)
+	var front: TrainingDummy = _dummy(Vector2(140, 100))
+	var back: TrainingDummy = _dummy(Vector2(220, 100))
+	input.aim = Vector2.RIGHT
+	await _cast(0)
+	await wait_physics_frames(30)
+	assert_lt(front.health.hp, front.health.max_hp)
+	assert_eq(back.health.hp, back.health.max_hp - 14, "the middle shard flies on: 10 * 1.4")
+
+
+func test_frost_level_5_shatters_a_frozen_enemy() -> void:
+	_equip([&"frost"], 5)
+	var frozen: TrainingDummy = _dummy(Vector2(128, 100))
+	var beside: TrainingDummy = _dummy(Vector2(128, 128))
+	input.aim = Vector2.RIGHT
+	await _cast(0)
+	await wait_physics_frames(20)
+	assert_true(frozen.status.has(StatusEffects.FREEZE), "the shatter does not end the freeze")
+	# 3 shards of 18, plus one shatter of 15 * 1.8 = 27.
+	assert_eq(frozen.health.hp, frozen.health.max_hp - 54 - 27, "one shatter per enemy per cast")
+	assert_eq(beside.health.hp, beside.health.max_hp - 27, "the shatter hits around it")
+
+
+func test_frost_level_4_does_not_shatter() -> void:
+	_equip([&"frost"], 4)
+	var frozen: TrainingDummy = _dummy(Vector2(128, 100))
+	var beside: TrainingDummy = _dummy(Vector2(128, 128))
+	input.aim = Vector2.RIGHT
+	await _cast(0)
+	await wait_physics_frames(20)
+	assert_true(frozen.status.has(StatusEffects.FREEZE))
+	assert_eq(beside.health.hp, beside.health.max_hp)
+
+
+func test_bulwark_level_3_burst_throws_spikes() -> void:
+	_equip([&"stone"], 3)
+	var far: TrainingDummy = _dummy(Vector2(165, 100))
+	await _cast(0)
+	_break_shield()
+	await wait_physics_frames(30)
+	var spikes: int = world.get_children().filter(func(n: Node) -> bool: return n is PowerProjectile).size()
+	assert_eq(far.health.hp, far.health.max_hp - 11, "out of the burst, but a spike (8 * 1.4) reaches it")
+	assert_eq(spikes, 0, "the spikes are gone by now")
+
+
+func test_bulwark_level_1_burst_throws_no_spikes() -> void:
+	_equip([&"stone"], 1)
+	var far: TrainingDummy = _dummy(Vector2(165, 100))
+	await _cast(0)
+	_break_shield()
+	await wait_physics_frames(30)
+	assert_eq(far.health.hp, far.health.max_hp)
+
+
+func _arrow_at(pos: Vector2, dir: Vector2) -> ThornArrow:
+	var arrow: ThornArrow = load("res://scenes/actors/enemy/thorn_arrow.tscn").instantiate()
+	world.add_child(arrow)
+	arrow.global_position = pos
+	arrow.launch(dir, ContentDB.get_item(&"enemies", &"thorn_archer") as EnemyData, CombatStats.new())
+	return arrow
+
+
+func test_bulwark_level_5_reflects_arrows() -> void:
+	_equip([&"stone"], 5)
+	var archer_spot: TrainingDummy = _dummy(Vector2(240, 100))
+	await _cast(0)
+	var arrow: ThornArrow = _arrow_at(Vector2(190, 100), Vector2.LEFT)
+	var shield: int = hero.health.shield
+	await wait_seconds(0.5)
+	assert_true(is_instance_valid(arrow) and arrow.is_reflected(), "turned back at the shield")
+	assert_eq(hero.health.shield, shield, "the shield took nothing")
+	await wait_seconds(1.0)
+	var arrow_damage: int = roundi((ContentDB.get_item(&"enemies", &"thorn_archer") as EnemyData).attack.damage)
+	assert_eq(archer_spot.health.hp, archer_spot.health.max_hp - arrow_damage, "and it hits enemies now")
+
+
+func test_bulwark_level_4_does_not_reflect() -> void:
+	_equip([&"stone"], 4)
+	await _cast(0)
+	var arrow: ThornArrow = _arrow_at(Vector2(190, 100), Vector2.LEFT)
+	await wait_seconds(0.6)
+	assert_false(is_instance_valid(arrow) and arrow.is_reflected())
+	assert_lt(hero.health.shield, 30, "the shield soaked the arrow")
+
+
+func test_bramble_level_3_is_bigger_and_lasts_longer() -> void:
+	_equip([&"growth"], 3)
+	await _cast(0)
+	var patches: Array[PowerPatch] = _patches()
+	assert_eq(patches.size(), 1)
+	if patches.is_empty():
+		return
+	var growth: PowerData = _power(&"growth")
+	assert_almost_eq(patches[0].current_radius(), growth.area_radius * growth.level3_area_scale, 0.01)
+	assert_almost_eq(patches[0].duration, growth.area_duration * growth.level3_duration_scale, 0.01)
+	assert_null(patches[0].damage_attack, "no root damage before level 5")
+
+
+func test_bramble_level_5_roots_deal_damage_and_spread() -> void:
+	_equip([&"growth"], 5)
+	var inside: TrainingDummy = _dummy(Vector2(130, 100))
+	await _cast(0)
+	var patch: PowerPatch = _patches()[0]
+	var start: float = patch.current_radius()
+	await wait_seconds(2.1)
+	# 3 * 1.8 = 5.4 -> 5 a second, starting at once: 3 hits so far.
+	assert_eq(inside.health.hp, inside.health.max_hp - 15)
+	assert_true(inside.status.has(StatusEffects.ROOT))
+	assert_gt(patch.current_radius(), start + 5.0, "the patch spreads")
+
+
+func test_tuning_room_sets_the_trial_power_level() -> void:
+	var room: Node = load("res://scenes/run/tuning_room.tscn").instantiate()
+	add_child_autofree(room)
+	await wait_physics_frames(2)
+	var room_hero: Hero = room.get_node("Actors/Hero")
+	room.toggle_power(&"fire")
+	room.cycle_power_level()
+	room.cycle_power_level()
+	TuningPanel.close()
+	assert_eq(room_hero.powers.slot(0).level, 3)
+	room.toggle_power(&"frost")
+	TuningPanel.close()
+	assert_eq(room_hero.powers.slot(1).level, 3, "a power turned on takes the chosen level")
+	for i: int in 3:
+		room.cycle_power_level()
+	TuningPanel.close()
+	assert_eq(room.trial_level, 1, "wraps from 5 back to 1")
 
 
 # --- HUD ----------------------------------------------------------------------

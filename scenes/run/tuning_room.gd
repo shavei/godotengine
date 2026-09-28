@@ -2,7 +2,8 @@ extends Node2D
 ## Tuning room: a safe place to tune combat feel with a controller.
 ## Start (or Esc) opens the tuning menu, which pauses the game. The menu can spawn a
 ## round of Mossy Hollow enemies or one of its bosses, turn powers on and off (up to the
-## 3 kept slots, like a real hero), save the results, or go back to the title.
+## 3 kept slots, like a real hero), set their level (1 to 5, to try the level 3 and 5
+## upgrades for free), save the results, or go back to the title.
 
 const TITLE_SCENE: String = "res://scenes/main/title.tscn"
 const RESPAWN_DELAY: float = 1.5
@@ -21,6 +22,8 @@ const TRY_POWERS: Array[StringName] = [&"fire", &"frost", &"stone", &"growth"]
 var _test_waves: EncounterData
 ## A stand-in hero for trying powers; slot rules come from GiftSystem.
 var _trial: HeroState = HeroState.new()
+## Level of every trial power.
+var trial_level: int = 1
 
 
 func _ready() -> void:
@@ -57,6 +60,7 @@ func open_menu() -> void:
 		if power != null:
 			var state: String = "on" if GiftSystem.find(_trial, power_id) != null else "off"
 			actions.append(["%s (%s): %s" % [power.display_name, power.ability_name, state], toggle_power.bind(power_id)])
+	actions.append(["Power level: %d (press to change)" % trial_level, cycle_power_level])
 	actions.append(["Back to title", _go_to_title])
 	TuningPanel.open(actions)
 
@@ -67,8 +71,21 @@ func toggle_power(power_id: StringName) -> void:
 		GiftSystem.release(_trial, power_id)
 	elif GiftSystem.keep(_trial, power_id, hero.balance) == null:
 		TuningPanel.status_text = "All %d slots are full. Turn a power off first." % GiftSystem.slot_count(hero.balance)
-	hero.equip_powers(_trial.kept_powers)
+	_equip_trial()
 	open_menu()
+
+
+## Raises every trial power one level, wrapping from the cap back to 1.
+func cycle_power_level() -> void:
+	trial_level = trial_level % hero.balance.power_level_cap + 1
+	_equip_trial()
+	open_menu()
+
+
+func _equip_trial() -> void:
+	for kept: KeptPower in _trial.kept_powers:
+		kept.level = trial_level
+	hero.equip_powers(_trial.kept_powers)
 
 
 ## Starts the Mossy Hollow test waves, unless enemies are already out.

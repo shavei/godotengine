@@ -107,6 +107,8 @@ class_name PowerData extends Resource   # built in M3 PR 1
 @export var level5_text: String
 # Projectile group: projectile_count, spread_degrees, projectile_speed, projectile_range, projectile_size
 # Area group: area_radius, area_duration, area_interval, shield_amount, heal_per_second
+# Level 3 group (M3 PR 2): level3_attack, level3_count, level3_area_scale, level3_duration_scale
+# Level 5 group (M3 PR 2): level5_attack, level5_radius, level5_duration, level5_interval, level5_spread
 # Later: raid_spell_scene (M6)
 
 class_name VillagerData extends Resource
@@ -214,8 +216,8 @@ var technique_taught: bool
 
 | System | API sketch | Notes |
 |---|---|---|
-| `GiftSystem` | `can_keep(hero, power) -> bool`, `keep(hero, power)`, `give(village, hero, power, villager_idx)`, `merge(hero, power)` | Enforces slot cap, one power per villager, TP carry-over `level - 1`. Emits via returned result, callers emit `EventBus` signals. Built (M3 PR 1): `slot_count`, `find`, `can_keep`/`keep`, `can_merge`/`merge` (+1 level up to the cap), `release` (frees a slot); `give` joins in M4. |
-| `PowerRules` | `level_multiplier`, `attack_at_level(power, level)`, `focus_damage_bonus`, `cooldown(power, focus)` | Power damage and cooldown math (GDD 4.1, 4.3). |
+| `GiftSystem` | `can_keep(hero, power) -> bool`, `keep(hero, power)`, `give(village, hero, power, villager_idx)`, `merge(hero, power)` | Enforces slot cap, one power per villager, TP carry-over `level - 1`. Emits via returned result, callers emit `EventBus` signals. Built (M3 PR 1): `slot_count`, `find`, `can_keep`/`keep`, `can_merge`/`merge` (+1 level up to the cap), `release` (frees a slot). M3 PR 2: `level_up_cost`, `can_level_up`/`level_up` (spends banked Power Shards for +1 level; callers emit `EventBus.power_leveled`). `give` joins in M4. |
+| `PowerRules` | `level_multiplier`, `attack_at_level(power, level)`, `scaled_attack(attack, level)`, `has_upgrade(level, 3 or 5)`, `level_up_cost(level)`, `total_cost(level)`, `focus_damage_bonus`, `cooldown(power, focus)` | Power damage, upgrade, shard cost and cooldown math (GDD 4.1, 4.3). |
 | `PowerLoadout` | `set_powers`, `slot(i)`, `is_ready`, `start_cooldown`, `cooldown_fraction`, `tick` | A hero's power slots in a fight: power, level, cooldown. The hero ticks it, the HUD draws it. |
 | `StatusEffects` | `apply(id, count)`, `add_stagger`, `tick -> burn damage`, `move_scale`, `action_scale`, `is_held` | Burn, Chill/Freeze, Root, Stagger/Stun and the boss rules (GDD 7.3). `StatusComponent` wraps one per actor. |
 | `TrainingSystem` | `tick(village, balance) -> Array[RankUpEvent]` | +1 TP each powered villager, applies threshold reductions, returns rank-ups and techniques to teach. |
@@ -277,7 +279,7 @@ main.tscn (boot: ContentDB load, SaveManager load)
 | 8 | Pickups |
 | 9 | Buildings (raids) |
 
-- **Abilities:** `PowerData.ability_script` names an `Ability` (`scripts/abilities/`, a `RefCounted` with `cast(hero, power, level, aim)`), made fresh per cast by `Hero.cast_power`. It reads every number from the `PowerData`, scales damage with `PowerRules`, and spawns effect scenes from `scenes/abilities/`: `PowerProjectile` (bolts, shards), `PowerBurst` (a ring hit), `BramblePatch` (a lingering area), `StoneShield` (a shield on the hero using `HealthComponent.shield`). Power hitboxes use `Hero.power_stats` (crit and Focus, no weapon tier), so power damage never counts toward weapon mastery. Kept powers reach the hero through `Hero.apply_progress` -> `equip_powers(kept_powers)` -> `PowerLoadout`; the HUD shows one `PowerSlotView` per slot.
+- **Abilities:** `PowerData.ability_script` names an `Ability` (`scripts/abilities/`, a `RefCounted` with `cast(hero, power, level, aim)`), made fresh per cast by `Hero.cast_power`. It reads every number from the `PowerData`, scales damage with `PowerRules`, and spawns effect scenes from `scenes/abilities/`: `PowerProjectile` (bolts, shards), `PowerBurst` (a ring hit), `PowerPatch` (a lingering area: status pulses, an optional damage hit, heal, spread; Bramble and Fire's burning ground), `StoneShield` (a shield on the hero using `HealthComponent.shield`; emits `burst`, and with `reflects` turns `ThornArrow`s in the `enemy_projectiles` group back as hero hits). Level 3 and 5 upgrades are in the same Ability script (`PowerRules.has_upgrade`); their numbers are `PowerData.level3_*` and `level5_*` (an extra `AttackData` each plus a few sizes and times), so tuning an upgrade is data only. Power hitboxes use `Hero.power_stats` (crit and Focus, no weapon tier), so power damage never counts toward weapon mastery. Kept powers reach the hero through `Hero.apply_progress` -> `equip_powers(kept_powers)` -> `PowerLoadout`; the HUD shows one `PowerSlotView` per slot.
 - **Statuses:** a hit's `AttackData` can carry `status`, `status_stacks` and `stagger`; `HurtboxComponent.receive_hit` passes them to its linked `StatusComponent` (`receive_status` does it without damage, for areas). `StatusComponent` ticks a pure `StatusEffects`, deals burn damage to its `HealthComponent` and emits `burned` and `staggered`. `Enemy` scales its AI clock by `action_scale()` (chill), its own movement by `move_scale()` (chill, root), and holds the AI while frozen or stunned (`EnemyAI.interrupt()` once, `can_be_held()` lets Mother Toad finish a leap). `StatusBadge` draws pips and the stagger bar.
 - **Game feel:** hit-stop (`HitStop.request()`, an `Engine.time_scale` pulse; the newest request restores speed, and `HitStop.enabled` is the accessibility toggle), hit flash shader (`assets/shaders/hit_flash.gdshader`, material local to scene), screen shake (`GameCamera` listens to `EventBus.camera_shake_requested(trauma)`), damage numbers (`DamageNumber.spawn()`).
 

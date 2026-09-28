@@ -78,10 +78,10 @@ Split into small PRs, each playable: (1) floor maps, doors and the room flow, (2
 Split into small PRs, each playable: (1) powers, abilities (level 1), statuses, HUD slots, keep and merge rules (try them in the Tuning room), (2) level 3 and 5 upgrades, Power Shard costs and leveling on the results screen, Focus unlocked, (3) boss reward orbs and the keep screen, so runs earn powers.
 
 - [x] `PowerData` resources for Fire, Frost, Growth, Stone [P].
-- [ ] Ability base class and 4 abilities with levels 1, 3, 5 behaviors. (Base class and level 1 done in PR 1.)
+- [x] Ability base class and 4 abilities with levels 1, 3, 5 behaviors. (Level 1 in PR 1, levels 3 and 5 in PR 2.)
 - [x] Status effects: Burn, Chill/Freeze, Root, Stagger (+ boss rules).
 - [x] 3 power slots on the HUD with cooldowns.
-- [ ] Power Shards spending UI (level up at the Shrine or run end).
+- [x] Power Shards spending UI (level up at the Shrine or run end). (Results screen in PR 2; the Shrine joins in M4.)
 - [ ] Boss reward: 2 power orbs, pick 1.
 - [x] `GiftSystem.keep` and `merge` with unit tests (slot cap, merge level-up).
 

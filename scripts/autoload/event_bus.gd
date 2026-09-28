@@ -10,6 +10,8 @@ extends Node
 signal power_kept(player_id: int, power_id: StringName)
 signal power_given(player_id: int, power_id: StringName, villager_index: int)
 signal power_merged(player_id: int, power_id: StringName, new_level: int)
+## A kept power was raised a level with Power Shards.
+signal power_leveled(player_id: int, power_id: StringName, new_level: int)
 
 # Village
 signal villager_ranked_up(villager_index: int, new_rank: int)

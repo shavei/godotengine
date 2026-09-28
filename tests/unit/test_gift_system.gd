@@ -82,3 +82,41 @@ func test_kept_powers_survive_a_save_round_trip() -> void:
 func test_old_saves_without_kept_powers_load_empty() -> void:
 	var loaded: HeroState = HeroState.from_dict({"level": 3})
 	assert_eq(loaded.kept_powers.size(), 0)
+
+
+# --- Leveling with Power Shards (docs/GDD.md Section 4.3) ---------------------
+
+func test_shard_costs_match_the_gdd() -> void:
+	assert_eq(PowerRules.level_up_cost(1, balance), 3, "level 2")
+	assert_eq(PowerRules.level_up_cost(2, balance), 5, "level 3")
+	assert_eq(PowerRules.level_up_cost(3, balance), 8, "level 4")
+	assert_eq(PowerRules.level_up_cost(4, balance), 12, "level 5")
+	assert_eq(PowerRules.level_up_cost(5, balance), 0, "no level past the cap")
+	assert_eq(PowerRules.total_cost(5, balance), 28, "28 in total")
+	assert_eq(PowerRules.total_cost(3, balance), 8)
+
+
+func test_level_up_spends_banked_shards() -> void:
+	GiftSystem.keep(hero, &"fire", balance)
+	hero.bank.add(Wallet.SHARDS, 10)
+	assert_eq(GiftSystem.level_up_cost(hero, &"fire", balance), 3)
+	assert_eq(GiftSystem.level_up(hero, &"fire", balance, 4), 2)
+	assert_eq(hero.bank.amount(Wallet.SHARDS), 7)
+	assert_eq(GiftSystem.find(hero, &"fire").last_leveled_run, 4, "Fusion tie-break is kept up to date")
+	assert_eq(GiftSystem.level_up(hero, &"fire", balance), 3)
+	assert_eq(hero.bank.amount(Wallet.SHARDS), 2)
+	assert_false(GiftSystem.can_level_up(hero, &"fire", balance), "level 4 costs 8")
+	assert_eq(GiftSystem.level_up(hero, &"fire", balance), 0)
+	assert_eq(hero.bank.amount(Wallet.SHARDS), 2, "nothing spent on a refused level")
+
+
+func test_level_up_needs_a_kept_power_below_the_cap() -> void:
+	hero.bank.add(Wallet.SHARDS, 100)
+	assert_false(GiftSystem.can_level_up(hero, &"frost", balance), "not kept")
+	assert_eq(GiftSystem.level_up_cost(hero, &"frost", balance), 0)
+	GiftSystem.keep(hero, &"frost", balance)
+	for i: int in 4:
+		GiftSystem.level_up(hero, &"frost", balance)
+	assert_eq(GiftSystem.find(hero, &"frost").level, 5)
+	assert_eq(hero.bank.amount(Wallet.SHARDS), 100 - 28)
+	assert_false(GiftSystem.can_level_up(hero, &"frost", balance), "capped at 5")

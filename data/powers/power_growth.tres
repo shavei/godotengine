@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="PowerData" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="PowerData" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/power_data.gd" id="1_power"]
 [ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="2_attack"]
@@ -11,6 +11,13 @@ reach = 0.0
 radius = 40.0
 knockback = 0.0
 status = &"root"
+
+[sub_resource type="Resource" id="Resource_thorns"]
+script = ExtResource("2_attack")
+damage = 3.0
+reach = 0.0
+radius = 40.0
+knockback = 0.0
 
 [resource]
 script = ExtResource("1_power")
@@ -29,3 +36,8 @@ area_radius = 40.0
 area_duration = 4.0
 area_interval = 0.25
 heal_per_second = 2.0
+level3_area_scale = 1.4
+level3_duration_scale = 1.5
+level5_attack = SubResource("Resource_thorns")
+level5_interval = 1.0
+level5_spread = 1.5
