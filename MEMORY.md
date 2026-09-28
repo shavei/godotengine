@@ -166,6 +166,7 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 | 2026-09-28 | Village camera may look `HUD_BAND` (32 px) below the room; the sign and help lines sit over the bottom wall and the dark below it | Owner's screenshots: captions near the bottom (the gate, Maren's Use hint) hid under the sign. Moving one caption fixed one spot; the band fixes every spot, since a 3-line sign now ends above the floor's bottom edge. |
 | 2026-09-28 | Unlimited stamina and no stamina bar in the village (`StaminaPool.unlimited`); runs keep the bar and the limit | Owner: pick one, the village had a hidden limit with no bar. Nothing can hurt you in the village (a cozy place), so a limit there only gets in the way. Raids (M6) get their own HUD. |
+| 2026-09-28 | Gamepad B is "back" in every menu (`ui_cancel` = Escape or B), next to A on a focused Close / Continue button | Owner (checklist B5): the forge closed with A on Close but not with B. Godot 4.7's default `ui_cancel` is Escape only. The Xbox convention is A to confirm, B to go back. Not remappable (fixed menu keys, like `ui_accept`). |
 
 ## Rejected ideas (do not re-propose without new info)
 
@@ -212,6 +213,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-28 (B to go back):** Owner started `docs/PLAYTEST_CHECKLIST.md`. B5: the forge must close with B too. Added gamepad B to `ui_cancel` in `project.godot`, which also makes B back out of the character sheet, Shrine, results, Controls and tuning menus. 537 tests pass (2 new; the forge test fails on the old input map).
 
 - **2026-09-28 (village stamina):** Owner: the village had limited stamina but no bar, pick one. Chose unlimited with no bar: `StaminaPool.unlimited`, set by the village. GDD 13 notes it. 535 tests pass (2 new).
 

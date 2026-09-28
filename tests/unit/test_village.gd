@@ -286,6 +286,20 @@ func test_talking_to_the_smith_opens_the_forge_and_steel_can_be_bought() -> void
 	assert_true(scene.hero.is_physics_processing())
 
 
+
+func test_gamepad_b_closes_the_forge() -> void:
+	var scene: Village = await _open()
+	scene.talk(scene.find_child("VillagerSmith", true, false) as Villager)
+	await wait_process_frames(1)
+	assert_not_null(scene.shop)
+	var press: InputEventJoypadButton = InputEventJoypadButton.new()
+	press.button_index = JOY_BUTTON_B
+	press.pressed = true
+	get_viewport().push_input(press)
+	await wait_process_frames(1)
+	assert_null(scene.shop, "B backs out of a menu, like Escape")
+
+
 func test_a_smith_with_a_power_sells_the_infusion_once() -> void:
 	var village: VillageState = GameState.profile.village
 	GiftSystem.give(village, village.index_of(&"smith"), &"fire")
