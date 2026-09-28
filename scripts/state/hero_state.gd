@@ -1,7 +1,7 @@
 class_name HeroState
 extends RefCounted
 ## One hero's long-term progress (docs/ARCHITECTURE.md Section 4.2): level, XP,
-## attributes, weapon mastery, banked loot and kept powers. ProfileState keeps one per
+## attributes, weapon mastery, banked loot, kept powers and a boss's power offer. ProfileState keeps one per
 ## player_id. Techniques join in M5. GiftSystem enforces the kept power rules.
 
 const MIGHT: StringName = &"might"
@@ -21,6 +21,9 @@ var weapon_mastery: Dictionary[StringName, int] = {}
 var bank: Wallet = Wallet.new()
 ## Kept powers in slot order (at most BalanceData.kept_power_slots).
 var kept_powers: Array[KeptPower] = []
+## The region boss's power orbs not settled yet (PowerOffer): two or more to pick from,
+## then the one taken until it is kept, merged or left behind. Empty most of the time.
+var power_offer: Array[StringName] = []
 
 
 func attribute(attribute_id: StringName) -> int:
@@ -46,6 +49,7 @@ func to_dict() -> Dictionary:
 		"weapon_mastery": mastery,
 		"bank": bank.to_dict(),
 		"kept_powers": kept_powers.map(func(kept: KeptPower) -> Dictionary: return kept.to_dict()),
+		"power_offer": power_offer.map(func(id: StringName) -> String: return String(id)),
 	}
 
 
@@ -66,4 +70,8 @@ static func from_dict(data: Dictionary) -> HeroState:
 			var kept: KeptPower = KeptPower.from_dict(entry)
 			if kept.power_id != &"":
 				hero.kept_powers.append(kept)
+	for entry: Variant in data.get("power_offer", []):
+		var power_id: StringName = StringName(str(entry))
+		if power_id != &"" and not hero.power_offer.has(power_id):
+			hero.power_offer.append(power_id)
 	return hero

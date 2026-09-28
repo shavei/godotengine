@@ -82,7 +82,8 @@ Split into small PRs, each playable: (1) powers, abilities (level 1), statuses, 
 - [x] Status effects: Burn, Chill/Freeze, Root, Stagger (+ boss rules).
 - [x] 3 power slots on the HUD with cooldowns.
 - [x] Power Shards spending UI (level up at the Shrine or run end). (Results screen in PR 2; the Shrine joins in M4.)
-- [ ] Boss reward: 2 power orbs, pick 1.
+- [x] Boss reward: 2 power orbs, pick 1. (PR 3: orbs in the boss room, then the keep screen after the results: Keep, Merge, let a kept power go, or Leave. Give joins in M4.)
+- [ ] Owner plays full runs, earns powers and checks the done criteria below.
 - [x] `GiftSystem.keep` and `merge` with unit tests (slot cap, merge level-up).
 
 **Done when:** you can earn powers from bosses, keep up to 3, level them with shards, and they feel distinct in combat.

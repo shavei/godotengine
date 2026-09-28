@@ -4,11 +4,11 @@ Persistent project memory. Read at the start of every session, update at the end
 
 ## Current status
 
-- **Phase:** M0 done. M1 (combat core) code done; only the owner's gamepad playtest item is still open. M2 (run structure): all 4 PRs merged (the owner's run-length and death-rule answers are still welcome). M3 (kept powers): PR 1 (powers, level 1 abilities, statuses, HUD slots, keep/merge rules) merged; PR 2 (level 3 and 5 upgrades, shard costs, leveling on the results screen, Focus unlocked, shard drops cut) open for the owner to play in the Tuning room.
+- **Phase:** M0 done. M1 (combat core) code done; only the owner's gamepad playtest item is still open. M2 (run structure): all 4 PRs merged (the owner's run-length and death-rule answers are still welcome). M3 (kept powers): PR 1 (powers, level 1 abilities, statuses, HUD slots, keep/merge rules) and PR 2 (level 3 and 5 upgrades, shard costs, leveling on the results screen, Focus unlocked, shard drops cut) merged; PR 3 (boss power orbs and the keep screen) open: real runs now earn powers.
 - **Also:** Controls remapping menu (title > Controls) added at the owner's request, ahead of the M7 Settings menu.
-- **Next step:** Owner tries each power at levels 3 and 5 in the Tuning room (menu: Power level) and answers the M3 PR 2 questions in the session log (the PR 1 questions still welcome). Then M3 PR 3 (boss orbs and the keep screen), which lets real runs earn powers.
+- **Next step:** Owner plays a few full runs with M3 PR 3: clear the Warden, take an orb, keep or merge it on the keep screen, and checks the M3 done criteria (earn powers, keep up to 3, level with shards, powers feel distinct). Answers to the PR 3 questions in the session log (PR 1 and 2 questions still welcome). Then M4 (village and the Choice).
 - **Also:** Combat feel pass (merged): quick turns, swings keep momentum, stable facing, no swallowed finisher press. Owner feedback on it still welcome.
-- **Last updated:** 2026-09-28 (M3 PR 2)
+- **Last updated:** 2026-09-28 (M3 PR 3)
 
 ## The game in brief
 
@@ -117,6 +117,11 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-28 | Power Shards are spent on the results screen (one press per level, like attribute points) until the Shrine (M4); Focus unlocked for everyone | The roadmap names "run end" as a place to level. Focus waited for powers, which now exist. |
 | 2026-09-28 | Shard drops cut: elites 1 (was 1 to 2), Mother Toad 1 (was 2), Warden 2 (was 3) | Owner's full run gave 11 shards vs the 4 to 6 target; with costs (28 to max one power) that would max a power in under 3 runs. Now about 6 to 7 per cleared run. Resolves the open question. GDD 4.3, 6.2, 15.6 and 15.8 synced. |
 | 2026-09-28 | Tuning room "Power level" entry sets every trial power 1 to 5 | Real runs cannot earn powers until PR 3, and the owner should feel levels 3 and 5 without farming shards. |
+| 2026-09-28 | Prototype Mossy Hollow's power pool is all 4 [P] powers (Fire, Frost, Growth, Stone), not CONTENT's Growth, Wind, Stone | Wind does not exist and Fire and Frost only appear in later regions, so the real pool would be 2 powers and every offer the same pair (no choice). Resolves the open question. CONTENT 6.1 notes it. |
+| 2026-09-28 | Boss orbs stand in the boss room after the Warden falls; the hero takes one with Interact, the other fades; only then does Interact open the results (Esc always does) | GDD 3.1 "two power orbs appear, player picks one". Walking to an orb is diegetic (pillar 4). Interact is also how an orb is taken, so it cannot skip ahead while orbs wait. |
+| 2026-09-28 | The offer lives in `HeroState.power_offer` (saved), rolled by `RunEnd` at the clear; the keep screen (`choice_screen.tscn`) settles it after the results; the title shows "A power is waiting" if it was left unsettled | The run is banked the moment the boss dies, so the reward must be banked too: a quit or crash between the orbs and the keep screen never loses a power. The keep screen asks for an orb first if none was taken in the room. |
+| 2026-09-28 | Keep screen before the village: Keep, Merge, let a kept power go (every slot full; the new power takes its slot at level 1), Leave it behind; letting go and leaving need a second press. A power let go is lost until M4's gift flow | GDD 3.1's full-slot rule is "give one away or discard the new one"; without villagers, letting go is the stand-in. The second press stops a stray button from throwing away a leveled power. |
+| 2026-09-28 | Orbs are always different powers; a kept power at level 5 is offered only when the pool has too few others | Two copies, or a power that can only be left behind, would make the pick empty (pillar 1). One sentence, tested. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 
 ## Rejected ideas (do not re-propose without new info)
@@ -147,7 +152,7 @@ Runner-up ideas still considered original (keep for later or a future project): 
 ## Open questions
 
 - Frost up close: all 3 shards hitting one enemy is an instant freeze. Intended as a risk-for-reward, but watch whether it makes Frost the obvious keep (pillar 1).
-- Power reward pool: Mossy Hollow's pool in CONTENT is Growth, Wind, Stone, but Fire and Frost only appear in later regions, which do not exist in the prototype. Proposal for M3 PR 3: the prototype Mossy Hollow offers all 4 [P] powers.
+- Until M4, a new power with every slot full can only replace a kept power (lost) or be left. That pushes toward Leave, the "always keep what I have" habit pillar 1 warns about; M4's Give answers it. Watch whether it feels bad in M3 playtests.
 
 - Save and quit restarts the current room with full enemies. It cannot heal or duplicate loot, but a hero about to lose a fight can quit and retry it at the same HP. Acceptable for now (Hades works the same); revisit if playtests abuse it.
 
@@ -160,6 +165,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-28 (M3 PR 3):** Boss power orbs and the keep screen, so real runs earn powers. `RegionData.power_pool` (Mossy Hollow: all 4 powers), `BalanceData.boss_orb_count` (2), pure `PowerOffer` (seeded roll of different powers, take, choice_for: keep, merge, replace, maxed), `HeroState.power_offer` (saved), `RunEnd` rolls it on a clear, `GiftSystem.replace`. Boss room: two orbs (`InteractSpot` with a power icon) after the Warden; taking one fades the other. `choice_screen.tscn` (`ChoiceScreen`): pick an orb if none taken, then Keep, Merge (shows the upgrade it unlocks), let a kept power go, or Leave (second press to confirm). Results "Choose your power" leads there; title "A power is waiting" for an unsettled offer. 358 tests pass, no warnings, boot clean, checked with xvfb screenshots (orbs in the boss room, pick, full-slot replace with its confirm, merge, done). Questions for the owner: is walking to an orb clear, and do you read both before taking one? Is the keep screen clear at a glance? Does the second press on Let go / Leave feel safe or annoying? With every slot full, did you ever let a power go, or always leave the new one? Does earning a power make you want another run?
 
 - **2026-09-28 (M3 PR 2):** Level 3 and 5 upgrades for all four powers (Fire explodes, then leaves burning ground; Frost pierces, then shatters frozen enemies; Stone throws a ring of spikes, then reflects arrows and seeds; Growth grows bigger and longer, then its roots hurt and spread). `PowerData` level 3/5 fields, `PowerRules` (`scaled_attack`, `has_upgrade`, `level_up_cost`, `total_cost`), `GiftSystem.level_up` (spends banked shards), `EventBus.power_leveled`, `BalanceData.power_level_costs` (3, 5, 8, 12). `BramblePatch` generalized into `PowerPatch`. `ThornArrow.reflect`. Results screen: Focus unlocked, a row of kept powers with a level-up button each (cost shown, next upgrade explained below), focus moves to what you can still spend. Tuning room: Power level entry (1 to 5). Shard drops cut (elite 1, Mother Toad 1, Warden 2). 332 tests pass, no warnings, boot clean, checked with xvfb screenshots (results before and after spending, Fire level 5 blast and burning ground, Bramble level 5). Questions for the owner: does each upgrade feel worth its shards? Is Fire's burning ground or Bramble's spread too strong at level 5? Does the Frost shatter read (freeze first, then the burst)? Can you see arrows bounce off a level 5 Bulwark? Is the results screen still clear with the power row? Do about 6 shards a run feel stingy or right?
 

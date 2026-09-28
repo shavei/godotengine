@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="RegionData" load_steps=20 format=3]
+[gd_resource type="Resource" script_class="RegionData" load_steps=25 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/region_data.gd" id="1_region"]
 [ext_resource type="Script" path="res://scripts/resources/encounter_data.gd" id="2_encounter"]
@@ -15,6 +15,11 @@
 [ext_resource type="Script" path="res://scripts/resources/event_data.gd" id="13_event"]
 [ext_resource type="Resource" path="res://data/events/event_mossy_shrine.tres" id="14_shrine"]
 [ext_resource type="Resource" path="res://data/events/event_wishing_well.tres" id="15_well"]
+[ext_resource type="Script" path="res://scripts/resources/power_data.gd" id="16_power"]
+[ext_resource type="Resource" path="res://data/powers/power_fire.tres" id="17_fire"]
+[ext_resource type="Resource" path="res://data/powers/power_frost.tres" id="18_frost"]
+[ext_resource type="Resource" path="res://data/powers/power_growth.tres" id="19_growth"]
+[ext_resource type="Resource" path="res://data/powers/power_stone.tres" id="20_stone"]
 
 [sub_resource type="Resource" id="Resource_chest_coins"]
 script = ExtResource("12_entry")
@@ -75,3 +80,4 @@ floor_color = Color(0.2, 0.26, 0.19, 1)
 material = &"wood"
 treasure_drops = SubResource("Resource_chest")
 events = Array[ExtResource("13_event")]([ExtResource("14_shrine"), ExtResource("15_well")])
+power_pool = Array[ExtResource("16_power")]([ExtResource("17_fire"), ExtResource("18_frost"), ExtResource("19_growth"), ExtResource("20_stone")])

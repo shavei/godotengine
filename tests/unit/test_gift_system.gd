@@ -120,3 +120,17 @@ func test_level_up_needs_a_kept_power_below_the_cap() -> void:
 	assert_eq(GiftSystem.find(hero, &"frost").level, 5)
 	assert_eq(hero.bank.amount(Wallet.SHARDS), 100 - 28)
 	assert_false(GiftSystem.can_level_up(hero, &"frost", balance), "capped at 5")
+
+
+func test_replace_puts_the_new_power_in_the_old_slot() -> void:
+	for id: StringName in [&"fire", &"frost", &"stone"]:
+		GiftSystem.keep(hero, id, balance)
+	hero.kept_powers[1].level = 3
+	var gone: KeptPower = GiftSystem.replace(hero, &"frost", &"growth", 6)
+	assert_eq(gone.power_id, &"frost")
+	assert_eq(gone.level, 3)
+	assert_eq(hero.kept_powers.map(func(k: KeptPower) -> StringName: return k.power_id), [&"fire", &"growth", &"stone"])
+	assert_eq(hero.kept_powers[1].level, 1, "the new power starts at level 1")
+	assert_eq(hero.kept_powers[1].last_leveled_run, 6)
+	assert_null(GiftSystem.replace(hero, &"wind", &"frost"), "only a kept power can go")
+	assert_null(GiftSystem.replace(hero, &"fire", &"stone"), "the new power is not kept yet")

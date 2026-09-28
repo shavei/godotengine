@@ -93,3 +93,18 @@ func test_continue_run_shows_only_with_a_saved_run() -> void:
 	assert_true(with_run.get_node("%Profile").text.begins_with("Level "))
 	SaveManager.delete_slot(GameState.slot)
 	SaveManager.save_dir = original_dir
+
+
+func test_a_waiting_power_shows_first() -> void:
+	assert_false(title.get_node("%ClaimButton").visible, "no offer, no button")
+	var original_profile: ProfileState = GameState.profile
+	GameState.new_profile()
+	GameState.hero_state(GameState.LOCAL_PLAYER_ID).power_offer = [&"fire"] as Array[StringName]
+	var with_offer: Control = TITLE_SCENE.instantiate()
+	viewport.add_child(with_offer)
+	await wait_process_frames(2)
+	var claim: Button = with_offer.get_node("%ClaimButton")
+	assert_true(claim.visible)
+	assert_true(claim.has_focus(), "the waiting power is the first choice")
+	assert_true(claim.pressed.is_connected(with_offer._on_claim_pressed))
+	GameState.profile = original_profile

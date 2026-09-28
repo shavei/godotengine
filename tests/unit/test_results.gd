@@ -121,3 +121,13 @@ func test_no_kept_powers_says_so() -> void:
 	var screen: ResultsScreen = await _open(_make_summary(true))
 	assert_eq(_text(screen, "Shards"), "No kept powers yet. Power Shards: 4")
 	assert_true(screen.find_child("ContinueButton", true, false).has_focus())
+
+
+func test_continue_leads_to_the_choice_while_a_power_waits() -> void:
+	var screen: ResultsScreen = await _open(_make_summary(true))
+	assert_eq(screen.next_scene(), ResultsScreen.TITLE_SCENE)
+	screen.queue_free()
+	GameState.hero_state(0).power_offer = [&"fire", &"frost"] as Array[StringName]
+	screen = await _open(_make_summary(true))
+	assert_eq(screen.next_scene(), ResultsScreen.CHOICE_SCENE)
+	assert_eq((screen.find_child("ContinueButton", true, false) as Button).text, "Choose your power")

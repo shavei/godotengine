@@ -1,7 +1,7 @@
 class_name GiftSystem
 extends RefCounted
 ## The Choice rules (docs/GDD.md Section 3): keep a power in one of the 3 slots, or merge
-## it into the same kept power for +1 level. Kept powers also level up with banked Power
+## it into the same kept power for +1 level, or let a kept power go to make room. Kept powers also level up with banked Power
 ## Shards (GDD 4.3). Giving to villagers joins in M4.
 ## Callers emit the EventBus signals (power_kept, power_merged, power_leveled).
 
@@ -74,6 +74,16 @@ static func level_up(hero: HeroState, power_id: StringName, balance: BalanceData
 	kept.level += 1
 	kept.last_leveled_run = run_number
 	return kept.level
+
+
+## Every slot is full: `old_id` leaves its slot and `new_id` takes that same slot at
+## level 1. Returns the power let go (the gift flow in M4 hands it on), or null.
+static func replace(hero: HeroState, old_id: StringName, new_id: StringName, run_number: int = 0) -> KeptPower:
+	var old: KeptPower = find(hero, old_id)
+	if old == null or new_id == &"" or find(hero, new_id) != null:
+		return null
+	hero.kept_powers[hero.kept_powers.find(old)] = KeptPower.create(new_id, 1, run_number)
+	return old
 
 
 ## Takes a power out of its slot (the gift flow in M4 hands it on). Later slots move up.

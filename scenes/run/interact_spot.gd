@@ -1,8 +1,8 @@
 class_name InteractSpot
 extends Area2D
 ## Something in a run room the hero stands on and takes with Interact: a Rest room
-## comfort, a treasure chest, a Merchant's ware or an Event choice. The room decides
-## what happens. A disabled spot (the hero cannot pay) reports `refused` instead.
+## comfort, a treasure chest, a Merchant's ware, an Event choice or a power orb. The
+## room decides what happens. A disabled spot (the hero cannot pay) reports `refused`.
 
 signal chosen(spot: InteractSpot, hero: Hero)
 signal refused(spot: InteractSpot, hero: Hero)
@@ -15,8 +15,10 @@ const TEXT_WIDTH: float = 110.0
 var kind: StringName = &""
 var caption: String = ""
 var color: Color = Color.WHITE
-## Room data for this spot (a ware's price, an Event choice).
+## Room data for this spot (a ware's price, an Event choice, a power orb's power id).
 var payload: Variant = null
+## A PowerIcon shape drawn in the middle (power orbs), or &"" for none.
+var icon_shape: StringName = &""
 var enabled: bool = true:
 	set(value):
 		enabled = value
@@ -71,6 +73,8 @@ func _draw() -> void:
 	var glow: float = 0.5 + 0.5 * sin(_time * 3.0) if enabled else 0.0
 	draw_circle(Vector2.ZERO, RADIUS, Color(tint, 0.18 + 0.12 * glow))
 	draw_arc(Vector2.ZERO, RADIUS, 0.0, TAU, 32, tint, 2.0)
+	if icon_shape != &"":
+		PowerIcon.draw(self, icon_shape, Vector2(0, -2.0 * glow), RADIUS * 1.1, tint)
 	var font: Font = ThemeDB.fallback_font
 	var text: String = caption + ("\n" + InputBindings.hint(&"interact") if _hero != null else "")
 	var at: Vector2 = Vector2(-TEXT_WIDTH * 0.5, RADIUS + 12.0)

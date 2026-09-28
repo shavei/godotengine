@@ -90,6 +90,8 @@ You are the only hero of Emberwick, a small village at the edge of a drained lan
    - **Merge:** if you already keep the same power, merging raises it +1 level (max 5).
 4. **Gift ceremony** (5 to 8 seconds, skippable after first time): the power flows from hero to villager, the villager's sprite, workplace and shop change on screen, and the villager says a unique line.
 
+**Until the village exists (M3 build):** the orbs stand in the boss room; the hero walks to one and takes it with Interact (the other fades). After the results screen the keep screen offers Keep, Merge, or (every slot full) let a kept power go, and Leave it behind. Letting go and leaving need a second press. A power let go is lost for now; in M4 it goes to the gift flow. The offer is saved, so quitting before choosing never loses it (the title shows "A power is waiting"). The two orbs are always different powers; a kept power already at level 5 is only offered when the pool has too few others.
+
 ### 3.2 Rules
 - **Kept slots: 3.** Fixed for the whole game (Season 6 reduces it to 2).
 - **Gifts are permanent.** A villager's power can never be taken back or swapped.
@@ -628,7 +630,7 @@ Live values: `data/powers/power_*.tres` and `data/balance/balance_default.tres` 
 - Kept slots: 3. Power level cap: 5.
 - Try the powers in the Tuning room (title screen): the menu turns each one on or off, up to the 3 slots.
 - Try the powers in the Tuning room at any level: the menu's "Power level" entry sets every trial power from 1 to 5.
-- Boss power orbs come in the next M3 PR.
+- Boss power orbs (M3 PR 3): the Warden of Roots drops 2 (`boss_orb_count`), different powers from the region's pool; Mossy Hollow's prototype pool is all 4 powers (Fire, Frost, Growth, Stone). Only a cleared run earns them.
 
 | Power | Level 3 upgrade | Level 5 upgrade |
 |---|---|---|
