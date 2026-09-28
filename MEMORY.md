@@ -169,6 +169,7 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-28 | Gamepad B is "back" in every menu (`ui_cancel` = Escape or B), next to A on a focused Close / Continue button | Owner (checklist B5): the forge closed with A on Close but not with B. Godot 4.7's default `ui_cancel` is Escape only. The Xbox convention is A to confirm, B to go back. Not remappable (fixed menu keys, like `ui_accept`). |
 | 2026-09-28 | Sword slashes sweep across their arc; hit 1 and hit 2 sweep opposite ways, the finisher is wider (about 195 degrees) and gold. `AttackData.slash_sweep` and `slash_arc` | Owner (checklist C2): "the combo is not felt at all, I didn't know I could do combos". All 3 steps drew the same static arc. Visual only: damage, timings and hitboxes are unchanged. |
 | 2026-09-28 | Rumble floor 0.25 for 0.1 s, strong motor carries the hit (was mostly the weak motor); Controls gets a Test rumble button; screen shake max offset 6 to 7.5 px | Owner (checklist C7): never feels any rumble; shake a tiny bit more aggressive. A sword tap asked for 0.12 on the weak (buzz) motor for 0.06 s, too faint to feel. The test button tells whether the pad is seen and can rumble at all. GDD 15.5 synced. |
+| 2026-09-28 | A pulled pickup steers its velocity toward the hero (`Pickup.TURN_ACCEL` 2400) instead of only adding speed toward them | Owner (checklist D3): loot sometimes circled the hero after a room clear. Adding 900 px/s² toward the hero with a 320 px/s cap is a stable orbit at about 110 px for anything moving sideways. Regression test reproduces it. |
 
 ## Rejected ideas (do not re-propose without new info)
 
@@ -215,6 +216,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-28 (loot orbit):** D3: loot sometimes circles the hero and is never picked up. Reproduced in a test (sideways coin, attracted, never arrives), fixed with steering in `Pickup._physics_process`. 542 tests pass.
 
 - **2026-09-28 (rumble and shake):** C7: owner never feels rumble, wants a bit more shake. `LocalInputSource.motor_levels` (floor, min time, strong motor first), `ControlsMenu.test_rumble` (Test rumble button: rumbles every pad or says it cannot), `GameCamera.max_offset` 7.5. If the test button rumbles but hits still do not, the cause is elsewhere (which pad is "last used"); ask the owner.
 

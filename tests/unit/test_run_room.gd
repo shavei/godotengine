@@ -284,6 +284,26 @@ func test_room_clear_pulls_loot_to_the_hero() -> void:
 	assert_eq(run.wallet(0).amount(Wallet.WOOD), 2)
 
 
+
+func test_pulled_loot_never_circles_the_hero() -> void:
+	var run: RunState = RunState.start(region, 5)
+	run.enter(run.next_choices()[0])
+	var room: RunRoom = await _spawn_room(run)
+	var hero: Hero = room.find_child("Hero", true, false) as Hero
+	var pickup: Pickup = Pickup.create(Wallet.COINS, 1)
+	var got: Array[bool] = [false]
+	pickup.collected.connect(func(_p: Pickup, _h: Hero) -> void: got[0] = true)
+	room.add_child(pickup)
+	pickup.global_position = hero.global_position + Vector2(100, 0)
+	await wait_physics_frames(20)
+	# Moving sideways when the pull starts (a pop, or the hero walking past) used to
+	# settle into an orbit about 100 px out.
+	pickup.velocity = Vector2(0, Pickup.MAX_SPEED)
+	pickup.attract()
+	await wait_seconds(1.0)
+	assert_true(got[0], "the coin reaches the hero")
+
+
 func test_leaving_scoops_up_loot_left_on_the_floor() -> void:
 	var run: RunState = RunState.start(region, 5)
 	var room: RunRoom = await _spawn_room(run)
