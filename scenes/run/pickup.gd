@@ -12,6 +12,9 @@ const MAGNET_RADIUS: float = 40.0
 const COLLECT_RADIUS: float = 10.0
 const MAGNET_ACCEL: float = 900.0
 const MAX_SPEED: float = 320.0
+## How fast a pulled pickup turns toward the hero (px/s per second). Well above
+## MAGNET_ACCEL, so sideways speed dies out and it cannot settle into an orbit.
+const TURN_ACCEL: float = 2400.0
 
 var currency: StringName = Wallet.COINS
 var amount: int = 1
@@ -50,7 +53,8 @@ func _physics_process(delta: float) -> void:
 			collect(hero)
 			return
 		if attracted or to_hero.length() <= MAGNET_RADIUS:
-			velocity = (velocity + to_hero.normalized() * MAGNET_ACCEL * delta).limit_length(MAX_SPEED)
+			var speed: float = minf(MAX_SPEED, velocity.length() + MAGNET_ACCEL * delta)
+			velocity = velocity.move_toward(to_hero.normalized() * speed, TURN_ACCEL * delta)
 			# Never overshoot: the hero is reached this frame.
 			if velocity.length() * delta >= to_hero.length():
 				collect(hero)
