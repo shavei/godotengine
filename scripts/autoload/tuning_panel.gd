@@ -34,6 +34,7 @@ const ROWS: Array[Array] = [
 	[&"flask_heal_fraction", 0.05, "Flask heal"],
 	[&"aim_assist_angle", 5.0, "Aim assist angle"],
 	[&"aim_assist_range", 4.0, "Aim assist range"],
+	[&"power_aim_assist_angle", 5.0, "Power aim assist angle"],
 	[&"rumble_strength", 0.1, "Rumble strength"],
 ]
 const SHIFT_STEPS: float = 5.0

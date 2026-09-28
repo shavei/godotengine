@@ -8,7 +8,7 @@ Persistent project memory. Read at the start of every session, update at the end
 - **Also:** Controls remapping menu (title > Controls) added at the owner's request, ahead of the M7 Settings menu.
 - **Next step:** Owner plays a few full runs with M3 PR 3: clear the Warden, take an orb, keep or merge it on the keep screen, and checks the M3 done criteria (earn powers, keep up to 3, level with shards, powers feel distinct). Answers to the PR 3 questions in the session log (PR 1 and 2 questions still welcome). Then M4 (village and the Choice).
 - **Also:** Combat feel pass (merged): quick turns, swings keep momentum, stable facing, no swallowed finisher press. Owner feedback on it still welcome.
-- **Last updated:** 2026-09-28 (M3 PR 3)
+- **Last updated:** 2026-09-28 (power aim assist)
 
 ## The game in brief
 
@@ -122,6 +122,7 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-28 | The offer lives in `HeroState.power_offer` (saved), rolled by `RunEnd` at the clear; the keep screen (`choice_screen.tscn`) settles it after the results; the title shows "A power is waiting" if it was left unsettled | The run is banked the moment the boss dies, so the reward must be banked too: a quit or crash between the orbs and the keep screen never loses a power. The keep screen asks for an orb first if none was taken in the room. |
 | 2026-09-28 | Keep screen before the village: Keep, Merge, let a kept power go (every slot full; the new power takes its slot at level 1), Leave it behind; letting go and leaving need a second press. A power let go is lost until M4's gift flow | GDD 3.1's full-slot rule is "give one away or discard the new one"; without villagers, letting go is the stand-in. The second press stops a stray button from throwing away a leveled power. |
 | 2026-09-28 | Orbs are always different powers; a kept power at level 5 is offered only when the pool has too few others | Two copies, or a power that can only be left behind, would make the pick empty (pillar 1). One sentence, tested. |
+| 2026-09-28 | Power casts get their own stick aim assist: 20 degrees either side, reaching as far as the power flies (`PowerData.projectile_range`); swings keep 30 degrees / 64 px | Owner: the fireball is really hard to aim on an Xbox controller. Casts used the melee assist, which only looks 64 px out, while Ember Bolt flies 220 px, so at fireball range there was no help. A narrower cone than melee keeps a far target from stealing a cast aimed elsewhere. Tunable in F4 (Power aim assist angle). |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 
 ## Rejected ideas (do not re-propose without new info)
@@ -165,6 +166,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-28 (power aim assist):** Owner: powers feel earned (M3 done criteria), but the fireball is really hard to aim on an Xbox controller. Cause: casts used the sword's aim assist (64 px reach) while the fireball flies 220 px. Added `Hero.power_direction(power)` (reach = the power's range, `power_aim_assist_angle` 20 degrees) used by the Cast state, and an F4 entry. New test (stick fireball 15 degrees off hits a dummy 160 px away) fails on the old code. 361 tests pass, no warnings, boot clean. Questions for the owner: do stick fireballs land now? Does the cast ever snap to an enemy you did not mean (then lower Power aim assist angle in F4)?
 
 - **2026-09-28 (M3 PR 3):** Boss power orbs and the keep screen, so real runs earn powers. `RegionData.power_pool` (Mossy Hollow: all 4 powers), `BalanceData.boss_orb_count` (2), pure `PowerOffer` (seeded roll of different powers, take, choice_for: keep, merge, replace, maxed), `HeroState.power_offer` (saved), `RunEnd` rolls it on a clear, `GiftSystem.replace`. Boss room: two orbs (`InteractSpot` with a power icon) after the Warden; taking one fades the other. `choice_screen.tscn` (`ChoiceScreen`): pick an orb if none taken, then Keep, Merge (shows the upgrade it unlocks), let a kept power go, or Leave (second press to confirm). Results "Choose your power" leads there; title "A power is waiting" for an unsettled offer. 358 tests pass, no warnings, boot clean, checked with xvfb screenshots (orbs in the boss room, pick, full-slot replace with its confirm, merge, done). Questions for the owner: is walking to an orb clear, and do you read both before taking one? Is the keep screen clear at a glance? Does the second press on Let go / Leave feel safe or annoying? With every slot full, did you ever let a power go, or always leave the new one? Does earning a power make you want another run?
 
