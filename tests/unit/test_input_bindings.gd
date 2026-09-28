@@ -102,6 +102,12 @@ func test_triggers_and_sticks_bind_but_the_aim_stick_does_not() -> void:
 	assert_eq(InputBindings.event_name(InputBindings.primary(&"map", G)), "LT")
 
 
+func test_back_paddles_have_names() -> void:
+	InputBindings.rebind(&"map", _button(JOY_BUTTON_PADDLE2))
+	assert_eq(InputBindings.event_name(InputBindings.primary(&"map", G)), "Paddle 2")
+	assert_eq(InputBindings.hint(&"map"), "Tab / Paddle 2")
+
+
 func test_save_and_load_round_trip() -> void:
 	InputBindings.rebind(&"dodge", _key(KEY_K))
 	InputBindings.rebind(&"map", _button(JOY_BUTTON_Y))

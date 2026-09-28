@@ -80,6 +80,7 @@ func _ready() -> void:
 		InputBindings.move_hint(), InputBindings.hint(&"interact"), InputBindings.hint(&"map"), InputBindings.hint(&"pause")]
 	shrine = _add_spot(SHRINE, $Spots/Shrine.position, SHRINE_COLOR)
 	gate = _add_spot(GATE, $Spots/Gate.position, GATE_COLOR)
+	gate.caption_above = true
 	board = _add_spot(BOARD, $Spots/Board.position, BOARD_COLOR)
 	board.caption = "Notice board"
 	_place_villagers()

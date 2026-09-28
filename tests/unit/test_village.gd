@@ -208,6 +208,7 @@ func test_the_gate_starts_a_run_or_continues_the_saved_one() -> void:
 	SaveManager.save_dir = "user://test_saves_village"
 	var scene: Village = await _open()
 	assert_eq(scene.gate.caption, "Gate: Mossy Hollow")
+	assert_true(scene.gate.caption_above, "the sign and help lines would cover a caption below the gate")
 	watch_signals(EventBus)
 	scene.prepare_run()
 	assert_not_null(GameState.run, "a run is in progress")
