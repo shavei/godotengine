@@ -49,7 +49,7 @@ Split into small PRs, each playable: (1) hero combat core in a test room with tr
 - [x] Flasks (3 charges).
 - [x] Gamepad feel: stick aim assist for melee, rumble, low stamina cue. F4 live tuning panel for the owner's playtests.
 - [x] Tuning room on the title: controller-driven tuning menu, Save results writes `balance_default.tres` for a GitHub Desktop commit.
-- [ ] Owner playtest with a gamepad: tune in the Tuning room and confirm the done criteria below.
+- [x] Owner playtest with a gamepad: tune in the Tuning room and confirm the done criteria below.
 - Perfect dodge (GDD 7.2) waits for the Fusion meter (M6); only the slow-motion part could come earlier if playtests ask for it.
 
 **Done when:** a 3-wave room is fun to play for 5 minutes with placeholder art. Dodge feels responsive (tested with gamepad).
@@ -68,7 +68,7 @@ Split into small PRs, each playable: (1) floor maps, doors and the room flow, (2
 - [x] Results screen; death handling (50% materials rule). (PR 4: `RunEnd` banks the run, `results.tscn` shows XP, mastery and loot found vs kept.)
 - [x] `ProgressionSystem`: XP, level-ups, attribute points (unit tested). (PR 4: points are spent on the results screen; Focus locked until M3; weapon mastery tallied too.)
 - [x] Mid-run save at room boundaries. (PR 4: `run_slot_0.json` on every room load, Save and quit on Esc, Continue run on the title.)
-- [ ] Owner plays a full run start to finish and checks the done criteria below (time on the results screen).
+- [x] Owner plays a full run start to finish and checks the done criteria below (time on the results screen).
 
 **Done when:** a full 3-floor run can be played start to finish in 12 to 15 minutes and ends at a results screen.
 
