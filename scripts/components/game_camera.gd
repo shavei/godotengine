@@ -6,7 +6,7 @@ extends Camera2D
 ## setting) Godot then draws camera and actors between ticks together, so nothing jitters.
 
 @export var target: Node2D
-@export var max_offset: float = 6.0
+@export var max_offset: float = 7.5
 @export var trauma_decay: float = 1.8
 ## Accessibility slider (docs/GDD.md Section 18). 0 turns shake off.
 @export_range(0.0, 1.0) var shake_scale: float = 1.0

@@ -36,6 +36,12 @@ func _press_key(code: Key) -> void:
 	viewport.push_input(event)
 
 
+func test_test_rumble_says_when_no_gamepad_is_found() -> void:
+	assert_not_null(menu.find_child("RumbleButton", true, false))
+	if Input.get_connected_joypads().is_empty():
+		assert_eq(menu.test_rumble(), "No gamepad found. Plug one in and try again.")
+
+
 func test_buttons_show_current_bindings() -> void:
 	var button: Button = menu._buttons[[&"map", InputBindings.Kind.KEYBOARD]]
 	assert_eq(button.text, "Tab")
