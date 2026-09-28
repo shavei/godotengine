@@ -66,14 +66,17 @@ func _ready() -> void:
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(_status)
 	var footer: HBoxContainer = HBoxContainer.new()
-	footer.position = Vector2(200, 318)
-	footer.size = Vector2(240, 20)
+	footer.position = Vector2(140, 318)
+	footer.size = Vector2(360, 20)
 	footer.alignment = BoxContainer.ALIGNMENT_CENTER
 	footer.add_theme_constant_override("separation", 12)
 	add_child(footer)
 	var reset: Button = _footer_button("Reset to defaults", _on_reset_pressed)
 	reset.name = "ResetButton"
 	footer.add_child(reset)
+	var rumble: Button = _footer_button("Test rumble", func() -> void: _set_status(test_rumble()))
+	rumble.name = "RumbleButton"
+	footer.add_child(rumble)
 	var back: Button = _footer_button("Back", close)
 	back.name = "BackButton"
 	footer.add_child(back)
@@ -86,6 +89,22 @@ func refresh() -> void:
 	for key: Array in _buttons:
 		var button: Button = _buttons[key]
 		button.text = InputBindings.event_name(InputBindings.primary(key[0], key[1]))
+
+
+## Rumbles every connected gamepad for half a second and says what happened, so a pad
+## that cannot rumble (or is not seen at all) is easy to spot.
+func test_rumble() -> String:
+	var pads: Array[int] = Input.get_connected_joypads()
+	if pads.is_empty():
+		return "No gamepad found. Plug one in and try again."
+	var lines: PackedStringArray = []
+	for pad: int in pads:
+		if Input.has_joy_vibration(pad):
+			Input.start_joy_vibration(pad, 1.0, 1.0, 0.5)
+			lines.append("%s: rumbling" % Input.get_joy_name(pad))
+		else:
+			lines.append("%s: this pad cannot rumble" % Input.get_joy_name(pad))
+	return ", ".join(lines)
 
 
 func is_listening() -> bool:

@@ -11,6 +11,10 @@ const MOUSE_WAKE_DISTANCE: float = 2.0
 const MOUSE_MIN_DISTANCE: float = 6.0
 ## A released right stick keeps its last aim this long (ms).
 const STICK_AIM_HOLD_MSEC: int = 250
+## The weakest rumble a pad plays, and its shortest time: lighter or shorter buzzes are
+## too faint to feel on most controllers.
+const MIN_RUMBLE: float = 0.25
+const MIN_RUMBLE_TIME: float = 0.1
 
 var using_mouse: bool = true
 ## Device id of the last gamepad that sent input, or -1.
@@ -68,8 +72,17 @@ func rumble(strength: float, duration: float) -> void:
 	super.rumble(strength, duration)
 	if using_mouse or joy_device < 0 or strength <= 0.0:
 		return
-	var s: float = clampf(strength, 0.0, 1.0)
-	Input.start_joy_vibration(joy_device, s, s * 0.6, duration)
+	var levels: Vector3 = motor_levels(strength, duration)
+	Input.start_joy_vibration(joy_device, levels.x, levels.y, levels.z)
+
+
+## What a rumble asks of the pad: Vector3(weak motor, strong motor, seconds). The strong
+## (low, heavy) motor carries the hit; the weak one adds a little buzz on top.
+static func motor_levels(strength: float, duration: float) -> Vector3:
+	if strength <= 0.0:
+		return Vector3.ZERO
+	var s: float = clampf(strength, MIN_RUMBLE, 1.0)
+	return Vector3(s * 0.6, s, maxf(duration, MIN_RUMBLE_TIME))
 
 
 func just_pressed(action: StringName) -> bool:

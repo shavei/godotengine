@@ -277,6 +277,17 @@ func test_hits_and_getting_hit_rumble() -> void:
 	assert_almost_eq(input.last_rumble.x, Hero.HURT_RUMBLE.x * hero.balance.rumble_strength, 0.001)
 
 
+func test_light_rumbles_are_raised_until_a_pad_can_feel_them() -> void:
+	assert_eq(LocalInputSource.motor_levels(0.0, 0.2), Vector3.ZERO, "zero stays off")
+	var tap: Vector3 = LocalInputSource.motor_levels(0.12, 0.06)
+	assert_almost_eq(tap.y, LocalInputSource.MIN_RUMBLE, 0.001, "a light tap is raised to the weakest felt rumble")
+	assert_almost_eq(tap.z, LocalInputSource.MIN_RUMBLE_TIME, 0.001, "and lasts long enough to feel")
+	var hurt: Vector3 = LocalInputSource.motor_levels(0.6, 0.18)
+	assert_almost_eq(hurt.y, 0.6, 0.001, "the strong motor carries the hit")
+	assert_lt(hurt.x, hurt.y)
+	assert_almost_eq(LocalInputSource.motor_levels(5.0, 0.2).y, 1.0, 0.001, "capped at full")
+
+
 func test_rumble_strength_zero_turns_it_off() -> void:
 	var old: float = hero.balance.rumble_strength
 	hero.balance.rumble_strength = 0.0
