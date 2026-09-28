@@ -23,6 +23,9 @@ var icon_shape: StringName = &""
 ## False: draw nothing but the caption, and only while the hero stands here (a villager
 ## draws its own body).
 var show_ring: bool = true
+## True: the caption sits above the ring (a spot at the bottom edge, where the sign and
+## help lines would cover a caption below it).
+var caption_above: bool = false
 var enabled: bool = true:
 	set(value):
 		enabled = value
@@ -82,6 +85,9 @@ func _draw() -> void:
 	var font: Font = ThemeDB.fallback_font
 	var text: String = caption + ("\n" + InputBindings.hint(&"interact") if _hero != null else "")
 	var at: Vector2 = Vector2(-TEXT_WIDTH * 0.5, RADIUS + 12.0)
+	if caption_above:
+		var lines: int = text.count("\n") + 1
+		at.y = -RADIUS - 6.0 - (lines - 1) * font.get_height(8)
 	draw_multiline_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_CENTER, TEXT_WIDTH, 8, -1, 3, Color(0.05, 0.03, 0.05))
 	draw_multiline_string(font, at, text, HORIZONTAL_ALIGNMENT_CENTER, TEXT_WIDTH, 8, -1, tint)
 
