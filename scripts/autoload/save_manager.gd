@@ -1,6 +1,7 @@
 extends Node
 ## Reads and writes save slots as versioned JSON, keeping a .bak of the previous save.
 ## Migrations are added here as the save format changes (docs/ARCHITECTURE.md Section 10).
+## A run in progress has its own file per slot (run_slot_N.json), written at room boundaries.
 
 const SAVE_VERSION: int = 1
 
@@ -13,6 +14,10 @@ func slot_path(slot: int) -> String:
 
 func backup_path(slot: int) -> String:
 	return save_dir.path_join("slot_%d.bak" % slot)
+
+
+func run_path(slot: int) -> String:
+	return save_dir.path_join("run_slot_%d.json" % slot)
 
 
 func has_save(slot: int) -> bool:
@@ -29,15 +34,10 @@ func save_data(slot: int, data: Dictionary) -> Error:
 		err = DirAccess.copy_absolute(path, backup_path(slot))
 		if err != OK:
 			return err
-	var payload: Dictionary = data.duplicate(true)
-	payload["version"] = SAVE_VERSION
-	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
-	if file == null:
-		return FileAccess.get_open_error()
-	file.store_string(JSON.stringify(payload, "\t"))
-	file.close()
-	EventBus.game_saved.emit(slot)
-	return OK
+	err = _write_json(path, data)
+	if err == OK:
+		EventBus.game_saved.emit(slot)
+	return err
 
 
 ## Returns the slot's data, falling back to the backup if the main file is unreadable.
@@ -54,9 +54,43 @@ func load_data(slot: int) -> Dictionary:
 
 
 func delete_slot(slot: int) -> void:
-	for path: String in [slot_path(slot), backup_path(slot)]:
+	for path: String in [slot_path(slot), backup_path(slot), run_path(slot)]:
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(path)
+
+
+func has_run(slot: int) -> bool:
+	return FileAccess.file_exists(run_path(slot))
+
+
+## Writes the run in progress (RunState.to_dict()) for the slot.
+func save_run(slot: int, data: Dictionary) -> Error:
+	var err: Error = DirAccess.make_dir_recursive_absolute(save_dir)
+	if err != OK:
+		return err
+	return _write_json(run_path(slot), data)
+
+
+## The saved run, or an empty Dictionary if there is none or it cannot be read.
+func load_run(slot: int) -> Dictionary:
+	return _read_json(run_path(slot))
+
+
+## Called when a run ends (cleared or fallen), so it cannot be continued.
+func delete_run(slot: int) -> void:
+	if has_run(slot):
+		DirAccess.remove_absolute(run_path(slot))
+
+
+func _write_json(path: String, data: Dictionary) -> Error:
+	var payload: Dictionary = data.duplicate(true)
+	payload["version"] = SAVE_VERSION
+	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		return FileAccess.get_open_error()
+	file.store_string(JSON.stringify(payload, "\t"))
+	file.close()
+	return OK
 
 
 func _read_json(path: String) -> Dictionary:

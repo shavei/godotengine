@@ -66,3 +66,61 @@ func test_hero_snapshot_round_trip() -> void:
 	run.save_hero(0, 55, 100, 2)
 	assert_eq(run.hero_snapshot(0), {"hp": 55, "max_hp": 100, "flasks": 2})
 	assert_eq(run.hero_snapshot(1), {}, "keyed by player_id")
+
+
+func _mid_run() -> RunState:
+	var run: RunState = RunState.start(region, 77)
+	run.enter(run.next_choices()[0])
+	run.mark_cleared()
+	run.enter(run.next_choices()[-1])
+	run.save_hero(0, 61, 104, 2)
+	run.wallet(0).add_all({Wallet.COINS: 12, Wallet.WOOD: 3})
+	run.add_xp(0, 30)
+	run.add_weapon_damage(0, &"sword", 450)
+	run.elapsed = 93.5
+	return run
+
+
+func test_mid_run_save_round_trips_through_json() -> void:
+	var run: RunState = _mid_run()
+	var parsed: Variant = JSON.parse_string(JSON.stringify(run.to_dict()))
+	var loaded: RunState = RunState.from_dict(parsed, region)
+	assert_not_null(loaded)
+	assert_eq(loaded.run_seed, 77)
+	assert_eq(loaded.floor_index, 0)
+	assert_eq(loaded.current_room_id, run.current_room_id)
+	assert_eq(loaded.path, run.path)
+	assert_false(loaded.room_cleared, "the room starts over")
+	assert_eq(loaded.rooms_cleared, 1)
+	assert_almost_eq(loaded.elapsed, 93.5, 0.001)
+	assert_eq(loaded.hero_snapshot(0), {"hp": 61, "max_hp": 104, "flasks": 2})
+	assert_eq(loaded.wallet(0).amount(Wallet.COINS), 12)
+	assert_eq(loaded.xp_earned(0), 30)
+	assert_eq(int(loaded.damage_by_weapon(0)[&"sword"]), 450)
+	assert_eq(loaded.to_dict(), run.to_dict(), "saving again gives the same data")
+	# The map is rebuilt from the seed, so the doors are the same.
+	loaded.mark_cleared()
+	run.mark_cleared()
+	assert_eq(loaded.next_choices(), run.next_choices())
+
+
+func test_mid_run_save_keeps_the_floor() -> void:
+	var run: RunState = RunState.start(region, 5)
+	while run.current_room() != run.map.exit_room():
+		run.enter(run.next_choices()[0])
+		run.mark_cleared()
+	assert_true(run.advance_floor())
+	var loaded: RunState = RunState.from_dict(run.to_dict(), region)
+	assert_eq(loaded.floor_index, 1)
+	assert_true(loaded.is_in_corridor())
+	assert_eq(loaded.map.rows.size(), run.map.rows.size())
+
+
+func test_saved_run_for_another_region_or_a_missing_room_is_refused() -> void:
+	var data: Dictionary = _mid_run().to_dict()
+	var other: RegionData = region.duplicate()
+	other.id = &"somewhere_else"
+	assert_null(RunState.from_dict(data, other))
+	assert_null(RunState.from_dict(data, null))
+	data["room"] = 9999
+	assert_null(RunState.from_dict(data, region))

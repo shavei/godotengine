@@ -128,6 +128,14 @@ func apply_balance() -> void:
 	stats.crit_multiplier = balance.hero_crit_multiplier
 
 
+## Applies the hero's long-term progress (level, Vigor, Might) and refills HP and stamina.
+func apply_progress(progress: HeroState) -> void:
+	health.set_max_hp(ProgressionSystem.max_hp(progress, balance), true)
+	stamina.maximum = ProgressionSystem.max_stamina(progress, balance)
+	stamina.current = stamina.maximum
+	stats.damage_bonus = ProgressionSystem.weapon_damage_bonus(progress, balance)
+
+
 func rumble(strength: float, duration: float) -> void:
 	input.rumble(strength * balance.rumble_strength, duration)
 

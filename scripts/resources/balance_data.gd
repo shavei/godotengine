@@ -60,3 +60,35 @@ extends Resource
 @export var merchant_heal_price: int = 25
 @export var merchant_heal_fraction: float = 0.25
 @export var merchant_shard_price: int = 60
+
+@export_group("Progression")
+## XP to go from level n-1 to level n: round(xp_curve_base * n ^ xp_curve_exponent) (docs/GDD.md Section 4.1).
+@export var xp_curve_base: float = 50.0
+@export var xp_curve_exponent: float = 1.5
+@export var level_cap: int = 30
+## Each level above 1 adds this much max HP (and one attribute point).
+@export var level_max_hp: int = 4
+## XP for clearing a room of each fight type.
+@export var xp_combat_room: int = 15
+@export var xp_elite_room: int = 60
+@export var xp_mini_boss: int = 100
+@export var xp_region_boss: int = 200
+@export var attribute_cap: int = 20
+## Might: weapon damage per point (0.03 = +3%).
+@export var might_damage: float = 0.03
+## Vigor: max HP and max stamina per point.
+@export var vigor_max_hp: int = 10
+@export var vigor_max_stamina: float = 5.0
+## Focus: power damage and cooldown per point (powers arrive in M3).
+@export var focus_power_damage: float = 0.03
+@export var focus_cooldown: float = 0.015
+## Weapon mastery: 1 mastery XP per this much damage dealt; level n (2 to cap) needs
+## round(mastery_curve_base * n ^ mastery_curve_exponent) total mastery XP.
+@export var mastery_damage_per_xp: int = 10
+@export var mastery_curve_base: float = 150.0
+@export var mastery_curve_exponent: float = 1.4
+@export var mastery_cap: int = 10
+
+@export_group("Run end")
+## Share of coins and materials a hero keeps when they fall (docs/GDD.md Section 6.4).
+@export var death_keep_fraction: float = 0.5

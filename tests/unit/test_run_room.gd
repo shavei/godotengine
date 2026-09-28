@@ -2,16 +2,33 @@ extends GutTest
 ## The run room scene builds the right room for the run's current map room.
 
 const ROOM_SCENE: PackedScene = preload("res://scenes/run/room.tscn")
+const TEST_SAVE_DIR: String = "user://test_saves_room"
 
 var region: RegionData
+var _original_dir: String
+var _original_profile: ProfileState
 
 
 func before_all() -> void:
 	region = load("res://data/regions/region_mossy_hollow.tres")
+	# Rooms save the run as they load; keep that away from the real saves.
+	_original_dir = SaveManager.save_dir
+	_original_profile = GameState.profile
+	SaveManager.save_dir = TEST_SAVE_DIR
+
+
+func before_each() -> void:
+	GameState.new_profile()
 
 
 func after_each() -> void:
 	GameState.run = null
+	SaveManager.delete_slot(GameState.slot)
+
+
+func after_all() -> void:
+	SaveManager.save_dir = _original_dir
+	GameState.profile = _original_profile
 
 
 func _spawn_room(run: RunState) -> RunRoom:
@@ -124,6 +141,15 @@ func test_floor_exit_leads_down_and_the_boss_ends_the_run() -> void:
 	assert_true(run.is_run_won())
 	assert_signal_emitted_with_parameters(EventBus, "run_ended", [true])
 	assert_eq(_doors(boss_room).size(), 0)
+	# The clear is banked at once: XP from the boss, the run save is gone.
+	var summary: RunSummary = boss_room._summary
+	assert_not_null(summary)
+	assert_true(summary.success)
+	assert_eq(summary.xp_gained, 300, "Mother Toad (100) and the Warden (200) were cleared in rooms")
+	assert_null(GameState.run)
+	assert_false(SaveManager.has_run(GameState.slot))
+	assert_eq(GameState.profile.runs_won, 1)
+	assert_true(SaveManager.has_save(GameState.slot), "the profile is saved")
 
 
 func test_open_door_reports_the_hero_walking_in() -> void:
@@ -363,3 +389,99 @@ func test_boss_room_is_an_open_arena_with_a_boss_bar() -> void:
 	toad.health.take_damage(1)
 	await wait_physics_frames(2)
 	assert_false(room.hud.boss_panel.visible, "the bar goes with the boss")
+
+
+func test_entering_a_room_saves_the_run() -> void:
+	var run: RunState = RunState.start(region, 5)
+	run.enter(run.next_choices()[0])
+	await _spawn_room(run)
+	assert_true(SaveManager.has_run(GameState.slot))
+	var saved: Dictionary = SaveManager.load_run(GameState.slot)
+	assert_eq(int(saved["room"]), run.current_room_id)
+	assert_eq(int(saved["seed"]), 5)
+
+
+func test_clearing_a_fight_gives_xp() -> void:
+	var run: RunState = _run_in(MapRoom.COMBAT)
+	var room: RunRoom = await _spawn_room(run)
+	room.director.room_cleared.emit()
+	await wait_physics_frames(1)
+	assert_eq(run.xp_earned(0), 15)
+
+
+func test_hero_level_and_vigor_raise_max_hp() -> void:
+	var hero_state: HeroState = GameState.hero_state(0)
+	hero_state.level = 3
+	hero_state.attributes[HeroState.VIGOR] = 1
+	hero_state.attributes[HeroState.MIGHT] = 2
+	var room: RunRoom = await _spawn_room(RunState.start(region, 5))
+	assert_eq(room.hero.health.max_hp, 118, "100 + 2 levels x 4 + 1 Vigor x 10")
+	assert_eq(room.hero.health.hp, 118)
+	assert_almost_eq(room.hero.stats.damage_bonus, 0.06, 0.0001)
+
+
+func test_hero_hits_count_toward_weapon_mastery() -> void:
+	var run: RunState = _run_in(MapRoom.REST)
+	var room: RunRoom = await _spawn_room(run)
+	var result: DamageResult = DamageResult.new()
+	result.amount = 25
+	room.hero.hitbox.attack = room.hero.weapon.combo[0]
+	room.hero.hitbox.hit_landed.emit(null, result)
+	assert_eq(int(run.damage_by_weapon(0)[&"sword"]), 25)
+
+
+func test_falling_banks_half_the_loot_and_ends_the_run() -> void:
+	var run: RunState = _run_in(MapRoom.REST)
+	run.wallet(0).add_all({Wallet.COINS: 9, Wallet.WOOD: 3})
+	run.add_xp(0, 30)
+	var room: RunRoom = await _spawn_room(run)
+	watch_signals(EventBus)
+	room.hero.health.take_damage(9999)
+	await wait_physics_frames(1)
+	assert_signal_emitted_with_parameters(EventBus, "run_ended", [false])
+	assert_true(room.get_node("%FellLabel").visible)
+	assert_null(GameState.run)
+	assert_false(SaveManager.has_run(GameState.slot), "a fall cannot be undone by quitting")
+	var bank: Wallet = GameState.hero_state(0).bank
+	assert_eq(bank.amount(Wallet.COINS), 4)
+	assert_eq(bank.amount(Wallet.WOOD), 1)
+	assert_eq(GameState.hero_state(0).xp, 30, "XP is kept in full")
+	assert_false(room._summary.success)
+	assert_eq(GameState.profile.run_count, 1)
+	# Leave before the results screen would load over the tests.
+	room.free()
+
+
+func test_quitting_never_saves_more_hp_or_flasks_than_the_hero_has() -> void:
+	var run: RunState = _run_in(MapRoom.REST)
+	run.save_hero(0, 50, 100, 1)
+	var room: RunRoom = await _spawn_room(run)
+	# Healing in the Rest room and then quitting must not keep the heal.
+	room.hero.health.heal(30)
+	room.write_quit_save()
+	var carry: Dictionary = SaveManager.load_run(GameState.slot)["heroes"]["0"]["carry"]
+	assert_eq(int(carry["hp"]), 50)
+	# Losing HP before quitting is kept.
+	room.hero.health.take_damage(60)
+	room.hero.flasks.charges = 0
+	room.write_quit_save()
+	carry = SaveManager.load_run(GameState.slot)["heroes"]["0"]["carry"]
+	assert_eq(int(carry["hp"]), 20)
+	assert_eq(int(carry["flasks"]), 0)
+
+
+func test_a_quit_run_continues_in_the_same_room() -> void:
+	var run: RunState = RunState.start(region, 5)
+	run.enter(run.next_choices()[0])
+	run.save_hero(0, 70, 100, 2)
+	var room: RunRoom = await _spawn_room(run)
+	room.hero.health.take_damage(10)
+	room.write_quit_save()
+	room.free()
+	GameState.run = null
+	assert_true(GameState.load_saved_run())
+	var again: RunRoom = await _spawn_room(GameState.run)
+	assert_eq(again.run.current_room_id, run.current_room_id)
+	assert_eq(again.map_room.type, run.current_room().type)
+	assert_eq(again.hero.health.hp, 60)
+	assert_eq(again.hero.flasks.charges, 2)

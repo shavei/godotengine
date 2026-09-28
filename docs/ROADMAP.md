@@ -65,9 +65,10 @@ Split into small PRs, each playable: (1) floor maps, doors and the room flow, (2
 - [x] Room types: Combat, Elite, Treasure, Rest, Merchant (basic), Event (2 sample events). (PR 2: Elder Boar and Spore Witch elites, treasure chest, merchant with flask, heal and shard, Mossy Shrine and Wishing Well events. Trinkets join the merchant in M8.)
 - [x] Mini-boss (Mother Toad) and region boss (Warden of Roots, phase 1 only for now). (PR 3: `BossData`, `BossPattern`, boss bar, root walls; both bosses also in the Tuning room menu.)
 - [x] Coins, Wood, Crystal, Power Shards drops and pickups. (Run wallet per hero; banking at run end is PR 4.)
-- [ ] Results screen; death handling (50% materials rule).
-- [ ] `ProgressionSystem`: XP, level-ups, attribute points (unit tested).
-- [ ] Mid-run save at room boundaries.
+- [x] Results screen; death handling (50% materials rule). (PR 4: `RunEnd` banks the run, `results.tscn` shows XP, mastery and loot found vs kept.)
+- [x] `ProgressionSystem`: XP, level-ups, attribute points (unit tested). (PR 4: points are spent on the results screen; Focus locked until M3; weapon mastery tallied too.)
+- [x] Mid-run save at room boundaries. (PR 4: `run_slot_0.json` on every room load, Save and quit on Esc, Continue run on the title.)
+- [ ] Owner plays a full run start to finish and checks the done criteria below (time on the results screen).
 
 **Done when:** a full 3-floor run can be played start to finish in 12 to 15 minutes and ends at a results screen.
 
