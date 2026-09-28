@@ -14,6 +14,8 @@ func before_each() -> void:
 	_original_profile = GameState.profile
 	_original_context = SceneRouter.context
 	GameState.new_profile()
+	# The Healer moves in at Renown 2.
+	GameState.admit_villagers(2)
 	# Past the forced first gift (its tests set this back).
 	GameState.profile.first_gift_done = true
 	hero = GameState.hero_state(GameState.LOCAL_PLAYER_ID)

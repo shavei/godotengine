@@ -9,6 +9,10 @@ extends Node2D
 ## their shop when talked to. Right after a gift the Choice screen comes back here with a
 ## "ceremony" in the router context, and the gift ceremony plays (GiftCeremony). While the
 ## first power must still be given (FirstGift), the Elder's words point to the Shrine.
+## Once nothing waits at the Shrine, the runs' training ticks apply (TrainingSystem) and
+## the village shows what they did: a VillageMoment for every villager reaching Adept or
+## Master, then one for every new Renown level with the villager who moves in. The gate
+## stays shut while a power waits, so every run's power is settled before the next.
 ## Placeholder art until M7.
 
 const RUN_ROOM_SCENE: String = "res://scenes/run/room.tscn"
@@ -16,6 +20,7 @@ const CHOICE_SCENE: String = "res://scenes/ui/choice_screen.tscn"
 const TITLE_SCENE: String = "res://scenes/main/title.tscn"
 const VILLAGER_SCENE: PackedScene = preload("res://scenes/village/villager.tscn")
 const CEREMONY_SCENE: PackedScene = preload("res://scenes/ui/gift_ceremony.tscn")
+const GOLD: Color = Color(1, 0.82, 0.45)
 ## Where the hero stands after leaving the Shrine: just below it.
 const SHRINE_STEP: Vector2 = Vector2(0, 44)
 ## Until a region picker exists (M7), the gate leads to the first region.
@@ -43,6 +48,11 @@ var save_on_change: bool = true
 var shop: ShopPanel
 ## The gift ceremony while it plays, or null.
 var ceremony: GiftCeremony
+## The rank-up or Renown moment playing, or null.
+var moment: VillageMoment
+## Moments waiting to play after the current one (callables that start one).
+var _moments: Array[Callable] = []
+var _renown_label: Label
 
 @onready var hero: Hero = $Actors/Hero
 @onready var camera: GameCamera = $Camera
@@ -67,11 +77,14 @@ func _ready() -> void:
 	board = _add_spot(BOARD, $Spots/Board.position, BOARD_COLOR)
 	board.caption = "Notice board"
 	_place_villagers()
+	_add_renown_label()
 	refresh()
 	_say(welcome())
 	var gift: Variant = SceneRouter.context.get("ceremony", {})
 	if gift is Dictionary and not (gift as Dictionary).is_empty():
 		play_ceremony(StringName(str(gift.get("villager_id", ""))), bool(gift.get("first_gift", false)))
+	else:
+		grow()
 
 
 ## The sign's first line: the Elder's words while the first gift waits.
@@ -83,7 +96,7 @@ func welcome() -> String:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if shop != null or ceremony != null:
+	if busy():
 		return
 	if event.is_action_pressed(&"pause") and not _leaving:
 		get_viewport().set_input_as_handled()
@@ -105,23 +118,44 @@ func refresh() -> void:
 		var state: VillagerState = village.on_plot(plot.index)
 		var data: VillagerData = _villager_data(state.villager_id) if state != null else null
 		var power: PowerData = ContentDB.get_item(&"powers", state.power_id) as PowerData if state != null and state.has_power() else null
-		plot.set_resident(data, power)
+		plot.set_resident(data, power, TrainingSystem.rank(state, balance) if state != null else TrainingSystem.NONE)
 	for villager: Villager in villagers:
 		villager.setup(villager.data, villager.state, balance)
+	_renown_label.text = RenownSystem.text(village, balance)
+
+
+## True while a shop, the gift ceremony or a moment holds the hero still.
+func busy() -> bool:
+	return shop != null or ceremony != null or moment != null
 
 
 ## Shrine: the Choice screen. Gate: a run. Board: the village news.
 func use_spot(spot: InteractSpot, by: Hero) -> void:
-	if _leaving or shop != null or ceremony != null:
+	if _leaving or busy():
 		return
 	match spot.kind:
 		SHRINE:
 			_leaving = true
 			SceneRouter.go(CHOICE_SCENE, {"player_id": by.player_id})
 		GATE:
-			start_run()
+			if _offer_waits():
+				_say("A power waits at the Shrine. Settle it before you set out.")
+			else:
+				start_run()
 		BOARD:
-			_say("No raids are coming yet. Runs so far: %d, cleared: %d." % [GameState.profile.run_count, GameState.profile.runs_won])
+			_say(board_text())
+
+
+## The notice board: Renown and who comes next, then the runs so far.
+func board_text() -> String:
+	var renown_level: int = RenownSystem.level(village, balance)
+	var text: String = "%s." % RenownSystem.text(village, balance)
+	var next: int = RenownSystem.next_level_points(renown_level, balance)
+	var coming: Array[VillagerData] = RenownSystem.arrivals_at(renown_level + 1, GameState.roster())
+	if next > 0 and not coming.is_empty():
+		text += " At Renown %d, %s moves in." % [renown_level + 1, coming[0].title()]
+	text += " Gifts give Renown, Masters more."
+	return text + "\nNo raids are coming yet. Runs so far: %d, cleared: %d." % [GameState.profile.run_count, GameState.profile.runs_won]
 
 
 ## Leaves through the gate into the run.
@@ -144,7 +178,7 @@ func prepare_run() -> void:
 ## What a villager says: their service now, and the line for their gift. A villager who
 ## sells something opens their shop too.
 func talk(villager: Villager, by: Hero = hero) -> void:
-	if shop != null or ceremony != null:
+	if busy():
 		return
 	_say(speech(villager))
 	if ShopPanel.sells_anything(villager.data, villager.state):
@@ -163,7 +197,7 @@ func speech(villager: Villager) -> String:
 	var service: String = _service_text(combo.novice)
 	if villager.rank >= TrainingSystem.ADEPT:
 		service += " Adept: " + _service_text(combo.adept)
-	return "%s (%s, %s): \"%s\"\n%s %s" % [data.title(), power_name, TrainingSystem.rank_name(villager.rank), combo.gift_line, base, service]
+	return "%s (%s, %s): \"%s\"\n%s %s" % [data.title(), power_name, villager.progress, combo.gift_line, base, service]
 
 
 ## Plays the gift ceremony for the villager who was just given a power. The hero stands
@@ -206,6 +240,123 @@ func _on_ceremony_finished(villager: Villager, first_gift: bool) -> void:
 		_say("The Elder: \"Well done. A Spark grows when it is shared. From now on, the Choice is yours.\"")
 	else:
 		_say("%s holds %s now." % [villager.data.title(), villager.power.display_name])
+	grow()
+
+
+# --- Training and Renown (docs/GDD.md Sections 5.2 and 5.5) -------------------------
+
+## Once nothing waits at the Shrine: applies the runs' training ticks, moves in the
+## villagers a new Renown level brings, saves, and plays a moment for each rank-up and
+## each new Renown level. Returns the rank-ups.
+func grow() -> Array[RankUp]:
+	if _offer_waits():
+		return []
+	var rank_ups: Array[RankUp] = TrainingSystem.train_due(GameState.profile, balance)
+	for event: RankUp in rank_ups:
+		EventBus.villager_ranked_up.emit(village.index_of(event.villager_id), event.rank_after)
+	var renown_level: int = RenownSystem.level(village, balance)
+	if village.renown_seen < 0:
+		village.renown_seen = renown_level
+	var arrivals: Array[VillagerState] = []
+	var levels: Array[int] = []
+	if renown_level > village.renown_seen:
+		arrivals = GameState.admit_villagers(renown_level)
+		for level: int in range(maxi(village.renown_seen, 0) + 1, renown_level + 1):
+			levels.append(level)
+		village.renown_seen = renown_level
+		EventBus.renown_changed.emit(RenownSystem.points(village, balance), renown_level)
+	if rank_ups.is_empty() and levels.is_empty():
+		return rank_ups
+	if save_on_change:
+		GameState.save_profile()
+	for state: VillagerState in arrivals:
+		_add_villager(state).modulate.a = 0.0
+	refresh()
+	for event: RankUp in rank_ups:
+		_moments.append(play_rank_up.bind(event))
+	for level: int in levels:
+		_moments.append(play_renown.bind(level, arrivals))
+	_next_moment()
+	return rank_ups
+
+
+## Plays the next waiting moment, if any.
+func _next_moment() -> void:
+	if moment != null or ceremony != null:
+		return
+	while not _moments.is_empty():
+		var start: Callable = _moments.pop_front()
+		if start.call() != null:
+			return
+	# Nothing left to play: every newcomer stands in full view.
+	for villager: Villager in villagers:
+		villager.modulate.a = 1.0
+
+
+## A villager reached Adept or Master: their new star or crown and pennant grow in.
+func play_rank_up(event: RankUp) -> VillageMoment:
+	var villager: Villager = villager_node(event.villager_id)
+	if villager == null or villager.power == null:
+		return null
+	var plot: VillagePlot = _plot_of(villager.state)
+	var title: String = "%s is now %s!" % [villager.data.display_name, TrainingSystem.rank_name(event.rank_after)]
+	var line: String = "\"I have mastered %s. Soon I can teach you what I learned.\"" % villager.power.display_name \
+			if event.is_master() else "\"%s comes easier every day. I can do more now.\"" % villager.power.display_name
+	var combo: ComboData = ContentDB.get_item(&"combos", ComboData.id_for(event.villager_id, event.power_id)) as ComboData
+	var detail: String = ""
+	if event.is_master():
+		detail = "Master! +%d Renown." % balance.renown_per_master
+	elif combo != null and combo.adept != null:
+		detail = "Adept: " + _service_text(combo.adept)
+	var reveal: Callable = func(amount: float) -> void:
+		villager.rank_blend = amount
+		if plot != null:
+			plot.rank_blend = amount
+	return _start_moment(villager, villager.power.color, title, line, detail, reveal)
+
+
+## A new Renown level: whoever moves in at it fades in on their plot.
+func play_renown(level: int, arrivals: Array[VillagerState]) -> VillageMoment:
+	var newcomer: Villager = null
+	for state: VillagerState in arrivals:
+		var data: VillagerData = _villager_data(state.villager_id)
+		if data != null and data.arrives_at_renown == level:
+			newcomer = villager_node(state.villager_id)
+			break
+	var title: String = "Renown %d!" % level
+	if newcomer == null:
+		_say("%s! Emberwick is growing." % title)
+		return null
+	var line: String = "\"%s\"" % newcomer.data.greeting
+	var detail: String = "%s moves in. %s" % [newcomer.data.title(), _service_text(newcomer.data.base_service)]
+	var reveal: Callable = func(amount: float) -> void: newcomer.modulate.a = amount
+	return _start_moment(newcomer, GOLD, title, line, detail, reveal)
+
+
+func _start_moment(villager: Villager, tint: Color, title: String, line: String, detail: String, reveal: Callable) -> VillageMoment:
+	moment = VillageMoment.new()
+	moment.name = "Moment"
+	actors.add_child(moment)
+	# A villager low on the map would stand under the dialogue box: move the box up.
+	moment.setup(villager, tint, title, line, detail, reveal, villager.position.y > room.get_rect().get_center().y)
+	moment.finished.connect(_on_moment_finished.bind(title))
+	camera.target = moment.focus
+	$Overlay.visible = false
+	hero.velocity = Vector2.ZERO
+	hero.set_physics_process(false)
+	return moment
+
+
+func _on_moment_finished(title: String) -> void:
+	moment = null
+	_say(title)
+	_next_moment()
+	if moment != null:
+		return
+	$Overlay.visible = true
+	camera.target = hero
+	# Next frame, so the press that ended the moment does not also act.
+	hero.set_physics_process.call_deferred(true)
 
 
 ## The villager node for this job, or null.
@@ -259,15 +410,38 @@ func _service_text(service: ServiceData) -> String:
 func _place_villagers() -> void:
 	for plot: VillagePlot in plots.get_children():
 		var state: VillagerState = village.on_plot(plot.index)
-		var data: VillagerData = _villager_data(state.villager_id) if state != null else null
-		if data == null:
-			continue
-		var villager: Villager = VILLAGER_SCENE.instantiate()
-		actors.add_child(villager)
-		villager.position = plot.position
-		villager.setup(data, state, balance)
-		villager.talked_to.connect(func(who: Villager, by: Hero) -> void: talk(who, by))
-		villagers.append(villager)
+		if state != null:
+			_add_villager(state)
+
+
+## Puts a villager in front of their house. Returns null if their data is missing.
+func _add_villager(state: VillagerState) -> Villager:
+	var data: VillagerData = _villager_data(state.villager_id)
+	var plot: VillagePlot = _plot_of(state)
+	if data == null or plot == null:
+		return null
+	var villager: Villager = VILLAGER_SCENE.instantiate()
+	actors.add_child(villager)
+	villager.position = plot.position
+	villager.setup(data, state, balance)
+	villager.talked_to.connect(func(who: Villager, by: Hero) -> void: talk(who, by))
+	villagers.append(villager)
+	return villager
+
+
+
+## "Renown 1 (1/4)" in the top right corner.
+func _add_renown_label() -> void:
+	_renown_label = Label.new()
+	_renown_label.name = "Renown"
+	_renown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_renown_label.position = Vector2(440, 6)
+	_renown_label.size = Vector2(192, 14)
+	_renown_label.add_theme_font_size_override("font_size", 9)
+	_renown_label.add_theme_color_override("font_color", GOLD)
+	_renown_label.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.05))
+	_renown_label.add_theme_constant_override("outline_size", 3)
+	$Overlay.add_child(_renown_label)
 
 
 func _add_spot(kind: StringName, at: Vector2, tint: Color) -> InteractSpot:

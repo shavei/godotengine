@@ -11,6 +11,9 @@ var village: VillageState = VillageState.new()
 var first_gift_done: bool = false
 ## Gift ceremonies watched to the end or skipped; the first one cannot be skipped.
 var ceremonies_seen: int = 0
+## Training ticks the runs left waiting (TrainingSystem.train_due): one per run, applied
+## in the village once nothing waits at the Shrine.
+var training_due: int = 0
 
 
 ## The hero's progress. Made fresh (level 1) the first time it is asked for.
@@ -31,6 +34,7 @@ func to_dict() -> Dictionary:
 		"village": village.to_dict(),
 		"first_gift_done": first_gift_done,
 		"ceremonies_seen": ceremonies_seen,
+		"training_due": training_due,
 	}
 
 
@@ -47,4 +51,5 @@ static func from_dict(data: Dictionary) -> ProfileState:
 	# Saves from before the tutorial: anyone who gave or kept a power is past it.
 	profile.first_gift_done = bool(data.get("first_gift_done", FirstGift.settled_before(profile)))
 	profile.ceremonies_seen = maxi(0, int(data.get("ceremonies_seen", 0)))
+	profile.training_due = maxi(0, int(data.get("training_due", 0)))
 	return profile

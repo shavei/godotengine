@@ -1,7 +1,9 @@
 class_name ResultsScreen
 extends Control
 ## The results screen (docs/GDD.md Section 13): how the run went, XP and level-ups,
-## weapon mastery, the loot found and kept, and what the village's services banked.
+## weapon mastery, the loot found and kept, what the village's services banked, and the
+## training tick preview (what the villagers' training will reach once the run's power
+## is settled).
 ## Attribute points and Power Shards are spent at the village Shrine (GrowthPanel).
 ## Reads SceneRouter.context["summary"] (a RunSummary for the local hero).
 ## Continue goes back to the village, where the Shrine glows while a boss's power offer
@@ -108,7 +110,8 @@ func _build() -> void:
 	for currency: StringName in summary.income:
 		income.append("+%d %s" % [summary.income[currency], Wallet.currency_name(currency)])
 	var income_label: Label = _label("From the village: %s" % ", ".join(income) if not income.is_empty() else "", 9, GOOD, "Income")
-	_place(income_label, Vector2(0, 214), Vector2(640, 14), true)
+	_place(income_label, Vector2(0, 200), Vector2(640, 14), true)
+	_place(_label(training_text(), 9, INK, "Training"), Vector2(0, 216), Vector2(640, 14), true)
 	_points_label = _label("", 10, GOLD, "Points")
 	_place(_points_label, Vector2(0, 240), Vector2(640, 16), true)
 	_shards_label = _label("", 9, Wallet.currency_color(Wallet.SHARDS), "Shards")
@@ -120,6 +123,23 @@ func _build() -> void:
 	_continue.add_theme_font_size_override("font_size", 10)
 	_continue.pressed.connect(continue_on)
 	_place(_continue, Vector2(250, 320), Vector2(140, 24), false)
+
+
+## "Training: Tilly reaches Adept, Brann 2/3" (empty while no villager holds a power).
+func training_text() -> String:
+	var profile: ProfileState = GameState.profile
+	var parts: PackedStringArray = []
+	for entry: RankUp in TrainingSystem.preview(profile.village, balance, maxi(profile.training_due, 1)):
+		var data: VillagerData = ContentDB.get_item(&"villagers", entry.villager_id) as VillagerData
+		var who: String = data.display_name if data != null else String(entry.villager_id)
+		if entry.is_rank_up():
+			parts.append("%s reaches %s" % [who, TrainingSystem.rank_name(entry.rank_after)])
+		elif entry.rank_after == TrainingSystem.MASTER:
+			parts.append("%s Master" % who)
+		else:
+			var next: int = balance.adept_tp if entry.rank_after == TrainingSystem.NOVICE else balance.master_tp
+			parts.append("%s %d/%d" % [who, entry.training_points, next])
+	return "Training: %s" % ", ".join(parts) if not parts.is_empty() else ""
 
 
 func refresh() -> void:

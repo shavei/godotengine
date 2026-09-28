@@ -4,6 +4,7 @@ extends RefCounted
 ## weapon mastery; loot is banked in full after a clear, or `death_keep_fraction` of it
 ## after a fall. A clear also rolls each hero's power orbs (PowerOffer). Village income
 ## (services, by player_id in `services`) is banked after every run, never halved.
+## Every run, won or lost, leaves one training tick for the village (ProfileState.training_due).
 ## Returns one RunSummary per player_id for the results screen.
 
 
@@ -62,6 +63,7 @@ static func finish(run: RunState, profile: ProfileState, success: bool, balance:
 			summary.power_offer = hero.power_offer.duplicate()
 		summaries[player_id] = summary
 	profile.run_count += 1
+	profile.training_due += 1
 	if success:
 		profile.runs_won += 1
 	return summaries

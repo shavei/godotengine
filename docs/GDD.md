@@ -179,7 +179,7 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 
 ### 5.1 Villagers
 - 8 jobs: **Smith, Farmer, Guard, Healer, Miller, Baker, Hunter, Scholar** (CONTENT.md).
-- Start with Smith, Farmer, Guard. Others arrive through Renown (5.5). Until Renown exists (M5) the village counts as Renown 2, so the Healer lives there from the start.
+- Start with Smith, Farmer, Guard. Others arrive through Renown (5.5): the Healer at Renown 2 (built in M5 PR 1; before that the Healer lived there from the start).
 - Each villager has a **base service** without any power (so an unpowered village still works) and a workplace building.
 - A gifted power changes the service according to the villager+power combo.
 - **Services stack (M4 PR 2):** every villager's base service always works. A villager holding a power adds the combo's Novice service on top, and from Adept the Adept service on top of that (Adept adds to Novice: a Frost Farmer is +1 flask at Novice, +2 at Adept, plus the base +1). Every villager's services add up in one `ModifierStack` for each run. A priced service (a Smith's infusion) works only once the hero has bought it. Guard services only work in raids (M6); the Guard's card and speech say so.
@@ -190,6 +190,7 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 - Starting TP on gift: `power level - 1` (level 5 gift = 4 TP = already Adept, Master in 3 runs).
 - Speed-ups: Training Grounds building (-1 TP needed per level for both thresholds, max 2 levels), some Scholar combos, some Neighbor bonuses.
 - Typical pace: a level 1 gift reaches Master after 7 runs (about 1.75 hours). Tuned in M5 playtests.
+- **Built (M5 PR 1):** every run, won or lost, leaves one training tick. The tick plays in the village once nothing waits at the Shrine, so a power given right after a run trains with that run (a level 1 gift is at 1 TP when you walk out). The gate stays shut while a power waits at the Shrine. Each rank-up plays a short moment in the village (about 4.5 s, skippable after its burst): the camera goes to the villager, a ring bursts, their new rank prop grows in, then their line and their new service. **Adept:** a star on the chest in the power's color and a pennant on the roof. **Master:** a gold crown and a second, gold pennant. Villager names show their progress ("Tilly  Novice 2/3", "Adept 5/7", "Master"). The results screen previews the tick ("Training: Brann 1/3, Tilly reaches Adept").
 
 ### 5.3 Buildings
 - Each villager workplace has **3 levels**. Level 2 and 3 increase that villager's service strength by +25% each and unlock extra shop items.
@@ -231,6 +232,8 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 | 8 | 49 | Apprentices. The Hoard can be entered (also needs all 4 Wardens defeated). |
 | 9 | 60 | Mythic weapons for all types. |
 | 10 | 72 | Village fully grown; final story beat before the Hoard. |
+
+- **Built (M5 PR 1):** Renown points are counted from the village itself (every villager holding a power, every Master), so they can never drift from what the village holds; raids and buildings join in M6. A new level plays a moment in the village: "Renown 2!" with the newcomer fading in on their plot, their greeting and their base service. Renown shows in the village's top right ("Renown 1 (1/4)") and on the notice board with who moves in next. With the 4 prototype villagers the most is 12 points (Renown 3); the Miller and Training Grounds at Renown 3 wait for later content. The Healer arrives at Renown 2: with only 3 starting villagers that is the first Master, or 2 gifts and a Master.
 
 ### 5.6 Apprentices (late game depth)
 - From Renown 8, each **Master** villager can take one **Apprentice** of the same job, who lives on a new plot and can receive a **different** power.
@@ -686,6 +689,7 @@ Live values: the villager and combo files in `data/villagers/` and `data/combos/
 - Respec: 50 coins per hero level.
 - Gift ceremony: 7.5 s (Spark rises 0.4 s, flies 1.0 to 2.3 s, the palette swap takes 0.9 s, the line shows at 3.2 s). The first one can be continued 1.5 s after its line shows. A gift shifts the villager's clothes 50% toward the power's color.
 - The forced first gift goes to `first_gift_villager` (the Farmer) in `balance_default.tres`.
+- Training (M5): Adept at 3 TP, Master at 7 (`adept_tp`, `master_tp`), 1 TP per run. Renown: `renown_per_gift` 1, `renown_per_master` 2, `renown_levels` 0, 4, 9, 15, 22, 30, 39, 49, 60, 72. Rank-up and Renown moments: 4.5 s, burst at 0.5 s, reveal over 0.8 s, line at 1.2 s, skippable from 0.6 s.
 
 All numbers here are starting points for tuning. Update this section when they change.
 

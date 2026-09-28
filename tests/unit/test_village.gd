@@ -14,6 +14,8 @@ func before_each() -> void:
 	_original_context = SceneRouter.context
 	SceneRouter.context = {}
 	GameState.new_profile()
+	# The Healer moves in at Renown 2.
+	GameState.admit_villagers(2)
 	# Past the forced first gift (its tests set this back).
 	GameState.profile.first_gift_done = true
 
@@ -76,10 +78,12 @@ func test_content_text_has_no_em_dash() -> void:
 
 # --- VillageState --------------------------------------------------------------------
 
-func test_a_new_profile_moves_in_the_prototype_villagers_on_their_home_plots() -> void:
+func test_a_new_profile_moves_in_the_starting_villagers_on_their_home_plots() -> void:
+	GameState.new_profile()
 	var village: VillageState = GameState.profile.village
-	assert_eq(village.villagers.size(), 4)
-	for id: StringName in PROTOTYPE_VILLAGERS:
+	assert_eq(village.villagers.size(), 3, "the Healer waits for Renown 2")
+	assert_null(village.find(&"healer"))
+	for id: StringName in [&"smith", &"farmer", &"guard"] as Array[StringName]:
 		var state: VillagerState = village.find(id)
 		assert_not_null(state, "%s lives in the village" % id)
 		var data: VillagerData = ContentDB.get_item(&"villagers", id) as VillagerData
@@ -127,7 +131,8 @@ func test_old_saves_without_a_village_get_the_starting_villagers() -> void:
 	SaveManager.save_data(GameState.slot, {"run_count": 3, "heroes": {"0": {"level": 2}}})
 	GameState.load_profile()
 	assert_eq(GameState.profile.run_count, 3)
-	assert_eq(GameState.profile.village.villagers.size(), 4)
+	assert_eq(GameState.profile.village.villagers.size(), 3, "the Healer waits for Renown 2")
+	assert_eq(GameState.profile.village.renown_seen, 1, "an old save takes its Renown as seen")
 	SaveManager.delete_slot(GameState.slot)
 	SaveManager.save_dir = original_dir
 
@@ -181,7 +186,7 @@ func test_talking_tells_the_service() -> void:
 	assert_true(scene.sign_label.text.contains("Sells weapons"))
 	var farmer: Villager = scene.find_child("VillagerFarmer", true, false) as Villager
 	var text: String = scene.speech(farmer)
-	assert_true(text.begins_with("Tilly the Farmer (Growth, Adept)"), text)
+	assert_true(text.begins_with("Tilly the Farmer (Growth, Adept 4/7)"), text)
 	assert_true(text.contains("+2 flasks"), "Novice service")
 	assert_true(text.contains("Adept: +3 flasks"), "a level 5 gift is Adept at once")
 

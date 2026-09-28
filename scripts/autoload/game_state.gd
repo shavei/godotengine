@@ -4,9 +4,6 @@ extends Node
 ## Rule: never store per-player data directly on this node; key it by player_id.
 
 const LOCAL_PLAYER_ID: int = 0
-## Renown arrives in M5. Until then the village counts as Renown 2, so the four
-## prototype villagers (Smith, Farmer, Guard and the Healer) all live there.
-const RENOWN_LEVEL_UNTIL_M5: int = 2
 
 ## The save slot in use. One slot until a slot picker exists.
 var slot: int = 0
@@ -23,14 +20,27 @@ func new_profile() -> void:
 	admit_villagers()
 
 
-## Moves in the villagers whose Renown level is reached (a fresh village, or an old save
-## from before a villager existed).
-func admit_villagers() -> void:
-	var roster: Array[VillagerData] = []
+## Moves in the villagers whose Renown level is reached (a fresh village, an old save
+## from before a villager existed, or a new Renown level). `renown_level` overrides the
+## village's own level (tests). Returns the new arrivals.
+func admit_villagers(renown_level: int = -1) -> Array[VillagerState]:
+	var level: int = renown_level if renown_level > 0 else RenownSystem.level(profile.village, balance())
+	return profile.village.admit(roster(), level)
+
+
+## Every villager in the game's content.
+func roster() -> Array[VillagerData]:
+	var result: Array[VillagerData] = []
 	for item: Resource in ContentDB.get_all(&"villagers"):
 		if item is VillagerData:
-			roster.append(item)
-	profile.village.admit(roster, RENOWN_LEVEL_UNTIL_M5)
+			result.append(item)
+	return result
+
+
+## The game's balance numbers (defaults if the file is missing).
+func balance() -> BalanceData:
+	var data: BalanceData = ContentDB.get_item(&"balance", &"default") as BalanceData
+	return data if data != null else BalanceData.new()
 
 
 func has_profile() -> bool:
@@ -46,6 +56,9 @@ func load_profile() -> void:
 		profile = ProfileState.from_dict(data)
 		profile.hero(LOCAL_PLAYER_ID)
 		admit_villagers()
+		# Saves from before Renown take their level as already seen.
+		if profile.village.renown_seen < 0:
+			profile.village.renown_seen = RenownSystem.level(profile.village, balance())
 
 
 func save_profile() -> Error:
@@ -59,16 +72,11 @@ func hero_state(player_id: int) -> HeroState:
 
 ## What the village does for this hero's runs (docs/ARCHITECTURE.md Section 5).
 func services(player_id: int) -> ModifierStack:
-	var villagers: Array[VillagerData] = []
-	for item: Resource in ContentDB.get_all(&"villagers"):
-		if item is VillagerData:
-			villagers.append(item)
 	var combos: Array[ComboData] = []
 	for item: Resource in ContentDB.get_all(&"combos"):
 		if item is ComboData:
 			combos.append(item)
-	var balance: BalanceData = ContentDB.get_item(&"balance", &"default") as BalanceData
-	return ModifierStack.collect(hero_state(player_id), profile.village, balance if balance != null else BalanceData.new(), villagers, combos)
+	return ModifierStack.collect(hero_state(player_id), profile.village, balance(), roster(), combos)
 
 
 # --- Run in progress ---------------------------------------------------------

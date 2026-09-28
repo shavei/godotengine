@@ -1,8 +1,8 @@
 class_name VillageState
 extends RefCounted
 ## The village (docs/ARCHITECTURE.md Section 4.2): who lives there, on which plot, and
-## the powers they hold. Shared by every hero in a co-op party. Buildings, Renown and
-## raids join in later milestones.
+## the powers they hold. Shared by every hero in a co-op party. Renown points come from
+## the villagers (RenownSystem); buildings and raids join in later milestones.
 
 ## House plots the village starts with (docs/GDD.md Section 5.4).
 const START_PLOTS: int = 6
@@ -12,6 +12,9 @@ const WORKPLACE_LEVEL_UNTIL_M6: int = 2
 
 var villagers: Array[VillagerState] = []
 var plot_count: int = START_PLOTS
+## The highest Renown level the village has shown (its level-up moment plays once).
+## -1 in saves from before Renown: the village takes the current level without a moment.
+var renown_seen: int = 1
 
 
 ## The villager with this job, or null if they have not arrived.
@@ -67,6 +70,7 @@ func _free_plot() -> int:
 func to_dict() -> Dictionary:
 	return {
 		"plot_count": plot_count,
+		"renown_seen": renown_seen,
 		"villagers": villagers.map(func(villager: VillagerState) -> Dictionary: return villager.to_dict()),
 	}
 
@@ -74,6 +78,7 @@ func to_dict() -> Dictionary:
 static func from_dict(data: Dictionary) -> VillageState:
 	var village: VillageState = VillageState.new()
 	village.plot_count = maxi(START_PLOTS, int(data.get("plot_count", START_PLOTS)))
+	village.renown_seen = int(data.get("renown_seen", -1))
 	for entry: Variant in data.get("villagers", []):
 		if entry is Dictionary:
 			var villager: VillagerState = VillagerState.from_dict(entry)

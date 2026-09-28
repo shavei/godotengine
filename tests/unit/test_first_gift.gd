@@ -13,7 +13,7 @@ func before_each() -> void:
 	var roster: Array[VillagerData] = []
 	for item: Resource in ContentDB.get_all(&"villagers"):
 		roster.append(item as VillagerData)
-	profile.village.admit(roster, GameState.RENOWN_LEVEL_UNTIL_M5)
+	profile.village.admit(roster, 2)
 
 
 func test_a_new_profile_must_give_its_first_power_to_the_farmer() -> void:
