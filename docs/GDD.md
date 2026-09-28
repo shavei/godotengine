@@ -92,6 +92,8 @@ You are the only hero of Emberwick, a small village at the edge of a drained lan
 
 **Built so far (M4 PR 1):** the orbs stand in the boss room; the hero walks to one and takes it with Interact (the other fades). Results lead back to the village, where the Shrine glows and names the waiting power. At the Shrine: Keep, Merge, **Give to a villager** (a card per villager previews the Novice and Adept services; the Master Technique shows "???" until the Codex; a villager who holds a power is greyed out), or Leave it behind. With every slot full, **Give a kept power away** makes room: the kept power goes to a villager at its level and the new power takes its slot at level 1. Only when every villager already holds a power does "let a kept power go" (lost) come back. Giving, letting go and leaving need a second press. The offer is saved, so quitting before choosing never loses it. The two orbs are always different powers; a kept power already at level 5 is only offered when the pool has too few others. With no offer waiting, the Shrine still gives kept powers away (Section 3.2).
 
+**M4 PR 2:** the Shrine also has **Grow stronger** (spend attribute points, level up kept powers with shards, respec for coins), open with or without an offer. Its caption reads "Shrine: grow stronger" and the button glows gold while something can be spent. Villager cards also say when a service is bought at a workplace or only works in raids.
+
 ### 3.2 Rules
 - **Kept slots: 3.** Fixed for the whole game (Season 6 reduces it to 2).
 - **Gifts are permanent.** A villager's power can never be taken back or swapped.
@@ -121,7 +123,7 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 - XP sources: combat room cleared 15, elite 60, mini-boss 100, region boss 200, raid won 150. Failed runs keep all XP earned.
 - Each level: **+4 max HP** and **1 attribute point**.
 - XP earned in a run is added to your level at the run's end (results screen). A cleared room gives its XP at once (a small "+15 XP" pops up).
-- Attribute points are spent on the results screen for now (one press per point); the Shrine and character sheet take over later. Focus is open since M3 (kept powers exist).
+- Attribute points are spent at the village Shrine ("Grow stronger", one press per point; since M4 PR 2, before that on the results screen). The results screen says how many wait. Focus is open since M3 (kept powers exist).
 
 | Attribute | Per point | Cap |
 |---|---|---|
@@ -129,7 +131,7 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 | Vigor | +10 max HP, +5 max stamina | 20 |
 | Focus | +3% power damage, -1.5% power cooldowns | 20 |
 
-- Respec at the Shrine for coins (cost `50 * level`).
+- Respec at the Shrine for coins (cost `50 * level`): every spent point comes back unspent. A second press confirms.
 - Base stats: 100 HP, 100 stamina, move speed 110 px/s.
 
 ### 4.2 Weapons and mastery
@@ -137,14 +139,15 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 - **Mastery** 1 to 10 per weapon type. Mastery XP = 1 per 10 damage dealt with that weapon. Mastery n requires `150 * n^1.4` total XP (every weapon starts at mastery 1, so mastery 2 needs 396). Tallied on the results screen; the unlocks below arrive with the other weapons (M8).
 - Unlocks by mastery: 2 dash attack, 4 charged attack, 6 special move, 8 finisher (on staggered enemies), 10 signature move.
 - **Weapon tiers** (bought from the Smith): Iron x1.0, Steel x1.3, Runed x1.7, Mythic x2.2 base damage. Steel needs Forge level 2, Runed Forge level 3, Mythic Forge level 3 plus a Master Smith.
-- **Infusions:** a Smith holding a power sells an infusion of that element (see CONTENT.md Smith combos).
+- **Infusions:** a Smith holding a power sells an infusion of that element (see CONTENT.md Smith combos). Each hero buys it **once** (100 coins) and it works in every run after; the Adept upgrade comes free once the Smith is Adept.
+- **Built so far (M4 PR 2):** talking to the Smith opens the Forge: the next tier for your weapon (paid from banked coins, shown on the hero at once) and the Smith's infusion. Buildings arrive in M6, so until then the Forge counts as **level 2**: Steel is for sale from the start, Runed needs Forge 3 (or a Fire Smith at Adept, "one Forge level early"), Mythic needs a Master Smith too.
 
 ### 4.3 Kept powers
 - Each kept power is an active ability on its own button (Power 1, 2, 3).
 - **Power level 1 to 5.** Raised with **Power Shards**: level 2 costs 3, level 3 costs 5, level 4 costs 8, level 5 costs 12 (28 total).
 - Each level: +20% power damage. Level 3 and level 5 add an upgrade effect (CONTENT.md).
 - Shards come from elites (1), mini-bosses (1), region bosses (2), treasure rooms (sometimes), events, the Merchant, and some village services. (Lowered in M3 from 1 to 2 / 2 / 3 once shards had costs: see Section 15.6.)
-- Banked shards are spent on the results screen for now (one press per level); the Shrine takes over in M4.
+- Banked shards are spent at the Shrine ("Grow stronger", one press per level; the results screen until M4 PR 2).
 - Levels persist between runs while the power is kept.
 - Base cooldowns 4 to 8 seconds (per power). No mana.
 
@@ -177,6 +180,7 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 - Start with Smith, Farmer, Guard. Others arrive through Renown (5.5). Until Renown exists (M5) the village counts as Renown 2, so the Healer lives there from the start.
 - Each villager has a **base service** without any power (so an unpowered village still works) and a workplace building.
 - A gifted power changes the service according to the villager+power combo.
+- **Services stack (M4 PR 2):** every villager's base service always works. A villager holding a power adds the combo's Novice service on top, and from Adept the Adept service on top of that (Adept adds to Novice: a Frost Farmer is +1 flask at Novice, +2 at Adept, plus the base +1). Every villager's services add up in one `ModifierStack` for each run. A priced service (a Smith's infusion) works only once the hero has bought it. Guard services only work in raids (M6); the Guard's card and speech say so.
 
 ### 5.2 Training
 - **Training Points (TP):** every villager holding a power gains **1 TP per run attempted** (win or lose), at the training tick after the Choice.
@@ -261,10 +265,10 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 ### 6.4 Death
 - Death ends the run. Keep XP, mastery, 50% of coins and materials (Storehouse increases this). The 50% applies to every run currency (coins, Wood, Crystal, Power Shards), rounded down per currency.
 - No power awarded. Training still ticks.
-- Healer services give **revive tokens** (revive at 30% HP, more with upgrades).
+- Healer services give **revive tokens** (revive at 30% HP, more with upgrades). A lethal hit uses a token instead: the hero gets up with 30% max HP, statuses cleared, and 1.5 s of grace. Tokens left carry from room to room (saved with the run; Save and quit never gives one back). The HUD shows "Revive 1" beside the flasks.
 
 ### 6.5 Results and saving mid-run
-- Every run ends at the **results screen**: time, rooms cleared, XP and level-ups, weapon mastery, and loot found vs kept. Continue goes to the title until the village exists (M4).
+- Every run ends at the **results screen**: time, rooms cleared, XP and level-ups, weapon mastery, loot found vs kept, and what the village's services banked ("From the village: +40 Coins"). Attribute points and shards waiting for the Shrine are named. Continue goes back to the village.
 - The run is saved each time you enter a room. **Save and quit** (Esc / Start) goes to the title, which then offers **Continue run**. The room you were in starts over, with HP and flasks no higher than when you quit; loot picked up in that room drops again.
 - Starting a new run replaces a saved one.
 
@@ -643,7 +647,7 @@ Live values: `data/powers/power_*.tres` and `data/balance/balance_default.tres` 
 - Upgrade hits scale with the power's level like the main hit (+20% a level), so level 5 numbers are 1.8 times the table.
 - Level 5 includes level 3 (a level 5 Fire bolt explodes and leaves burning ground).
 
-**Power levels (Power Shards).** Level 2 costs 3, level 3 costs 5, level 4 costs 8, level 5 costs 12 (28 in all). Spend banked shards on the results screen (the Shrine in M4). Live values: `power_level_costs` in `balance_default.tres`.
+**Power levels (Power Shards).** Level 2 costs 3, level 3 costs 5, level 4 costs 8, level 5 costs 12 (28 in all). Spend banked shards at the Shrine (Grow stronger). Live values: `power_level_costs` in `balance_default.tres`.
 
 **Shard sources (lowered in M3).** Elites 1, Mother Toad 1, Warden of Roots 2, a treasure chest 25%, the Mossy Shrine event 1, the Merchant 1 for 60 coins. A full cleared run comes to about 5 to 7 shards with the chest, 6 to 8 with the event or the Merchant, near the Section 15.3 target of 4 to 6 (was 10 to 11). One run then buys about one or two levels; a power from level 1 to 5 takes about 4 to 5 runs of shards.
 
@@ -662,6 +666,22 @@ Live values: `data/balance/balance_default.tres` (Progression and Run end groups
 | Kept on a fall | 50% of each run currency, rounded down |
 
 - A full cleared run (about 9 fights, 2 elites, 2 Mother Toads, the Warden) gives about 135 + 120 + 200 + 200 = 655 XP, just above the Section 15.3 target (450 to 650). The first cleared run takes a new hero to level 3.
+
+### 15.9 Village services (M4)
+Live values: the villager and combo files in `data/villagers/` and `data/combos/` (each service's `modifiers` and `price`), and `balance_default.tres` (Village, Village services and Smith groups).
+
+| Villager | Base (always) | Fire | Frost | Stone | Growth |
+|---|---|---|---|---|---|
+| Smith | Sells weapon tiers | Infusion: 15% Burn on weapon hits / Adept 30% and Forge +1 for tiers | Infusion: 15% Chill / Adept 30% and 10% less damage taken | Infusion: +25% stagger / Adept +50% and +15% max HP | Mending gear: +5% weapon damage per fight room cleared unhit, max 25% / Adept max 40% |
+| Farmer | +1 flask | Flasks heal +25% / +50% | +1 flask / +2 | +40 coins a run / +80 and +10 Wood | +2 flasks / +3, and each flask heals another 15% max HP over 5 s |
+| Guard | 1 raid tower | Raids only (M6) | Raids only | Raids only | Raids only |
+| Healer | 1 revive token (30% HP) | Revives burst: 30 damage, 56 px, Burn / Adept revive at 50% | 10% less damage in boss fights / 20% | +20 max HP / +40 | Heal 3 HP per fight room cleared / 6 |
+
+- Adept numbers are totals (Adept adds to Novice). Every Mossy Hollow floor ends in a boss fight, so the Frost Healer's "boss floors" counts in the mini-boss and boss rooms.
+- Smith infusions: 100 coins each, bought once per hero. Weapon tiers: Steel 300 coins (x1.3), Runed 900 (x1.7), Mythic 2500 and 10 Crystal (x2.2, needs a Master Smith). Forge counts as level 2 until buildings (M6).
+- Income ("+40 coins a run") is banked after every run, won or lost, and is never halved by a fall.
+- A max HP share (Stone Smith) applies after flat bonuses: `(base + flat) * (1 + share)`.
+- Respec: 50 coins per hero level.
 
 All numbers here are starting points for tuning. Update this section when they change.
 

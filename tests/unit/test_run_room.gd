@@ -497,6 +497,10 @@ func test_falling_banks_half_the_loot_and_ends_the_run() -> void:
 	watch_signals(EventBus)
 	room.hero.health.take_damage(9999)
 	await wait_physics_frames(1)
+	assert_signal_not_emitted(EventBus, "run_ended", "the Healer's revive token comes first")
+	room.hero.grant_iframes(0.0)
+	room.hero.health.take_damage(9999)
+	await wait_physics_frames(1)
 	assert_signal_emitted_with_parameters(EventBus, "run_ended", [false])
 	assert_true(room.get_node("%FellLabel").visible)
 	assert_null(GameState.run)
@@ -544,3 +548,63 @@ func test_a_quit_run_continues_in_the_same_room() -> void:
 	assert_eq(again.map_room.type, run.current_room().type)
 	assert_eq(again.hero.health.hp, 60)
 	assert_eq(again.hero.flasks.charges, 2)
+
+
+# --- Village services (M4 PR 2) ----------------------------------------------------
+
+func test_a_new_run_gets_the_village_services() -> void:
+	var village: VillageState = GameState.profile.village
+	GiftSystem.give(village, village.index_of(&"farmer"), &"growth")
+	var room: RunRoom = await _spawn_room(_run_in(MapRoom.REST))
+	var balance: BalanceData = room.hero.balance
+	assert_eq(room.hero.flasks.max_charges, balance.flask_charges + 3, "base +1, Growth Farmer +2")
+	assert_eq(room.hero.flasks.charges, room.hero.flasks.max_charges)
+	assert_eq(room.hero.revives, 1, "the Healer's token")
+	assert_true(room.hud.flask_label.text.ends_with("Revive 1"), room.hud.flask_label.text)
+
+
+func test_revive_tokens_and_clean_rooms_carry_through_doors_and_quits() -> void:
+	var run: RunState = _run_in(MapRoom.REST)
+	var room: RunRoom = await _spawn_room(run)
+	room.hero.health.take_damage(9999)
+	assert_eq(room.hero.revives, 0, "used up")
+	room.write_quit_save()
+	var carry: Dictionary = SaveManager.load_run(GameState.slot)["heroes"]["0"]["carry"]
+	assert_eq(int(carry["revives"]), 0, "quitting does not give the token back")
+	run.save_hero(0, 40, 100, 2, 0, 3)
+	room.free()
+	room = await _spawn_room(run)
+	assert_eq(room.hero.revives, 0, "the next room remembers")
+	assert_eq(room._clean_rooms, 3)
+
+
+func test_boss_rooms_switch_on_the_frost_salve() -> void:
+	var village: VillageState = GameState.profile.village
+	GiftSystem.give(village, village.index_of(&"healer"), &"frost")
+	var room: RunRoom = await _spawn_room(_run_in(MapRoom.REST))
+	assert_eq(room.hero.stats.damage_taken_multiplier, 1.0)
+	room.free()
+	var run: RunState = _run_in(MapRoom.MINI_BOSS)
+	room = await _spawn_room(run)
+	assert_almost_eq(room.hero.stats.damage_taken_multiplier, 0.9, 0.001)
+	room.free()
+
+
+func test_a_cleared_fight_heals_and_grows_mending_gear() -> void:
+	var village: VillageState = GameState.profile.village
+	GiftSystem.give(village, village.index_of(&"healer"), &"growth")
+	GiftSystem.give(village, village.index_of(&"smith"), &"growth")
+	GameState.hero_state(0).bought_services.append(&"smith_growth")
+	var room: RunRoom = await _spawn_room(_run_in(MapRoom.REST))
+	room.hero.health.take_damage(20)
+	room._hit_this_room = false
+	room._apply_room_services()
+	assert_eq(room.hero.health.hp, 83, "Growth Healer heals 3")
+	assert_eq(room._clean_rooms, 1, "no hit since the room began")
+	assert_almost_eq(room.hero.stats.damage_bonus, 0.05, 0.001)
+	room.hero.grant_iframes(0.0)
+	room.hero.health.take_damage(1)
+	assert_eq(room._clean_rooms, 0, "a hit resets the gear")
+	assert_eq(room.hero.stats.damage_bonus, 0.0)
+	room._apply_room_services()
+	assert_eq(room._clean_rooms, 0, "this room had a hit")

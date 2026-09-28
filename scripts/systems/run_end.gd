@@ -2,11 +2,13 @@ class_name RunEnd
 extends RefCounted
 ## Closes a run (docs/GDD.md Section 2 and 6.4). Every hero in it keeps all XP and
 ## weapon mastery; loot is banked in full after a clear, or `death_keep_fraction` of it
-## after a fall. A clear also rolls each hero's power orbs (PowerOffer). Returns one
-## RunSummary per player_id for the results screen.
+## after a fall. A clear also rolls each hero's power orbs (PowerOffer). Village income
+## (services, by player_id in `services`) is banked after every run, never halved.
+## Returns one RunSummary per player_id for the results screen.
 
 
-static func finish(run: RunState, profile: ProfileState, success: bool, balance: BalanceData) -> Dictionary[int, RunSummary]:
+static func finish(run: RunState, profile: ProfileState, success: bool, balance: BalanceData,
+		services: Dictionary[int, ModifierStack] = {}) -> Dictionary[int, RunSummary]:
 	var summaries: Dictionary[int, RunSummary] = {}
 	var keep_fraction: float = 1.0 if success else balance.death_keep_fraction
 	for player_id: int in run.player_ids():
@@ -45,6 +47,15 @@ static func finish(run: RunState, profile: ProfileState, success: bool, balance:
 		for currency: StringName in run_wallet.amounts:
 			summary.found[currency] = run_wallet.amount(currency)
 		summary.kept = EconomySystem.bank_run_loot(run_wallet, hero.bank, keep_fraction)
+		var stack: ModifierStack = services.get(player_id)
+		var income: Dictionary[StringName, int] = {}
+		if stack != null:
+			income = stack.income()
+		for currency: StringName in income:
+			var amount: int = income[currency]
+			if amount > 0:
+				hero.bank.add(currency, amount)
+				summary.income[currency] = amount
 		# Power orbs: only a clear earns them.
 		if success:
 			hero.power_offer = PowerOffer.roll(run.region.power_pool, hero, balance, PowerOffer.rng_for(run.run_seed))

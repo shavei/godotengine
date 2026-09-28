@@ -1,6 +1,6 @@
 class_name Hud
 extends CanvasLayer
-## Run HUD (docs/GDD.md Section 13): HP, stamina, flasks, power slots with cooldowns
+## Run HUD (docs/GDD.md Section 13): HP, stamina, flasks and revive tokens, power slots with cooldowns
 ## and, in runs, what the hero has picked up and a boss's health. Call bind_hero() once (and bind_wallet() in runs,
 ## bind_boss() when a boss appears); the HUD then follows their signals.
 
@@ -22,6 +22,8 @@ var _wallet: Wallet
 var _currencies: Array[StringName] = []
 var _power_row: HBoxContainer
 var _power_views: Array[PowerSlotView] = []
+var _flasks: Vector2i = Vector2i.ZERO
+var _revives: int = 0
 
 
 func bind_hero(hero: Hero) -> void:
@@ -29,6 +31,8 @@ func bind_hero(hero: Hero) -> void:
 	hero.stamina.changed.connect(_on_stamina_changed)
 	hero.flasks.changed.connect(_on_flasks_changed)
 	hero.dodge_denied.connect(_on_dodge_denied)
+	hero.revives_changed.connect(_on_revives_changed)
+	_revives = hero.revives
 	_on_health_changed(hero.health.hp, hero.health.max_hp)
 	_on_stamina_changed(hero.stamina.current, hero.stamina.maximum)
 	_on_flasks_changed(hero.flasks.charges, hero.flasks.max_charges)
@@ -102,8 +106,20 @@ func _on_stamina_changed(current: float, maximum: float) -> void:
 
 
 func _on_flasks_changed(charges: int, max_charges: int) -> void:
-	flask_label.text = "Flasks  %d / %d" % [charges, max_charges]
-	flask_label.modulate = Color(1, 1, 1, 1.0 if charges > 0 else 0.45)
+	_flasks = Vector2i(charges, max_charges)
+	_refresh_flasks()
+
+
+func _on_revives_changed(count: int) -> void:
+	_revives = count
+	_refresh_flasks()
+
+
+func _refresh_flasks() -> void:
+	flask_label.text = "Flasks  %d / %d" % [_flasks.x, _flasks.y]
+	if _revives > 0:
+		flask_label.text += "    Revive %d" % _revives if _revives == 1 else "    Revives %d" % _revives
+	flask_label.modulate = Color(1, 1, 1, 1.0 if _flasks.x > 0 or _revives > 0 else 0.45)
 
 
 ## Dodge pressed without enough stamina: the bar blinks red and nudges sideways.

@@ -20,4 +20,6 @@ func physics_update(delta: float) -> void:
 	var healed: int = hero.health.heal(amount)
 	if healed > 0:
 		DamageNumber.spawn(hero.get_parent(), hero.global_position, "+%d" % healed, DamageNumber.COLOR_HEAL)
+	if amount > 0:
+		hero.start_flask_regen()
 	machine.transition_to(&"Move")

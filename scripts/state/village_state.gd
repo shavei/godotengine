@@ -6,6 +6,9 @@ extends RefCounted
 
 ## House plots the village starts with (docs/GDD.md Section 5.4).
 const START_PLOTS: int = 6
+## Buildings arrive in M6. Until then every workplace counts as level 2, so the Smith
+## sells Steel (it needs Forge level 2). Only weapon tiers read it for now.
+const WORKPLACE_LEVEL_UNTIL_M6: int = 2
 
 var villagers: Array[VillagerState] = []
 var plot_count: int = START_PLOTS
@@ -17,6 +20,11 @@ func find(villager_id: StringName) -> VillagerState:
 		if villager.villager_id == villager_id:
 			return villager
 	return null
+
+
+## The level of a villager's workplace (the Smith's Forge).
+func workplace_level(_villager_id: StringName) -> int:
+	return WORKPLACE_LEVEL_UNTIL_M6
 
 
 func index_of(villager_id: StringName) -> int:

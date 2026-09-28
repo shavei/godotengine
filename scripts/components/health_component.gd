@@ -60,6 +60,13 @@ func heal(amount: int) -> int:
 	return restored
 
 
+## Brings a dead actor back with `amount` HP (a revive token).
+func revive(amount: int) -> void:
+	hp = clampi(amount, 1, max_hp)
+	healed.emit(hp)
+	health_changed.emit(hp, max_hp)
+
+
 func set_shield(value: int) -> void:
 	shield = maxi(value, 0)
 	shield_changed.emit(shield)

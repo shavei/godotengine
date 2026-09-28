@@ -18,7 +18,8 @@ var current_room_id: int = -1
 var room_cleared: bool = true
 ## Room ids visited on the current floor, in order.
 var path: Array[int] = []
-## player_id -> { "hp": int, "max_hp": int, "flasks": int }
+## player_id -> { "hp": int, "max_hp": int, "flasks": int, "revives": int, "clean_rooms": int }
+## (revive tokens left; fight rooms cleared in a row without being hit).
 var heroes: Dictionary = {}
 ## player_id -> Wallet: what each hero picked up this run.
 var wallets: Dictionary[int, Wallet] = {}
@@ -92,8 +93,8 @@ func advance_floor() -> bool:
 	return true
 
 
-func save_hero(player_id: int, hp: int, max_hp: int, flasks: int) -> void:
-	heroes[player_id] = {"hp": hp, "max_hp": max_hp, "flasks": flasks}
+func save_hero(player_id: int, hp: int, max_hp: int, flasks: int, revives: int = 0, clean_rooms: int = 0) -> void:
+	heroes[player_id] = {"hp": hp, "max_hp": max_hp, "flasks": flasks, "revives": revives, "clean_rooms": clean_rooms}
 
 
 ## What the hero carried out of the last room, or an empty Dictionary at the start.
@@ -195,7 +196,8 @@ static func from_dict(data: Dictionary, run_region: RegionData) -> RunState:
 		var entry: Dictionary = hero_data[key]
 		var carry: Dictionary = entry.get("carry", {})
 		if not carry.is_empty():
-			run.save_hero(player_id, int(carry.get("hp", 1)), int(carry.get("max_hp", 1)), int(carry.get("flasks", 0)))
+			run.save_hero(player_id, int(carry.get("hp", 1)), int(carry.get("max_hp", 1)), int(carry.get("flasks", 0)),
+					int(carry.get("revives", 0)), int(carry.get("clean_rooms", 0)))
 		run.wallets[player_id] = Wallet.from_dict(entry.get("wallet", {}))
 		run.add_xp(player_id, int(entry.get("xp", 0)))
 		var damage: Dictionary = entry.get("weapon_damage", {})

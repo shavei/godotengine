@@ -26,6 +26,8 @@ var found: Dictionary[StringName, int] = {}
 ## currency -> amount banked (all of it on a clear, a share after a fall).
 var kept: Dictionary[StringName, int] = {}
 var keep_fraction: float = 1.0
+## currency -> amount the village's services banked after the run (a Stone Farmer's terraces).
+var income: Dictionary[StringName, int] = {}
 ## Power ids the region boss offered (empty after a fall).
 var power_offer: Array[StringName] = []
 

@@ -96,11 +96,11 @@ Split into small PRs, each playable: (1) villagers, combos, the village scene an
 - [x] Village scene: tilemap, 6 plots, Shrine, gate, notice board. (PR 1: placeholder ground and houses until M7 tilesets; the notice board has no raids to show until M6.)
 - [x] Villagers [P]: Smith, Farmer, Guard, Healer with base services. (PR 1: data, houses, talking. Services change runs in PR 2. The Healer lives there from the start until Renown lands in M5.)
 - [x] `ComboData` for the 16 prototype combos (Novice and Adept services; Techniques stubbed). (Technique name and text only; `TechniqueData` in M5.)
-- [ ] `ModifierStack` gathering services into hero and run stats (unit tested).
+- [x] `ModifierStack` gathering services into hero and run stats (unit tested). (PR 2: services only; Techniques, Neighbors, meals and trinkets join the same stack later.)
 - [x] Choice screen: Keep / Give / Merge, villager preview cards, slot-full flow. (PR 1: Give with a second press, full slots give a kept power away to make room, and the Shrine gives kept powers away at any time.)
 - [x] `GiftSystem.give` with TP carry-over (unit tested).
 - [ ] Gift ceremony (simple version: particles, villager palette swap, line of dialogue). (PR 1 already shows the villager's line on the Choice screen, a glow in the power's color and a trimmed roof.)
-- [ ] Smith shop (weapon tiers, infusions), Farmer flasks, Healer revive tokens, Guard (raid stub).
+- [x] Smith shop (weapon tiers, infusions), Farmer flasks, Healer revive tokens, Guard (raid stub). (PR 2: all 16 combos' Novice and Adept services work in runs except the Guard's, which are collected as `raid.*` modifiers for M6. The Forge counts as level 2 until buildings. The Shrine's Grow stronger took over attribute points and shard leveling, with respec.)
 - [x] Save/load of `ProfileState` with round-trip tests. (PR 1: the village joins the profile; old saves get the starting villagers.)
 - [ ] Forced first gift tutorial (GDD Section 16).
 

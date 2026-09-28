@@ -4,6 +4,8 @@ extends CharacterBody2D
 ## Reads commands from an InputSource child, so tests, AI or a network peer can drive it.
 ## States live under StateMachine: Move, Attack, Dodge, Drink, Cast, Hurt, Dead.
 ## Kept powers sit in `powers` (a PowerLoadout), one per Power button.
+## Village services (a ModifierStack) change a run's hero: max HP, flasks, revive tokens,
+## weapon infusions, damage taken (apply_services).
 
 ## Dodge was pressed without enough stamina (the HUD flashes the bar).
 signal dodge_denied
@@ -11,6 +13,9 @@ signal dodge_denied
 signal power_denied(slot: int)
 ## A power went off (its cooldown has started).
 signal power_cast(slot: int)
+## A revive token was used: the hero got up instead of falling.
+signal revived
+signal revives_changed(count: int)
 
 const GROUP: StringName = &"heroes"
 ## Physics layer number of enemy bodies (docs/ARCHITECTURE.md Section 7).
@@ -24,6 +29,8 @@ const FACE_MIN_TILT: float = 0.5
 const POWER_ACTIONS: Array[StringName] = [&"power_1", &"power_2", &"power_3"]
 const BUFFERED_ACTIONS: Array[StringName] = [&"attack", &"dodge", &"flask", &"power_1", &"power_2", &"power_3"]
 const BLOCK_COLOR: Color = Color(0.8, 0.72, 0.6)
+const REVIVE_COLOR: Color = Color(1, 0.85, 0.5)
+const REVIVE_BLAST_COLOR: Color = Color(1, 0.5, 0.2)
 
 @export var player_id: int = 0
 ## Left empty, these load from ContentDB (weapon_sword, balance_default).
@@ -39,6 +46,12 @@ var power_stats: CombatStats = CombatStats.new()
 var powers: PowerLoadout
 ## Focus points (power damage is in power_stats; cooldowns read this).
 var focus: int = 0
+## What the village does for this hero in a run (empty outside runs).
+var services: ModifierStack = ModifierStack.new()
+## Revive tokens left this run.
+var revives: int = 0
+## Rolls weapon infusions.
+var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 ## Direction the hero faces and aims (unit vector).
 var facing: Vector2 = Vector2.RIGHT
 ## Index of the next swing in weapon.combo.
@@ -48,6 +61,13 @@ var combo_timer: float = 0.0
 
 var _buffers: Dictionary = {}
 var _iframe_time: float = 0.0
+## Max HP and weapon damage bonus from progress alone, before services.
+var _progress_max_hp: int = 0
+var _progress_damage_bonus: float = 0.0
+## A Growth Farmer's flask: HP still to heal over time, per second, and the fraction owed.
+var _regen_left: float = 0.0
+var _regen_rate: float = 0.0
+var _regen_owed: float = 0.0
 
 @onready var health: HealthComponent = $Health
 @onready var hurtbox: HurtboxComponent = $Hurtbox
@@ -70,6 +90,7 @@ func _ready() -> void:
 	if weapon == null:
 		weapon = ContentDB.get_item(&"weapons", &"sword") as WeaponData
 	input = _find_input_source()
+	rng.randomize()
 	stamina = StaminaPool.new(balance.hero_max_stamina, balance.stamina_regen, balance.stamina_regen_delay)
 	flasks = FlaskPouch.new(balance.flask_charges, balance.flask_heal_fraction)
 	powers = PowerLoadout.new(GiftSystem.slot_count(balance))
@@ -92,6 +113,7 @@ func _physics_process(delta: float) -> void:
 	powers.tick(delta)
 	status.tick(delta)
 	knockback.tick(delta)
+	_tick_regen(delta)
 	if combo_timer > 0.0:
 		combo_timer -= delta
 		if combo_timer <= 0.0:
@@ -163,16 +185,103 @@ func apply_balance() -> void:
 	power_stats.crit_multiplier = balance.hero_crit_multiplier
 
 
-## Applies the hero's long-term progress (level, Vigor, Might, Focus, kept powers) and
-## refills HP and stamina.
+## Applies the hero's long-term progress (level, Vigor, Might, Focus, weapon tier, kept
+## powers) and refills HP and stamina.
 func apply_progress(progress: HeroState) -> void:
-	health.set_max_hp(ProgressionSystem.max_hp(progress, balance), true)
+	_progress_max_hp = ProgressionSystem.max_hp(progress, balance)
+	health.set_max_hp(_progress_max_hp, true)
 	stamina.maximum = ProgressionSystem.max_stamina(progress, balance)
 	stamina.current = stamina.maximum
-	stats.damage_bonus = ProgressionSystem.weapon_damage_bonus(progress, balance)
+	_progress_damage_bonus = ProgressionSystem.weapon_damage_bonus(progress, balance)
+	stats.damage_bonus = _progress_damage_bonus
+	if weapon != null:
+		stats.weapon_tier = weapon.tier_multiplier * ShopSystem.tier_multiplier(progress.weapon_tier(weapon.id), balance)
 	focus = progress.attribute(HeroState.FOCUS)
 	power_stats.damage_bonus = PowerRules.focus_damage_bonus(focus, balance)
 	equip_powers(progress.kept_powers)
+
+
+## Applies the village's services for a run (after apply_progress): max HP, flask
+## charges and heal, damage taken (`conditions` like ModifierStack.BOSS_ROOM switch on
+## the matching ones), and a full set of revive tokens. Refills HP and flasks.
+func apply_services(stack: ModifierStack, conditions: Array[StringName] = []) -> void:
+	services = stack if stack != null else ModifierStack.new()
+	if _progress_max_hp <= 0:
+		_progress_max_hp = health.max_hp
+	var max_hp: float = services.total(ModifierStack.MAX_HP, _progress_max_hp) * (1.0 + services.total(ModifierStack.MAX_HP_SHARE))
+	health.set_max_hp(roundi(max_hp), true)
+	flasks.max_charges = maxi(0, services.count(ModifierStack.FLASK_CHARGES, balance.flask_charges))
+	flasks.heal_fraction = balance.flask_heal_fraction * (1.0 + services.total(ModifierStack.FLASK_HEAL))
+	flasks.refill()
+	stats.damage_taken_multiplier = maxf(0.0, 1.0 + services.total(ModifierStack.DAMAGE_TAKEN, 0.0, conditions))
+	set_revives(services.count(ModifierStack.REVIVES))
+	set_mending(0)
+
+
+func set_revives(count: int) -> void:
+	revives = maxi(0, count)
+	revives_changed.emit(revives)
+
+
+## Weapon damage from fight rooms cleared in a row without being hit (a Growth Smith's
+## self-mending gear): a step per room, up to the cap.
+func set_mending(rooms: int) -> void:
+	stats.damage_bonus = _progress_damage_bonus + mending_bonus(rooms)
+
+
+func mending_bonus(rooms: int) -> float:
+	return minf(rooms * services.total(ModifierStack.MENDING_STEP), services.total(ModifierStack.MENDING_CAP))
+
+
+## Uses a revive token if one is left: back up with a share of max HP and a moment of
+## grace (a Fire Healer's revive also bursts into flame). Returns true if it did.
+func try_revive() -> bool:
+	if revives <= 0:
+		return false
+	set_revives(revives - 1)
+	var fraction: float = balance.revive_hp_fraction + services.total(ModifierStack.REVIVE_HP)
+	health.revive(maxi(1, roundi(health.max_hp * fraction)))
+	status.clear()
+	grant_iframes(balance.revive_iframes)
+	var blast: float = services.total(ModifierStack.REVIVE_BLAST)
+	if blast > 0.0 and is_inside_tree():
+		var attack: AttackData = AttackData.new()
+		attack.damage = blast
+		attack.radius = balance.revive_blast_radius
+		attack.knockback = 160.0
+		attack.shake = 0.5
+		attack.status = StatusEffects.BURN
+		PowerBurst.spawn(get_parent(), global_position, attack, power_stats, REVIVE_BLAST_COLOR)
+	if is_inside_tree():
+		DamageNumber.spawn(get_parent(), global_position + Vector2(0, -16), "Revived!", REVIVE_COLOR)
+	revived.emit()
+	EventBus.hero_revived.emit(player_id)
+	return true
+
+
+## A Growth Farmer's flask keeps healing: its share of max HP over flask_regen_time.
+func start_flask_regen() -> void:
+	var share: float = services.total(ModifierStack.FLASK_REGEN)
+	if share <= 0.0 or balance.flask_regen_time <= 0.0:
+		return
+	_regen_left += health.max_hp * share
+	_regen_rate = _regen_left / balance.flask_regen_time
+
+
+func is_regenerating() -> bool:
+	return _regen_left > 0.0
+
+
+func _tick_regen(delta: float) -> void:
+	if _regen_left <= 0.0 or health.is_dead():
+		return
+	var step: float = minf(_regen_rate * delta, _regen_left)
+	_regen_left -= step
+	_regen_owed += step
+	if _regen_owed >= 1.0:
+		var whole: int = floori(_regen_owed)
+		_regen_owed -= whole
+		health.heal(whole)
 
 
 ## Fills the power slots from kept powers (PowerData from ContentDB), in slot order.
@@ -301,16 +410,32 @@ func _on_hurt(result: DamageResult, source: HitboxComponent) -> void:
 		state_machine.transition_to(&"Hurt")
 
 
-func _on_hit_landed(_hurtbox: HurtboxComponent, result: DamageResult) -> void:
+func _on_hit_landed(target: HurtboxComponent, result: DamageResult) -> void:
 	var attack: AttackData = hitbox.attack
 	var shake: float = attack.shake + (0.15 if result.is_crit else 0.0)
 	EventBus.camera_shake_requested.emit(shake)
 	HitStop.request(get_tree(), attack.hit_stop + (0.03 if result.is_crit else 0.0))
 	# Rumble follows the shake: light taps for slashes, a thump for the finisher.
 	rumble(clampf(shake * 1.5, 0.1, 1.0), 0.06 + attack.hit_stop)
+	apply_infusions(target, attack)
+
+
+## A Smith's infusion on weapon hits: a chance to Burn or Chill, and extra stagger.
+func apply_infusions(target: HurtboxComponent, attack: AttackData) -> void:
+	if target == null:
+		return
+	if rng.randf() < services.total(ModifierStack.WEAPON_BURN_CHANCE):
+		target.receive_status(StatusEffects.BURN)
+	if rng.randf() < services.total(ModifierStack.WEAPON_CHILL_CHANCE):
+		target.receive_status(StatusEffects.CHILL)
+	var extra_stagger: float = attack.stagger * services.total(ModifierStack.WEAPON_STAGGER) if attack != null else 0.0
+	if extra_stagger > 0.0:
+		target.receive_status(&"", 0, extra_stagger)
 
 
 func _on_died() -> void:
+	if try_revive():
+		return
 	state_machine.transition_to(&"Dead")
 	EventBus.hero_died.emit(player_id)
 

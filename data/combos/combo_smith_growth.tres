@@ -1,15 +1,35 @@
-[gd_resource type="Resource" script_class="ComboData" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="ComboData" load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/combo_data.gd" id="1_combo"]
 [ext_resource type="Script" path="res://scripts/resources/service_data.gd" id="2_service"]
+[ext_resource type="Script" path="res://scripts/resources/modifier_data.gd" id="3_mod"]
+
+[sub_resource type="Resource" id="Mod_novice_1"]
+script = ExtResource("3_mod")
+target = &"hero.mending_step"
+value = 0.05
+
+[sub_resource type="Resource" id="Mod_novice_2"]
+script = ExtResource("3_mod")
+target = &"hero.mending_cap"
+value = 0.25
 
 [sub_resource type="Resource" id="Resource_novice"]
 script = ExtResource("2_service")
-description = "Self-mending gear: +5% damage per room without being hit (max 25%)."
+description = "Sells self-mending gear: +5% damage for each fight room cleared without being hit (max 25%). A hit resets it."
+modifiers = Array[ExtResource("3_mod")]([SubResource("Mod_novice_1"), SubResource("Mod_novice_2")])
+price = 100
+shop_name = "Self-mending gear"
+
+[sub_resource type="Resource" id="Mod_adept_1"]
+script = ExtResource("3_mod")
+target = &"hero.mending_cap"
+value = 0.15
 
 [sub_resource type="Resource" id="Resource_adept"]
 script = ExtResource("2_service")
 description = "Max 40%."
+modifiers = Array[ExtResource("3_mod")]([SubResource("Mod_adept_1")])
 
 [resource]
 script = ExtResource("1_combo")

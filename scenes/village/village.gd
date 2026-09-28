@@ -5,7 +5,8 @@ extends Node2D
 ## the Shrine glows while a power waits and opens the Choice screen, and the gate starts
 ## a run (or continues a saved one). The notice board will carry raid warnings (M6).
 ## Every gift shows here: the villager glows in the power's color and their roof is trimmed
-## with it. Placeholder art until M7.
+## with it. A villager who sells something (the Smith's weapon tiers, an infusion) opens
+## their shop when talked to. Placeholder art until M7.
 
 const RUN_ROOM_SCENE: String = "res://scenes/run/room.tscn"
 const CHOICE_SCENE: String = "res://scenes/ui/choice_screen.tscn"
@@ -30,6 +31,8 @@ var gate: InteractSpot
 var board: InteractSpot
 
 var _leaving: bool = false
+## The open shop, or null.
+var shop: ShopPanel
 
 @onready var hero: Hero = $Actors/Hero
 @onready var camera: GameCamera = $Camera
@@ -57,6 +60,8 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if shop != null:
+		return
 	if event.is_action_pressed(&"pause") and not _leaving:
 		get_viewport().set_input_as_handled()
 		_leaving = true
@@ -66,7 +71,8 @@ func _unhandled_input(event: InputEvent) -> void:
 ## Updates the Shrine, gate, houses and villagers from the saved state.
 func refresh() -> void:
 	var offer: Array[StringName] = GameState.hero_state(hero.player_id).power_offer
-	shrine.caption = "Shrine: a power waits" if not offer.is_empty() else "Shrine"
+	shrine.caption = "Shrine: a power waits" if not offer.is_empty() \
+			else "Shrine: grow stronger" if GrowthPanel.has_anything_to_spend(GameState.hero_state(hero.player_id), balance) else "Shrine"
 	var waiting: PowerData = ContentDB.get_item(&"powers", PowerOffer.waiting_power(GameState.hero_state(hero.player_id))) as PowerData \
 			if offer.size() == 1 else null
 	shrine.icon_shape = waiting.icon_shape if waiting != null else &""
@@ -82,7 +88,7 @@ func refresh() -> void:
 
 ## Shrine: the Choice screen. Gate: a run. Board: the village news.
 func use_spot(spot: InteractSpot, by: Hero) -> void:
-	if _leaving:
+	if _leaving or shop != null:
 		return
 	match spot.kind:
 		SHRINE:
@@ -111,23 +117,62 @@ func prepare_run() -> void:
 	EventBus.run_started.emit(region.id, seed_value)
 
 
-## What a villager says: their service now, and the line for their gift.
-func talk(villager: Villager) -> void:
+## What a villager says: their service now, and the line for their gift. A villager who
+## sells something opens their shop too.
+func talk(villager: Villager, by: Hero = hero) -> void:
+	if shop != null:
+		return
 	_say(speech(villager))
+	if ShopPanel.sells_anything(villager.data, villager.state):
+		open_shop(villager, by)
 
 
 func speech(villager: Villager) -> String:
 	var data: VillagerData = villager.data
+	var base: String = _service_text(data.base_service)
 	if not villager.state.has_power():
-		return "%s: \"%s\"\n%s" % [data.title(), data.greeting, data.base_service.description if data.base_service != null else ""]
+		return "%s: \"%s\"\n%s" % [data.title(), data.greeting, base]
 	var combo: ComboData = ContentDB.get_item(&"combos", ComboData.id_for(data.id, villager.state.power_id)) as ComboData
 	var power_name: String = villager.power.display_name if villager.power != null else String(villager.state.power_id)
 	if combo == null:
 		return "%s holds %s." % [data.title(), power_name]
-	var service: String = combo.novice.description
+	var service: String = _service_text(combo.novice)
 	if villager.rank >= TrainingSystem.ADEPT:
-		service += " Adept: " + combo.adept.description
-	return "%s (%s, %s): \"%s\"\n%s" % [data.title(), power_name, TrainingSystem.rank_name(villager.rank), combo.gift_line, service]
+		service += " Adept: " + _service_text(combo.adept)
+	return "%s (%s, %s): \"%s\"\n%s %s" % [data.title(), power_name, TrainingSystem.rank_name(villager.rank), combo.gift_line, base, service]
+
+
+## Opens `villager`'s shop; the hero stands still until it closes.
+func open_shop(villager: Villager, by: Hero) -> ShopPanel:
+	shop = ShopPanel.new()
+	shop.setup(by.player_id, villager.state, villager.data, by.weapon, balance)
+	shop.closed.connect(_on_shop_closed.bind(by))
+	shop.bought.connect(func(_item: StringName) -> void: _on_bought(by))
+	$Overlay.add_child(shop)
+	shop.position = Vector2(170, 60)
+	by.velocity = Vector2.ZERO
+	by.set_physics_process(false)
+	return shop
+
+
+func _on_shop_closed(by: Hero) -> void:
+	shop = null
+	refresh()
+	# Next frame, so the press that closed the shop does not also dodge.
+	by.set_physics_process.call_deferred(true)
+
+
+## A new weapon tier shows at once on the hero in the village.
+func _on_bought(by: Hero) -> void:
+	by.apply_progress(GameState.hero_state(by.player_id))
+
+
+func _service_text(service: ServiceData) -> String:
+	if service == null:
+		return ""
+	if service.only_in_raids():
+		return service.description + " (Raids have not started yet.)"
+	return service.description
 
 
 func _place_villagers() -> void:
@@ -140,7 +185,7 @@ func _place_villagers() -> void:
 		actors.add_child(villager)
 		villager.position = plot.position
 		villager.setup(data, state, balance)
-		villager.talked_to.connect(func(who: Villager, _by: Hero) -> void: talk(who))
+		villager.talked_to.connect(func(who: Villager, by: Hero) -> void: talk(who, by))
 		villagers.append(villager)
 
 
