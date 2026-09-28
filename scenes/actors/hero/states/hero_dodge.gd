@@ -14,6 +14,7 @@ func enter(_msg: Dictionary = {}) -> void:
 	hero.knockback.clear()
 	hero.grant_iframes(hero.balance.dodge_iframes)
 	hero.set_collision_mask_value(Hero.ENEMY_BODY_LAYER, false)
+	hero.on_dodge_started()
 
 
 func exit() -> void:

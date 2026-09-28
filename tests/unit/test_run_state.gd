@@ -64,7 +64,8 @@ func test_hero_snapshot_round_trip() -> void:
 	var run: RunState = RunState.start(region, 1)
 	assert_eq(run.hero_snapshot(0), {})
 	run.save_hero(0, 55, 100, 2)
-	assert_eq(run.hero_snapshot(0), {"hp": 55, "max_hp": 100, "flasks": 2, "revives": 0, "clean_rooms": 0})
+	assert_eq(run.hero_snapshot(0), {"hp": 55, "max_hp": 100, "flasks": 2, "revives": 0, "clean_rooms": 0,
+			"floor": -1, "free_flasks": 0})
 	assert_eq(run.hero_snapshot(1), {}, "keyed by player_id")
 
 
@@ -73,7 +74,7 @@ func _mid_run() -> RunState:
 	run.enter(run.next_choices()[0])
 	run.mark_cleared()
 	run.enter(run.next_choices()[-1])
-	run.save_hero(0, 61, 104, 2)
+	run.save_hero(0, 61, 104, 2, 0, 0, 0, 1)
 	run.wallet(0).add_all({Wallet.COINS: 12, Wallet.WOOD: 3})
 	run.add_xp(0, 30)
 	run.add_weapon_damage(0, &"sword", 450)
@@ -93,7 +94,7 @@ func test_mid_run_save_round_trips_through_json() -> void:
 	assert_false(loaded.room_cleared, "the room starts over")
 	assert_eq(loaded.rooms_cleared, 1)
 	assert_almost_eq(loaded.elapsed, 93.5, 0.001)
-	assert_eq(loaded.hero_snapshot(0), {"hp": 61, "max_hp": 104, "flasks": 2, "revives": 0, "clean_rooms": 0})
+	assert_eq(loaded.hero_snapshot(0), {"hp": 61, "max_hp": 104, "flasks": 2, "revives": 0, "clean_rooms": 0, "floor": 0, "free_flasks": 1})
 	assert_eq(loaded.wallet(0).amount(Wallet.COINS), 12)
 	assert_eq(loaded.xp_earned(0), 30)
 	assert_eq(int(loaded.damage_by_weapon(0)[&"sword"]), 450)

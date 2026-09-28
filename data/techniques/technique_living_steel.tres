@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="TechniqueData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/technique_data.gd" id="1_tech"]
+[ext_resource type="Script" path="res://scripts/resources/modifier_data.gd" id="2_mod"]
+
+[sub_resource type="Resource" id="Mod_1"]
+script = ExtResource("2_mod")
+target = &"hero.heal_on_kill"
+value = 1
+
+[resource]
+script = ExtResource("1_tech")
+id = &"living_steel"
+display_name = "Living Steel"
+description = "Killing blows with your weapon heal 1 HP."
+lesson_line = "Good steel grows with its keeper. Every blow that ends a fight gives a little back."
+modifiers = Array[ExtResource("2_mod")]([SubResource("Mod_1")])

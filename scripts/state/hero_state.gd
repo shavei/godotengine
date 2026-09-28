@@ -2,8 +2,8 @@ class_name HeroState
 extends RefCounted
 ## One hero's long-term progress (docs/ARCHITECTURE.md Section 4.2): level, XP,
 ## attributes, weapon mastery and tiers, banked loot, kept powers, a boss's power offer
-## and the village services bought. ProfileState keeps one per player_id. Techniques join
-## in M5. GiftSystem enforces the kept power rules, ShopSystem the purchases.
+## the village services bought and the Techniques Masters taught. ProfileState keeps one
+## per player_id. GiftSystem enforces the kept power rules, ShopSystem the purchases.
 
 const MIGHT: StringName = &"might"
 const VIGOR: StringName = &"vigor"
@@ -29,6 +29,8 @@ var power_offer: Array[StringName] = []
 var weapon_tiers: Dictionary[StringName, int] = {}
 ## Combo ids of priced services bought once (a Smith infusion).
 var bought_services: Array[StringName] = []
+## Ids of the Techniques learned from Masters, in the order they were taught (TechniqueSystem).
+var techniques: Array[StringName] = []
 
 
 func attribute(attribute_id: StringName) -> int:
@@ -68,6 +70,7 @@ func to_dict() -> Dictionary:
 		"power_offer": power_offer.map(func(id: StringName) -> String: return String(id)),
 		"weapon_tiers": tiers,
 		"bought_services": bought_services.map(func(id: StringName) -> String: return String(id)),
+		"techniques": techniques.map(func(id: StringName) -> String: return String(id)),
 	}
 
 
@@ -99,4 +102,8 @@ static func from_dict(data: Dictionary) -> HeroState:
 		var service_id: StringName = StringName(str(entry))
 		if service_id != &"" and not hero.bought_services.has(service_id):
 			hero.bought_services.append(service_id)
+	for entry: Variant in data.get("techniques", []):
+		var technique_id: StringName = StringName(str(entry))
+		if technique_id != &"" and not hero.techniques.has(technique_id):
+			hero.techniques.append(technique_id)
 	return hero

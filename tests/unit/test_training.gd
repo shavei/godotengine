@@ -232,6 +232,8 @@ func test_a_new_renown_level_moves_the_healer_in_on_screen() -> void:
 	assert_eq((scene.moment.find_child("Title", true, false) as Label).text, "Maren is now Master!")
 	assert_eq(healer.modulate.a, 0.0, "the Healer waits for their moment")
 	scene.moment.step(VillageMoment.DURATION)
+	assert_eq((scene.moment.find_child("Title", true, false) as Label).text, "Maren teaches you Stoneguard!", "the lesson comes first")
+	scene.moment.step(VillageMoment.DURATION)
 	var moment: VillageMoment = scene.moment
 	assert_not_null(moment, "the Renown moment follows")
 	assert_eq((moment.find_child("Title", true, false) as Label).text, "Renown 2!")

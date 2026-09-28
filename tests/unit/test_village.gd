@@ -61,7 +61,7 @@ func test_every_villager_and_power_pair_has_one_combo() -> void:
 			assert_eq(combo.power_id, power.get("id"))
 			assert_not_null(combo.novice, "%s Novice service" % id)
 			assert_not_null(combo.adept, "%s Adept service" % id)
-			assert_false(combo.technique_name.is_empty(), "%s Technique" % id)
+			assert_not_null(combo.technique, "%s Technique" % id)
 			assert_false(combo.gift_line.is_empty(), "%s gift line" % id)
 	assert_eq(ContentDB.count(&"combos"), ContentDB.count(&"villagers") * powers.size(), "no stray combos")
 

@@ -2,8 +2,8 @@ class_name ModifierStack
 extends RefCounted
 ## One place for all stat math from outside the hero's own progress (docs/ARCHITECTURE.md
 ## Section 5). collect() gathers the village's services for one hero; total() adds up a
-## target: (base + every "add") * every "mul". Techniques, Neighbor bonuses, meals and
-## trinkets join the same stack later.
+## target: (base + every "add") * every "mul". The hero's learned Techniques join it too
+## (their modifiers); Neighbor bonuses, meals and trinkets join the same stack later.
 ##
 ## Services: every villager's base service always counts. A villager holding a power adds
 ## the combo's Novice service, and from Adept on its Adept service too (Adept adds to
@@ -33,7 +33,32 @@ const FLASK_REGEN: StringName = &"hero.flask_regen"
 const REVIVE_HP: StringName = &"hero.revive_hp"
 ## Damage of the fire burst a revive sets off (0 = none).
 const REVIVE_BLAST: StringName = &"hero.revive_blast"
+# Hero, from Techniques (docs/CONTENT.md Section 3)
+## Added to the first hit taken in each room (-0.5 = half damage).
+const FIRST_HIT_TAKEN: StringName = &"hero.first_hit_taken"
+## HP healed by a weapon hit that kills.
+const HEAL_ON_KILL: StringName = &"hero.heal_on_kill"
+## Seconds after drinking a flask that every weapon hit Burns.
+const FLASK_BURN_TIME: StringName = &"hero.flask_burn_time"
+## HP regenerated per second while no enemy is around.
+const CALM_REGEN: StringName = &"hero.calm_regen"
+## Above 0: hits do not knock the hero back or break a swing while attacking.
+const STEADY_ATTACKS: StringName = &"hero.steady_attacks"
+## Above 0: hits never knock the hero back or stagger them.
+const STEADY: StringName = &"hero.steady"
+## Added to power damage (0.3 = +30%), usually with an HP condition.
+const POWER_DAMAGE: StringName = &"hero.power_damage"
+## Added to swing speed (0.2 = 20% faster), usually with an HP condition.
+const ATTACK_SPEED: StringName = &"hero.attack_speed"
+## Above 0: an enemy that hits the hero up close is Chilled.
+const CHILL_ATTACKERS: StringName = &"hero.chill_attackers"
+## Damage an enemy that hits the hero up close takes.
+const THORNS: StringName = &"hero.thorns"
+## Share of max HP healed on reaching a new floor.
+const FLOOR_HEAL: StringName = &"hero.floor_heal"
 # Run
+## Flasks on each floor that are not used up when drunk.
+const FREE_FLASKS: StringName = &"run.free_flasks"
 const FLASK_CHARGES: StringName = &"run.flask_charges"
 const REVIVES: StringName = &"run.revives"
 ## "income.<currency>": banked after every run, won or lost (never halved).
@@ -46,6 +71,9 @@ const RAID_PREFIX: String = "raid."
 
 ## Conditions a room can switch on.
 const BOSS_ROOM: StringName = &"boss_room"
+## Conditions the hero switches on from its HP (BalanceData.low_hp_fraction, half_hp_fraction).
+const LOW_HP: StringName = &"low_hp"
+const HALF_HP: StringName = &"half_hp"
 
 var modifiers: Array[ModifierData] = []
 
@@ -102,11 +130,13 @@ func income() -> Dictionary[StringName, int]:
 	return result
 
 
-## Everything the village does for `hero`. `villagers` and `combos` are the content
-## (ContentDB lists in the game).
+## Everything the village does for `hero`, plus the Techniques they know. `villagers`,
+## `combos` and `techniques` are the content (ContentDB lists in the game).
 static func collect(hero: HeroState, village: VillageState, balance: BalanceData,
-		villagers: Array[VillagerData], combos: Array[ComboData]) -> ModifierStack:
+		villagers: Array[VillagerData], combos: Array[ComboData], techniques: Array[TechniqueData] = []) -> ModifierStack:
 	var stack: ModifierStack = ModifierStack.new()
+	for technique: TechniqueData in TechniqueSystem.known(hero, techniques):
+		stack.add_all(technique.modifiers)
 	if village == null:
 		return stack
 	for villager: VillagerState in village.villagers:

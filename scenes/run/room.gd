@@ -98,6 +98,7 @@ func _ready() -> void:
 	_services = GameState.services(hero.player_id)
 	hero.apply_services(_services, _conditions())
 	_restore_hero()
+	hero.apply_techniques(GameState.techniques(hero.player_id))
 	hero.health.damaged.connect(_on_hero_damaged)
 	wallet = run.wallet(hero.player_id)
 	_loot_rng = LootRoller.rng_for(run.run_seed, run.floor_index, run.current_room_id, &"loot")
@@ -324,7 +325,8 @@ func _on_door_entered(door: RoomDoor) -> void:
 		return
 	_leaving = true
 	scoop_loot(hero)
-	run.save_hero(hero.player_id, hero.health.hp, hero.health.max_hp, hero.flasks.charges, hero.revives, _clean_rooms)
+	run.save_hero(hero.player_id, hero.health.hp, hero.health.max_hp, hero.flasks.charges, hero.revives, _clean_rooms,
+			run.floor_index, hero.free_flasks)
 	if door.room_id < 0:
 		run.advance_floor()
 	else:
@@ -587,6 +589,8 @@ func write_quit_save() -> void:
 		"flasks": mini(int(carry.get("flasks", hero.flasks.charges)), hero.flasks.charges),
 		"revives": mini(int(carry.get("revives", hero.revives)), hero.revives),
 		"clean_rooms": int(carry.get("clean_rooms", _clean_rooms)),
+		"floor": int(carry.get("floor", run.floor_index)),
+		"free_flasks": mini(int(carry.get("free_flasks", hero.free_flasks)), hero.free_flasks),
 	}
 	heroes[str(hero.player_id)] = entry
 	_entry_save["heroes"] = heroes
@@ -607,15 +611,32 @@ func _hero_state() -> HeroState:
 	return GameState.hero_state(hero.player_id)
 
 
+## Puts back what the hero carried out of the last room. On a new floor, Second Serving's
+## free flasks come back and Second Wind heals.
 func _restore_hero() -> void:
 	var snapshot: Dictionary = run.hero_snapshot(hero.player_id)
-	if snapshot.is_empty():
+	var new_floor: bool = snapshot.is_empty() or int(snapshot.get("floor", run.floor_index)) != run.floor_index
+	if not snapshot.is_empty():
+		hero.health.hp = clampi(snapshot["hp"], 1, hero.health.max_hp)
+		hero.flasks.charges = clampi(snapshot["flasks"], 0, hero.flasks.max_charges)
+		hero.set_revives(clampi(int(snapshot.get("revives", hero.revives)), 0, hero.revives))
+		_clean_rooms = maxi(0, int(snapshot.get("clean_rooms", 0)))
+		hero.set_mending(_clean_rooms)
+		if not new_floor:
+			hero.free_flasks = clampi(int(snapshot.get("free_flasks", 0)), 0, hero.free_flasks)
+	if new_floor:
+		_floor_heal()
+	hero.refresh_conditional_stats()
+
+
+## Second Wind: a share of max HP back on reaching a new floor.
+func _floor_heal() -> void:
+	var share: float = _services.total(ModifierStack.FLOOR_HEAL)
+	if share <= 0.0:
 		return
-	hero.health.hp = clampi(snapshot["hp"], 1, hero.health.max_hp)
-	hero.flasks.charges = clampi(snapshot["flasks"], 0, hero.flasks.max_charges)
-	hero.set_revives(clampi(int(snapshot.get("revives", hero.revives)), 0, hero.revives))
-	_clean_rooms = maxi(0, int(snapshot.get("clean_rooms", 0)))
-	hero.set_mending(_clean_rooms)
+	var healed: int = hero.health.heal(roundi(hero.health.max_hp * share))
+	if healed > 0:
+		DamageNumber.spawn(actors, hero.global_position + Vector2(0, -32), "+%d Second Wind" % healed, DamageNumber.COLOR_HEAL)
 
 
 ## Boss rooms switch on the services that only count there (a Frost Healer's salve).

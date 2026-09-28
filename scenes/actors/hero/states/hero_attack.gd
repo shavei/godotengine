@@ -6,6 +6,7 @@ extends State
 ## and slash) stays where it was aimed, and the weapon follows the aim again once it fades.
 ## Steering keeps the hero's momentum (no snap on the first frame); the lunge is added on top.
 ## A press during the finisher is not used up: it stays buffered and starts the next combo.
+## Hero.attack_speed (Fever) runs the swing's clock faster; movement keeps real time.
 
 ## Seconds the slash stays visible after the hitbox turns off.
 const SLASH_LINGER: float = 0.08
@@ -43,7 +44,7 @@ func exit() -> void:
 
 func physics_update(delta: float) -> void:
 	var hero: Hero = actor
-	_time += delta
+	_time += delta * hero.attack_speed
 	hero.update_facing()
 	var is_last: bool = _step >= hero.weapon.combo.size() - 1
 	if not is_last and hero.consume(&"attack"):

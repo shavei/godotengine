@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="TechniqueData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/technique_data.gd" id="1_tech"]
+[ext_resource type="Script" path="res://scripts/resources/modifier_data.gd" id="2_mod"]
+
+[sub_resource type="Resource" id="Mod_1"]
+script = ExtResource("2_mod")
+target = &"hero.max_hp"
+value = 20
+
+[resource]
+script = ExtResource("1_tech")
+id = &"stoneguard"
+display_name = "Stoneguard"
+description = "+20 max HP."
+lesson_line = "Stone does not flinch. Neither will you. Stand a little taller out there."
+modifiers = Array[ExtResource("2_mod")]([SubResource("Mod_1")])

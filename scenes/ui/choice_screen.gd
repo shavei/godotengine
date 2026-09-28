@@ -7,7 +7,7 @@ extends Control
 ## kept power can be given away to make room (or, when every villager holds a power
 ## already, let go). With no offer waiting, a kept power can be given away at any time.
 ## Villager cards preview the Novice and Adept services; the Technique shows as "???"
-## until the Codex exists. Giving, letting go and leaving ask for a second press.
+## unless the hero already knows it (until the Codex exists). Giving, letting go and leaving ask for a second press.
 ## "Grow stronger" opens the Shrine's GrowthPanel: attribute points, power levels, respec.
 ## The first power ever earned must be given, to the villager FirstGift names (the Elder
 ## asks for it): only that card is open and Keep, Merge and Leave are not offered. After a
@@ -348,7 +348,8 @@ func _villager_card(villager: VillagerState, level: int) -> Button:
 		return card
 	column.add_child(_card_text("Novice: %s" % combo.novice.description, INK, "Novice"))
 	column.add_child(_card_text("Adept: %s" % combo.adept.description, DIM, "Adept"))
-	column.add_child(_card_text("Master: ???", DIM, "Master"))
+	var known: bool = combo.technique != null and TechniqueSystem.knows(hero, combo.technique.id)
+	column.add_child(_card_text("Master: %s" % (combo.technique.display_name if known else "???"), DIM, "Master"))
 	if combo.novice.price > 0:
 		column.add_child(_card_text("Bought once at the %s: %d coins." % [data.workplace if data != null else "shop", combo.novice.price], GOLD, "Price"))
 	elif combo.novice.only_in_raids():

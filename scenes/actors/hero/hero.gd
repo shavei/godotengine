@@ -5,7 +5,10 @@ extends CharacterBody2D
 ## States live under StateMachine: Move, Attack, Dodge, Drink, Cast, Hurt, Dead.
 ## Kept powers sit in `powers` (a PowerLoadout), one per Power button.
 ## Village services (a ModifierStack) change a run's hero: max HP, flasks, revive tokens,
-## weapon infusions, damage taken (apply_services).
+## weapon infusions, damage taken (apply_services). The Techniques Masters taught join
+## the same stack (heal on a kill, thorns, steady footing, HP-based power damage and swing
+## speed); a Technique that is more than numbers rides along as a TechniqueBehavior child
+## (apply_techniques).
 
 ## Dodge was pressed without enough stamina (the HUD flashes the bar).
 signal dodge_denied
@@ -16,6 +19,10 @@ signal power_cast(slot: int)
 ## A revive token was used: the hero got up instead of falling.
 signal revived
 signal revives_changed(count: int)
+## A dodge started (Ember Step listens).
+signal dodge_started
+## A dodge rolled through an attack: once per dodge (Cold Temper listens).
+signal perfect_dodge(source: HitboxComponent)
 
 const GROUP: StringName = &"heroes"
 ## Physics layer number of enemy bodies (docs/ARCHITECTURE.md Section 7).
@@ -31,6 +38,7 @@ const BUFFERED_ACTIONS: Array[StringName] = [&"attack", &"dodge", &"flask", &"po
 const BLOCK_COLOR: Color = Color(0.8, 0.72, 0.6)
 const REVIVE_COLOR: Color = Color(1, 0.85, 0.5)
 const REVIVE_BLAST_COLOR: Color = Color(1, 0.5, 0.2)
+const TECHNIQUE_COLOR: Color = Color(1, 0.82, 0.45)
 
 @export var player_id: int = 0
 ## Left empty, these load from ContentDB (weapon_sword, balance_default).
@@ -50,6 +58,10 @@ var focus: int = 0
 var services: ModifierStack = ModifierStack.new()
 ## Revive tokens left this run.
 var revives: int = 0
+## Flasks left on this floor that are not used up when drunk (Second Serving).
+var free_flasks: int = 0
+## Swing speed (1 = normal); Fever raises it at low HP.
+var attack_speed: float = 1.0
 ## Rolls weapon infusions.
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 ## Direction the hero faces and aims (unit vector).
@@ -68,6 +80,20 @@ var _progress_damage_bonus: float = 0.0
 var _regen_left: float = 0.0
 var _regen_rate: float = 0.0
 var _regen_owed: float = 0.0
+## Power damage from Focus alone, before Techniques.
+var _focus_bonus: float = 0.0
+## The room's conditions (a boss room), for the HP-based ones to join.
+var _room_conditions: Array[StringName] = []
+## The first hit in this room has not landed yet (Anvil Skin).
+var _first_hit_pending: bool = false
+## Seconds left that weapon hits Burn after a flask (Hearth Heart).
+var _hearth_time: float = 0.0
+## HP owed from regeneration out of combat (Regrowth).
+var _calm_owed: float = 0.0
+## This dodge already rolled through an attack.
+var _perfect_this_dodge: bool = false
+## Deals thorn damage to attackers.
+var _thorns: HitboxComponent
 
 @onready var health: HealthComponent = $Health
 @onready var hurtbox: HurtboxComponent = $Hurtbox
@@ -102,6 +128,8 @@ func _ready() -> void:
 	hitbox.stats = stats
 	hurtbox.stats = stats
 	hurtbox.hurt.connect(_on_hurt)
+	hurtbox.dodged.connect(_on_dodged)
+	health.health_changed.connect(_on_health_changed)
 	hitbox.hit_landed.connect(_on_hit_landed)
 	health.died.connect(_on_died)
 	state_machine.start(self)
@@ -114,6 +142,7 @@ func _physics_process(delta: float) -> void:
 	status.tick(delta)
 	knockback.tick(delta)
 	_tick_regen(delta)
+	_tick_techniques(delta)
 	if combo_timer > 0.0:
 		combo_timer -= delta
 		if combo_timer <= 0.0:
@@ -197,7 +226,8 @@ func apply_progress(progress: HeroState) -> void:
 	if weapon != null:
 		stats.weapon_tier = weapon.tier_multiplier * ShopSystem.tier_multiplier(progress.weapon_tier(weapon.id), balance)
 	focus = progress.attribute(HeroState.FOCUS)
-	power_stats.damage_bonus = PowerRules.focus_damage_bonus(focus, balance)
+	_focus_bonus = PowerRules.focus_damage_bonus(focus, balance)
+	power_stats.damage_bonus = _focus_bonus
 	equip_powers(progress.kept_powers)
 
 
@@ -213,9 +243,62 @@ func apply_services(stack: ModifierStack, conditions: Array[StringName] = []) ->
 	flasks.max_charges = maxi(0, services.count(ModifierStack.FLASK_CHARGES, balance.flask_charges))
 	flasks.heal_fraction = balance.flask_heal_fraction * (1.0 + services.total(ModifierStack.FLASK_HEAL))
 	flasks.refill()
-	stats.damage_taken_multiplier = maxf(0.0, 1.0 + services.total(ModifierStack.DAMAGE_TAKEN, 0.0, conditions))
+	_room_conditions = conditions.duplicate()
+	_first_hit_pending = services.has(ModifierStack.FIRST_HIT_TAKEN)
+	free_flasks = maxi(0, services.count(ModifierStack.FREE_FLASKS))
+	_hearth_time = 0.0
 	set_revives(services.count(ModifierStack.REVIVES))
 	set_mending(0)
+	refresh_conditional_stats()
+
+
+## The conditions that hold right now: the room's, plus low_hp and half_hp from HP.
+func active_conditions() -> Array[StringName]:
+	var result: Array[StringName] = _room_conditions.duplicate()
+	var share: float = float(health.hp) / maxf(1.0, health.max_hp)
+	if share < balance.low_hp_fraction:
+		result.append(ModifierStack.LOW_HP)
+	if share < balance.half_hp_fraction:
+		result.append(ModifierStack.HALF_HP)
+	return result
+
+
+## Recomputes what depends on HP and the first hit: damage taken, power damage, swing speed.
+func refresh_conditional_stats() -> void:
+	var now: Array[StringName] = active_conditions()
+	var taken: float = 1.0 + services.total(ModifierStack.DAMAGE_TAKEN, 0.0, now)
+	if _first_hit_pending:
+		taken += services.total(ModifierStack.FIRST_HIT_TAKEN, 0.0, now)
+	stats.damage_taken_multiplier = maxf(0.0, taken)
+	power_stats.damage_bonus = _focus_bonus + services.total(ModifierStack.POWER_DAMAGE, 0.0, now)
+	attack_speed = maxf(0.1, 1.0 + services.total(ModifierStack.ATTACK_SPEED, 0.0, now))
+
+
+## Adds the behaviors of the hero's Techniques (those with a script), replacing any from
+## before. Modifiers come with the ModifierStack in apply_services.
+func apply_techniques(techniques: Array[TechniqueData]) -> void:
+	for child: Node in get_children():
+		if child is TechniqueBehavior:
+			remove_child(child)
+			child.queue_free()
+	for technique: TechniqueData in techniques:
+		if technique == null or technique.behavior_script == null:
+			continue
+		var behavior: TechniqueBehavior = technique.behavior_script.new() as TechniqueBehavior
+		if behavior == null:
+			push_error("Technique %s: behavior_script is not a TechniqueBehavior" % technique.id)
+			continue
+		behavior.attach(self, technique)
+		add_child(behavior)
+
+
+## The Techniques' behaviors the hero carries now.
+func technique_behaviors() -> Array[TechniqueBehavior]:
+	var result: Array[TechniqueBehavior] = []
+	for child: Node in get_children():
+		if child is TechniqueBehavior and not child.is_queued_for_deletion():
+			result.append(child)
+	return result
 
 
 func set_revives(count: int) -> void:
@@ -259,6 +342,19 @@ func try_revive() -> bool:
 	return true
 
 
+## A flask was drunk (`healed` HP): a Growth Farmer's flask keeps healing, Hearth Heart
+## makes weapon hits Burn for a while, and Second Serving gives the charge back.
+func flask_drunk(_healed: int) -> void:
+	start_flask_regen()
+	var burn_time: float = services.total(ModifierStack.FLASK_BURN_TIME)
+	if burn_time > 0.0:
+		_hearth_time = burn_time
+	if free_flasks > 0:
+		free_flasks -= 1
+		flasks.refill(1)
+		_technique_text("Free flask!")
+
+
 ## A Growth Farmer's flask keeps healing: its share of max HP over flask_regen_time.
 func start_flask_regen() -> void:
 	var share: float = services.total(ModifierStack.FLASK_REGEN)
@@ -270,6 +366,28 @@ func start_flask_regen() -> void:
 
 func is_regenerating() -> bool:
 	return _regen_left > 0.0
+
+
+func _tick_techniques(delta: float) -> void:
+	if _hearth_time > 0.0:
+		_hearth_time = maxf(0.0, _hearth_time - delta)
+	var calm: float = services.total(ModifierStack.CALM_REGEN)
+	if calm <= 0.0 or health.is_dead() or health.hp >= health.max_hp or not is_inside_tree():
+		_calm_owed = 0.0
+		return
+	if not get_tree().get_nodes_in_group(Enemy.GROUP).is_empty():
+		_calm_owed = 0.0
+		return
+	_calm_owed += calm * delta
+	if _calm_owed >= 1.0:
+		var whole: int = floori(_calm_owed)
+		_calm_owed -= whole
+		health.heal(whole)
+
+
+## Hearth Heart's burning hits are on.
+func is_hearth_burning() -> bool:
+	return _hearth_time > 0.0
 
 
 func _tick_regen(delta: float) -> void:
@@ -342,6 +460,20 @@ func try_dodge() -> bool:
 	return true
 
 
+## The Dodge state began a roll.
+func on_dodge_started() -> void:
+	_perfect_this_dodge = false
+	dodge_started.emit()
+
+
+## Hits never knock the hero back or stagger them right now (Iron Bones, or Rooted
+## Stance while attacking).
+func is_steady() -> bool:
+	if services.total(ModifierStack.STEADY) > 0.0:
+		return true
+	return services.total(ModifierStack.STEADY_ATTACKS) > 0.0 and state_machine.is_in(&"Attack")
+
+
 ## Starts a buffered power cast if that slot is ready. Returns true if it did.
 func try_cast() -> bool:
 	for slot: int in POWER_ACTIONS.size():
@@ -392,8 +524,14 @@ func has_iframes() -> bool:
 
 
 func _on_hurt(result: DamageResult, source: HitboxComponent) -> void:
-	var away: Vector2 = (global_position - source.global_position).normalized()
-	knockback.apply(away * source.attack.knockback)
+	var steady: bool = is_steady()
+	if _first_hit_pending:
+		_first_hit_pending = false
+		refresh_conditional_stats()
+	_answer_attacker(source)
+	if not steady:
+		var away: Vector2 = (global_position - source.global_position).normalized()
+		knockback.apply(away * source.attack.knockback)
 	grant_iframes(balance.hurt_iframes)
 	if health.last_absorbed >= result.amount:
 		# The shield took all of it: no stagger, just a thud.
@@ -405,9 +543,56 @@ func _on_hurt(result: DamageResult, source: HitboxComponent) -> void:
 	EventBus.camera_shake_requested.emit(0.4)
 	HitStop.request(get_tree(), 0.05)
 	rumble(HURT_RUMBLE.x, HURT_RUMBLE.y)
+	if steady:
+		return
 	combo_step = 0
 	if not health.is_dead():
 		state_machine.transition_to(&"Hurt")
+
+
+## An enemy that hit the hero up close (its own attack, not an arrow) is Chilled (Hold the
+## Line) and takes thorn damage (Thornmail).
+func _answer_attacker(source: HitboxComponent) -> void:
+	var attacker: Enemy = _attacker_of(source)
+	if attacker == null or attacker.health.is_dead():
+		return
+	if services.total(ModifierStack.CHILL_ATTACKERS) > 0.0:
+		attacker.hurtbox.receive_status(StatusEffects.CHILL)
+	var thorns: float = services.total(ModifierStack.THORNS)
+	if thorns > 0.0:
+		if _thorns == null:
+			_thorns = HitboxComponent.new()
+			_thorns.name = "Thorns"
+			_thorns.attack = AttackData.new()
+			_thorns.stats.crit_chance = 0.0
+			add_child(_thorns)
+			_thorns.monitoring = false
+		_thorns.attack.damage = thorns
+		_thorns.attack.knockback = 40.0
+		attacker.hurtbox.receive_hit(_thorns)
+
+
+## The enemy whose own hitbox this is, or null (arrows, thorn patches, root walls).
+func _attacker_of(source: HitboxComponent) -> Enemy:
+	var node: Node = source.get_parent() if source != null else null
+	while node != null:
+		if node is Enemy:
+			return node
+		if node is Hero or node == get_tree().current_scene:
+			return null
+		node = node.get_parent()
+	return null
+
+
+func _on_dodged(source: HitboxComponent) -> void:
+	if _perfect_this_dodge or not state_machine.is_in(&"Dodge"):
+		return
+	_perfect_this_dodge = true
+	perfect_dodge.emit(source)
+
+
+func _on_health_changed(_current: int, _maximum: int) -> void:
+	refresh_conditional_stats()
 
 
 func _on_hit_landed(target: HurtboxComponent, result: DamageResult) -> void:
@@ -418,13 +603,18 @@ func _on_hit_landed(target: HurtboxComponent, result: DamageResult) -> void:
 	# Rumble follows the shake: light taps for slashes, a thump for the finisher.
 	rumble(clampf(shake * 1.5, 0.1, 1.0), 0.06 + attack.hit_stop)
 	apply_infusions(target, attack)
+	var heal: int = services.count(ModifierStack.HEAL_ON_KILL)
+	if heal > 0 and target != null and target.health != null and target.health.is_dead():
+		var healed: int = health.heal(heal)
+		if healed > 0 and is_inside_tree():
+			DamageNumber.spawn(get_parent(), global_position + Vector2(0, -16), "+%d" % healed, DamageNumber.COLOR_HEAL)
 
 
 ## A Smith's infusion on weapon hits: a chance to Burn or Chill, and extra stagger.
 func apply_infusions(target: HurtboxComponent, attack: AttackData) -> void:
 	if target == null:
 		return
-	if rng.randf() < services.total(ModifierStack.WEAPON_BURN_CHANCE):
+	if is_hearth_burning() or rng.randf() < services.total(ModifierStack.WEAPON_BURN_CHANCE):
 		target.receive_status(StatusEffects.BURN)
 	if rng.randf() < services.total(ModifierStack.WEAPON_CHILL_CHANCE):
 		target.receive_status(StatusEffects.CHILL)
@@ -465,6 +655,12 @@ func _update_visuals() -> void:
 		visual.modulate.a = 0.35 if int(_iframe_time * 20.0) % 2 == 0 else 1.0
 	else:
 		visual.modulate.a = 1.0
+
+
+## A short gold word over the hero when a Technique acts.
+func _technique_text(text: String) -> void:
+	if is_inside_tree():
+		DamageNumber.spawn(get_parent(), global_position + Vector2(0, -20), text, TECHNIQUE_COLOR)
 
 
 func _find_input_source() -> InputSource:

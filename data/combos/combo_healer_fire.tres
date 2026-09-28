@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="ComboData" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="ComboData" load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/combo_data.gd" id="1_combo"]
 [ext_resource type="Script" path="res://scripts/resources/service_data.gd" id="2_service"]
 [ext_resource type="Script" path="res://scripts/resources/modifier_data.gd" id="3_mod"]
+[ext_resource type="Resource" path="res://data/techniques/technique_fever.tres" id="4_tech"]
 
 [sub_resource type="Resource" id="Mod_novice_1"]
 script = ExtResource("3_mod")
@@ -31,6 +32,5 @@ villager_id = &"healer"
 power_id = &"fire"
 novice = SubResource("Resource_novice")
 adept = SubResource("Resource_adept")
-technique_name = "Fever"
-technique_text = "Below 50% HP you attack 20% faster."
+technique = ExtResource("4_tech")
 gift_line = "If you fall, you'll rise in flames. That's a promise."
