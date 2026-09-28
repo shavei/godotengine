@@ -294,16 +294,19 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 ### 7.3 Status effects
 | Status | Source | Effect |
 |---|---|---|
-| Burn | Fire | 3 damage per second for 4 s, stacks to 3 |
-| Chill | Frost | -30% move and attack speed; 3 stacks = Freeze 1.5 s |
+| Burn | Fire | 3 damage per second per stack for 4 s, stacks to 3 |
+| Chill | Frost | -30% move and attack speed for 3 s; 3 stacks = Freeze 1.5 s (no moving, no attacking) |
 | Shock | Storm | Next hit on the target chains to 2 nearby enemies for 50% |
-| Stagger | Stone, Hammer | Fills a stagger bar; full bar = stunned 1.5 s. Bosses have larger bars. |
+| Stagger | Stone, Hammer | Fills a stagger bar (60, bosses 250); full bar = stunned 1.5 s, and the bar empties. |
 | Root | Growth | Cannot move for 2 s (can still attack) |
 | Knockback | Wind | Pushed away; hitting a wall stuns 0.8 s |
 | Radiant | Light | Takes +20% damage for 5 s, visible through darkness |
 | Marked | Shadow | Next hit is a guaranteed crit |
 
-- Bosses: status durations halved, cannot be Frozen or Rooted (Chill and Root fill their stagger bar instead).
+- Bosses: status durations halved, cannot be Frozen or Rooted (Chill and Root fill their stagger bar instead: a freeze adds 40, a root adds 30 at most once a second).
+- A freeze or a stun stops what the enemy was doing (its attack is cancelled). A stun waits while Mother Toad is in the air.
+- Statuses show as colored pips above the enemy (one dot per stack); the stagger bar shows below it once it has any fill. Chilled enemies look blue, frozen ones pale.
+- Numbers are in `BalanceData` (Status effects group), Section 15.8.
 
 ### 7.4 Enemy archetypes
 Chaser, Charger, Ranged kiter, Ambusher, Tank, Summoner, Swarm, Bomber. Each region reskins and remixes these with one unique twist per enemy (CONTENT.md). Enemies telegraph every attack (0.4 to 0.8 s wind-up with a visual cue).
@@ -606,6 +609,24 @@ Live values: `data/regions/region_mossy_hollow.tres` and `data/balance/balance_d
 
 - Rough run estimate before bosses (about 9 fights, 2 elites, 2 treasure rooms): about 300 to 350 coins, 35 to 40 Wood, 2 Crystal, 3 to 4 shards, less what the Merchant takes.
 - With the bosses (2 Mother Toads and the Warden) a full run comes to about 390 to 460 coins, 46 to 58 Wood, 4 Crystal and 10 to 11 shards. Shards follow the per-source rule in Section 4.3 (mini-boss 2, region boss 3) and so land well above the Section 15.3 target of 4 to 6; coins and Wood run a little high too. Rebalance in M3, when shards have a use (open question in MEMORY.md).
+
+### 15.8 Powers (M3)
+Live values: `data/powers/power_*.tres` and `data/balance/balance_default.tres` (Powers and Status effects groups).
+
+| Power | Ability (level 1) | Numbers | Cooldown |
+|---|---|---|---|
+| Fire | Ember Bolt | Fireball, 20 damage, Burn, 260 px/s, 220 px range | 4 s |
+| Frost | Frost Shard | 3 shards over a 30 degree fan, 10 damage each, 1 Chill each, 280 px/s, 170 px range | 5 s |
+| Stone | Bulwark | Shield soaks 30 damage for 4 s, then bursts: 25 damage, 40 px radius, 60 stagger | 8 s |
+| Growth | Bramble | Patch at your feet, 40 px radius, 4 s: roots enemies inside (checked 4 times a second), heals you 2 HP/s inside | 7 s |
+
+- Casting: press the Power button; a 0.12 s wind-up (half speed, still aiming, stick aim assist applies), then the power goes off and its cooldown starts. A dodge or a hit during the wind-up cancels it and spends nothing. A power can cancel a swing's recovery, like a dodge.
+- Bulwark bursts when the shield breaks or when its 4 s run out. A hit the shield soaks up fully does not stagger the hero ("Blocked").
+- Up close all 3 Frost shards hit the same enemy: that is 3 Chill stacks, an instant freeze. Point blank is the risk that pays.
+- Power damage: `base * (1 + 0.2 * (level - 1)) * (1 + Focus bonus) * crit`. Powers use the hero's crit chance but not the weapon tier or Might.
+- Kept slots: 3. Power level cap: 5.
+- Try the powers in the Tuning room (title screen): the menu turns each one on or off, up to the 3 slots.
+- Level 3 and 5 upgrades, shard costs and boss power orbs come in the next M3 PRs.
 
 ### 15.7 Progression (M2)
 Live values: `data/balance/balance_default.tres` (Progression and Run end groups).

@@ -1,8 +1,8 @@
 class_name BossAI
 extends EnemyAI
 ## Base for boss behavior: picks moves from the boss's BossPattern and announces the
-## enrage. Bosses shrug off hits (their data has hit_stun 0), so interrupt() never runs
-## from a hit. Subclasses read their numbers from `boss` (the enemy's BossData).
+## enrage. Bosses shrug off hits (their data has hit_stun 0); only a full stagger bar
+## interrupts them (a stun), which drops the current move. Subclasses read their numbers from `boss` (the enemy's BossData).
 
 var boss: BossData
 var pattern: BossPattern

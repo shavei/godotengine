@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/abilities/power_burst.gd" id="1_burst"]
+[ext_resource type="Script" path="res://scripts/components/hitbox_component.gd" id="2_hitbox"]
+
+[node name="PowerBurst" type="Node2D"]
+z_index = 3
+script = ExtResource("1_burst")
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 8
+collision_mask = 64
+script = ExtResource("2_hitbox")
+
+[node name="Shape" type="CollisionShape2D" parent="Hitbox"]

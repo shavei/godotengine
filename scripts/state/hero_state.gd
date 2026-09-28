@@ -1,8 +1,8 @@
 class_name HeroState
 extends RefCounted
 ## One hero's long-term progress (docs/ARCHITECTURE.md Section 4.2): level, XP,
-## attributes, weapon mastery and banked loot. ProfileState keeps one per player_id.
-## Kept powers and Techniques join in M3 and M5.
+## attributes, weapon mastery, banked loot and kept powers. ProfileState keeps one per
+## player_id. Techniques join in M5. GiftSystem enforces the kept power rules.
 
 const MIGHT: StringName = &"might"
 const VIGOR: StringName = &"vigor"
@@ -19,6 +19,8 @@ var attributes: Dictionary[StringName, int] = {MIGHT: 0, VIGOR: 0, FOCUS: 0}
 var weapon_mastery: Dictionary[StringName, int] = {}
 ## Banked loot: coins, materials, Crystal and Power Shards, by Wallet currency.
 var bank: Wallet = Wallet.new()
+## Kept powers in slot order (at most BalanceData.kept_power_slots).
+var kept_powers: Array[KeptPower] = []
 
 
 func attribute(attribute_id: StringName) -> int:
@@ -43,6 +45,7 @@ func to_dict() -> Dictionary:
 		"attributes": attrs,
 		"weapon_mastery": mastery,
 		"bank": bank.to_dict(),
+		"kept_powers": kept_powers.map(func(kept: KeptPower) -> Dictionary: return kept.to_dict()),
 	}
 
 
@@ -58,4 +61,9 @@ static func from_dict(data: Dictionary) -> HeroState:
 	for key: Variant in mastery:
 		hero.weapon_mastery[StringName(str(key))] = int(mastery[key])
 	hero.bank = Wallet.from_dict(data.get("bank", {}))
+	for entry: Variant in data.get("kept_powers", []):
+		if entry is Dictionary:
+			var kept: KeptPower = KeptPower.from_dict(entry)
+			if kept.power_id != &"":
+				hero.kept_powers.append(kept)
 	return hero

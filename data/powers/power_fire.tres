@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="PowerData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/power_data.gd" id="1_power"]
+[ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="2_attack"]
+[ext_resource type="Script" path="res://scripts/abilities/ability_ember_bolt.gd" id="3_ability"]
+
+[sub_resource type="Resource" id="Resource_bolt"]
+script = ExtResource("2_attack")
+damage = 20.0
+reach = 0.0
+radius = 5.0
+knockback = 60.0
+shake = 0.12
+status = &"burn"
+
+[resource]
+script = ExtResource("1_power")
+id = &"fire"
+display_name = "Fire"
+ability_name = "Ember Bolt"
+description = "A fireball that burns what it hits."
+color = Color(1, 0.55, 0.2, 1)
+icon_shape = &"flame"
+ability_script = ExtResource("3_ability")
+base_cooldown = 4.0
+attack = SubResource("Resource_bolt")
+level3_text = "Explodes on impact (small area)."
+level5_text = "Leaves burning ground for 3 s."
+projectile_speed = 260.0
+projectile_range = 220.0
+projectile_size = Vector2(8, 8)

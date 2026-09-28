@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="PowerData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/power_data.gd" id="1_power"]
+[ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="2_attack"]
+[ext_resource type="Script" path="res://scripts/abilities/ability_bramble.gd" id="3_ability"]
+
+[sub_resource type="Resource" id="Resource_vines"]
+script = ExtResource("2_attack")
+damage = 0.0
+reach = 0.0
+radius = 40.0
+knockback = 0.0
+status = &"root"
+
+[resource]
+script = ExtResource("1_power")
+id = &"growth"
+display_name = "Growth"
+ability_name = "Bramble"
+description = "A vine patch at your feet roots enemies and heals you 2 HP/s inside."
+color = Color(0.45, 0.82, 0.35, 1)
+icon_shape = &"leaf"
+ability_script = ExtResource("3_ability")
+base_cooldown = 7.0
+attack = SubResource("Resource_vines")
+level3_text = "Bigger patch, lasts longer."
+level5_text = "Roots deal damage and spread."
+area_radius = 40.0
+area_duration = 4.0
+area_interval = 0.25
+heal_per_second = 2.0

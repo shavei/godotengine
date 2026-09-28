@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/abilities/bramble_patch.gd" id="1_patch"]
+
+[node name="BramblePatch" type="Node2D"]
+z_index = -5
+script = ExtResource("1_patch")
+
+[node name="Area" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 64
+monitorable = false
+
+[node name="Shape" type="CollisionShape2D" parent="Area"]

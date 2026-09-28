@@ -21,3 +21,11 @@ extends Resource
 @export var hit_stop: float = 0.0
 ## Camera shake trauma added on hit (0 to 1).
 @export var shake: float = 0.0
+
+@export_group("Status")
+## Status this hit applies (&"burn", &"chill", &"root"; see StatusEffects). Empty for none.
+@export var status: StringName = &""
+## Stacks added per hit.
+@export var status_stacks: int = 1
+## Fills the target's stagger bar by this much (docs/GDD.md Section 7.3).
+@export var stagger: float = 0.0

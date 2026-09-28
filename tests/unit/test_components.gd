@@ -73,27 +73,35 @@ func test_knockback_weight_scale() -> void:
 	assert_eq(kb.velocity, Vector2(0, 50))
 
 
-func test_status_stacks_refreshes_and_expires() -> void:
+func test_status_component_relays_effects_and_expires() -> void:
 	var status: StatusComponent = StatusComponent.new()
 	autofree(status)
+	status.setup(BalanceData.new(), false)
 	watch_signals(status)
-	status.apply(&"burn", 4.0, 3)
-	status.apply(&"burn", 2.0, 3)
+	status.apply(&"burn")
+	status.apply(&"burn")
 	assert_eq(status.stacks(&"burn"), 2)
 	status.tick(3.9)
-	assert_true(status.has(&"burn"), "longest duration is kept")
+	assert_true(status.has(&"burn"))
 	status.tick(0.2)
 	assert_false(status.has(&"burn"))
 	assert_signal_emit_count(status, "status_added", 1)
 	assert_signal_emit_count(status, "status_removed", 1)
 
 
-func test_status_stack_cap() -> void:
+func test_status_component_burns_its_health() -> void:
+	var health: HealthComponent = HealthComponent.new()
+	autofree(health)
+	health.set_max_hp(50, true)
 	var status: StatusComponent = StatusComponent.new()
 	autofree(status)
-	for i: int in 5:
-		status.apply(&"chill", 1.0, 3)
-	assert_eq(status.stacks(&"chill"), 3)
+	status.health = health
+	status.setup(BalanceData.new(), false)
+	watch_signals(status)
+	status.apply(&"burn", 2)
+	status.tick(1.0)
+	assert_eq(health.hp, 44, "2 stacks of 3 per second")
+	assert_signal_emitted_with_parameters(status, "burned", [6])
 
 
 func test_state_machine_starts_and_transitions() -> void:

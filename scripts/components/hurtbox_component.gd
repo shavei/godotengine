@@ -8,6 +8,8 @@ signal hurt(result: DamageResult, hitbox: HitboxComponent)
 @export var health: HealthComponent
 ## While true, hits are ignored (dodge i-frames, post-hit grace).
 @export var invincible: bool = false
+## Receives the statuses and stagger hits carry. Left empty, hits apply none.
+@export var status: StatusComponent
 
 var stats: CombatStats = CombatStats.new()
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
@@ -30,4 +32,16 @@ func receive_hit(hitbox: HitboxComponent) -> DamageResult:
 	var result: DamageResult = CombatMath.damage(hitbox.attack.damage, hitbox.stats, stats, rng)
 	health.take_damage(result.amount)
 	hurt.emit(result, hitbox)
+	if not health.is_dead():
+		receive_status(hitbox.attack.status, hitbox.attack.status_stacks, hitbox.attack.stagger)
 	return result
+
+
+## Applies a status and stagger without damage (a Bramble patch rooting what stands in it).
+func receive_status(id: StringName, stacks: int = 1, stagger: float = 0.0) -> void:
+	if status == null or not can_be_hit():
+		return
+	if id != &"":
+		status.apply(id, stacks)
+	if stagger > 0.0:
+		status.add_stagger(stagger)

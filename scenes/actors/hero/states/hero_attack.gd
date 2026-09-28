@@ -1,6 +1,6 @@
 extends State
 ## One step of the weapon combo: wind-up, active (hitbox on), recovery.
-## A press during the swing queues the next step; a dodge can cancel the recovery.
+## A press during the swing queues the next step; a dodge or a power can cancel the recovery.
 ## The move input steers the hero during the whole swing (Balance attack_move_scale).
 ## Steering keeps the hero's momentum (no snap on the first frame); the lunge is added on top.
 ## A press during the finisher is not used up: it stays buffered and starts the next combo.
@@ -58,8 +58,8 @@ func physics_update(delta: float) -> void:
 	else:
 		hero.hitbox.deactivate()
 		hero.velocity = _move_velocity
-		# Dodge cancels recovery.
-		if hero.try_dodge():
+		# Dodge or a power cancels recovery.
+		if hero.try_dodge() or hero.try_cast():
 			_end_combo_early()
 			return
 		if _queued and not is_last and _time >= hit_end + hero.weapon.chain_after:

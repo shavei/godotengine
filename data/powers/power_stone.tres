@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="PowerData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/power_data.gd" id="1_power"]
+[ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="2_attack"]
+[ext_resource type="Script" path="res://scripts/abilities/ability_bulwark.gd" id="3_ability"]
+
+[sub_resource type="Resource" id="Resource_burst"]
+script = ExtResource("2_attack")
+damage = 25.0
+reach = 0.0
+radius = 40.0
+knockback = 160.0
+shake = 0.3
+stagger = 60.0
+
+[resource]
+script = ExtResource("1_power")
+id = &"stone"
+display_name = "Stone"
+ability_name = "Bulwark"
+description = "A shield soaks up 30 damage for 4 s, then bursts and staggers."
+color = Color(0.72, 0.56, 0.4, 1)
+icon_shape = &"square"
+ability_script = ExtResource("3_ability")
+base_cooldown = 8.0
+attack = SubResource("Resource_burst")
+level3_text = "The burst throws spikes in a ring."
+level5_text = "The shield reflects projectiles."
+area_duration = 4.0
+shield_amount = 30

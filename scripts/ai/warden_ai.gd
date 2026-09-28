@@ -95,3 +95,10 @@ func _recover(seconds: float) -> void:
 func _set_phase(next: Phase) -> void:
 	phase = next
 	_time = 0.0
+
+
+## Stunned: drop the move and start over after the usual pause. Walls already up stay.
+func interrupt() -> void:
+	super.interrupt()
+	cooldown = boss.attack_cooldown
+	_set_phase(Phase.IDLE)
