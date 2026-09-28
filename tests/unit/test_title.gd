@@ -107,3 +107,30 @@ func test_a_waiting_power_is_mentioned_and_the_village_comes_first() -> void:
 	assert_true(village.has_focus() or with_offer.get_node("%ContinueButton").visible, "the village is the first choice")
 	assert_true(village.pressed.is_connected(with_offer._on_village_pressed))
 	GameState.profile = original_profile
+
+
+func test_new_game_asks_first_then_starts_a_fresh_profile() -> void:
+	var original_dir: String = SaveManager.save_dir
+	var original_profile: ProfileState = GameState.profile
+	SaveManager.save_dir = "user://test_saves_title"
+	GameState.new_profile()
+	GameState.profile.run_count = 5
+	GameState.profile.first_gift_done = true
+	GameState.hero_state(0).level = 4
+	var region: RegionData = load("res://data/regions/region_mossy_hollow.tres")
+	SaveManager.save_run(GameState.slot, RunState.start(region, 4).to_dict())
+	await wait_process_frames(2)
+	var button: Button = title.get_node("%NewGameButton")
+	button.pressed.emit()
+	assert_eq(button.text, "Sure? Your progress is lost")
+	assert_eq(GameState.profile.run_count, 5, "the first press only asks")
+	button.pressed.emit()
+	assert_eq(button.text, "New game")
+	assert_eq(GameState.profile.run_count, 0)
+	assert_eq(GameState.hero_state(0).level, 1)
+	assert_false(GameState.profile.first_gift_done, "the first gift tutorial comes again")
+	assert_false(GameState.has_saved_run(), "the saved run is gone")
+	assert_true(SaveManager.has_save(GameState.slot), "the fresh profile is saved")
+	SaveManager.delete_slot(GameState.slot)
+	SaveManager.save_dir = original_dir
+	GameState.profile = original_profile

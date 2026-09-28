@@ -94,6 +94,8 @@ You are the only hero of Emberwick, a small village at the edge of a drained lan
 
 **M4 PR 2:** the Shrine also has **Grow stronger** (spend attribute points, level up kept powers with shards, respec for coins), open with or without an offer. Its caption reads "Shrine: grow stronger" and the button glows gold while something can be spent. Villager cards also say when a service is bought at a workplace or only works in raids.
 
+**M4 PR 3:** every gift sends the hero back to the village, below the Shrine, and the **gift ceremony** plays (7.5 s): bars close in, a Spark rises from the hero and flies to the villager, bursts in the power's color, the villager's clothes shift to that color (with a sash) and their roof is trimmed, then they say their line with the service they now give. The first ceremony plays until the line has shown for 1.5 s; later ones skip with Use, Accept or Back. The **first power** must be given (Section 16): the Elder asks for it to go to the Farmer, and only the Farmer's card is open (no Keep, Merge or Leave). The first gift's orb pick is still free. The title's **New game** starts over, first gift included.
+
 ### 3.2 Rules
 - **Kept slots: 3.** Fixed for the whole game (Season 6 reduces it to 2).
 - **Gifts are permanent.** A villager's power can never be taken back or swapped.
@@ -682,6 +684,8 @@ Live values: the villager and combo files in `data/villagers/` and `data/combos/
 - Income ("+40 coins a run") is banked after every run, won or lost, and is never halved by a fall.
 - A max HP share (Stone Smith) applies after flat bonuses: `(base + flat) * (1 + share)`.
 - Respec: 50 coins per hero level.
+- Gift ceremony: 7.5 s (Spark rises 0.4 s, flies 1.0 to 2.3 s, the palette swap takes 0.9 s, the line shows at 3.2 s). The first one can be continued 1.5 s after its line shows. A gift shifts the villager's clothes 50% toward the power's color.
+- The forced first gift goes to `first_gift_villager` (the Farmer) in `balance_default.tres`.
 
 All numbers here are starting points for tuning. Update this section when they change.
 
@@ -692,6 +696,7 @@ All numbers here are starting points for tuning. Update this section when they c
 1. **Minute 0 to 3:** Wake up in Emberwick. Walk to the Elder. Learn movement, attack, dodge on training dummies.
 2. **Minute 3 to 12:** First run in Mossy Hollow, short tutorial floor (4 rooms, then the Warden of Roots in a weakened intro form). Get Growth.
 3. **Minute 12 to 15:** Choice tutorial. The Elder asks you to give this first Spark to the Farmer (forced gift). Gift ceremony. Crops sprout instantly (Novice service: extra flasks).
+   - Built (M4 PR 3): the forced gift and the ceremony. The Elder speaks in text only (on the Shrine screen and the village sign) until an Elder character exists; the first run is a full Mossy Hollow run with a free orb pick (the tutorial floor and the fixed Growth reward are not built).
 4. **Minute 15 to 30:** Second run (full Mossy Hollow). Earn a power; this Choice is free. Tooltip explains slots.
 5. **Minute 30 to 45:** Third run. Training tick: Farmer reaches Adept (3 TP). Village visibly changes.
 6. **Minute 45 to 60:** Fourth run, then first raid warning. Buildings introduced.

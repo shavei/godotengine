@@ -19,6 +19,7 @@ const SCENES: Array[String] = [
 	"res://scenes/ui/controls_menu.tscn",
 	"res://scenes/ui/results.tscn",
 	"res://scenes/ui/choice_screen.tscn",
+	"res://scenes/ui/gift_ceremony.tscn",
 	"res://scenes/village/village.tscn",
 	"res://scenes/village/villager.tscn",
 	"res://scenes/abilities/power_projectile.tscn",

@@ -112,6 +112,9 @@ extends Resource
 @export var master_tp: int = 7
 ## Resetting attributes at the Shrine costs this many coins per hero level (docs/GDD.md Section 4.1).
 @export var respec_cost_per_level: int = 50
+## The villager the first power must be given to (docs/GDD.md Section 16, the forced first
+## gift). Empty lets the first power go to anyone, or be kept.
+@export var first_gift_villager: StringName = &"farmer"
 
 @export_group("Village services")
 ## A revive token brings the hero back with this share of max HP, and this much grace.

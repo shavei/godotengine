@@ -7,6 +7,10 @@ var run_count: int = 0
 var runs_won: int = 0
 var heroes: Dictionary[int, HeroState] = {}
 var village: VillageState = VillageState.new()
+## True once the first power has been given (the forced first gift, FirstGift).
+var first_gift_done: bool = false
+## Gift ceremonies watched to the end or skipped; the first one cannot be skipped.
+var ceremonies_seen: int = 0
 
 
 ## The hero's progress. Made fresh (level 1) the first time it is asked for.
@@ -25,6 +29,8 @@ func to_dict() -> Dictionary:
 		"runs_won": runs_won,
 		"heroes": hero_data,
 		"village": village.to_dict(),
+		"first_gift_done": first_gift_done,
+		"ceremonies_seen": ceremonies_seen,
 	}
 
 
@@ -38,4 +44,7 @@ static func from_dict(data: Dictionary) -> ProfileState:
 			profile.heroes[int(str(key))] = HeroState.from_dict(hero_data[key])
 	var village_data: Variant = data.get("village", {})
 	profile.village = VillageState.from_dict(village_data if village_data is Dictionary else {})
+	# Saves from before the tutorial: anyone who gave or kept a power is past it.
+	profile.first_gift_done = bool(data.get("first_gift_done", FirstGift.settled_before(profile)))
+	profile.ceremonies_seen = maxi(0, int(data.get("ceremonies_seen", 0)))
 	return profile

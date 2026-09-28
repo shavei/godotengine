@@ -20,6 +20,11 @@ var workplace: String = ""
 ## The resident's power color, or transparent for none.
 var power_color: Color = Color.TRANSPARENT
 var occupied: bool = false
+## How far the roof trim shows (0 to 1). The gift ceremony plays it from 0.
+var trim_blend: float = 1.0:
+	set(value):
+		trim_blend = clampf(value, 0.0, 1.0)
+		queue_redraw()
 
 
 func _ready() -> void:
@@ -62,8 +67,10 @@ func _draw() -> void:
 		base.position + Vector2(base.size.x * 0.5, -ROOF_HEIGHT)]
 	var roof_color: Color = Color(0.45, 0.24, 0.18)
 	draw_colored_polygon(roof, roof_color)
-	var trim: Color = power_color if power_color.a > 0.0 else roof_color.darkened(0.3)
-	draw_polyline(PackedVector2Array([roof[0], roof[2], roof[1], roof[0]]), trim, 3.0 if power_color.a > 0.0 else 1.0)
+	var outline: PackedVector2Array = PackedVector2Array([roof[0], roof[2], roof[1], roof[0]])
+	draw_polyline(outline, roof_color.darkened(0.3), 1.0)
+	if power_color.a > 0.0 and trim_blend > 0.0:
+		draw_polyline(outline, Color(power_color, power_color.a * trim_blend), 1.0 + 2.0 * trim_blend)
 	var door: Rect2 = Rect2(Vector2(-7, -YARD - 14), Vector2(14, 14))
 	draw_rect(door, Color(0.3, 0.2, 0.14))
 	if not workplace.is_empty():

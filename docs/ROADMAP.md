@@ -99,10 +99,11 @@ Split into small PRs, each playable: (1) villagers, combos, the village scene an
 - [x] `ModifierStack` gathering services into hero and run stats (unit tested). (PR 2: services only; Techniques, Neighbors, meals and trinkets join the same stack later.)
 - [x] Choice screen: Keep / Give / Merge, villager preview cards, slot-full flow. (PR 1: Give with a second press, full slots give a kept power away to make room, and the Shrine gives kept powers away at any time.)
 - [x] `GiftSystem.give` with TP carry-over (unit tested).
-- [ ] Gift ceremony (simple version: particles, villager palette swap, line of dialogue). (PR 1 already shows the villager's line on the Choice screen, a glow in the power's color and a trimmed roof.)
+- [x] Gift ceremony (simple version: particles, villager palette swap, line of dialogue). (PR 3: plays in the village after every gift: bars, the Spark flies from the hero to the villager and bursts, their clothes and roof take the power's color, then their line and new service. 7.5 s; the first cannot be skipped until its line is read.)
 - [x] Smith shop (weapon tiers, infusions), Farmer flasks, Healer revive tokens, Guard (raid stub). (PR 2: all 16 combos' Novice and Adept services work in runs except the Guard's, which are collected as `raid.*` modifiers for M6. The Forge counts as level 2 until buildings. The Shrine's Grow stronger took over attribute points and shard leveling, with respec.)
 - [x] Save/load of `ProfileState` with round-trip tests. (PR 1: the village joins the profile; old saves get the starting villagers.)
-- [ ] Forced first gift tutorial (GDD Section 16).
+- [x] Forced first gift tutorial (GDD Section 16). (PR 3: the first power must go to the Farmer; the Elder's words are text only. The title's New game replays it. The tutorial floor and the Elder character wait for M7 onboarding.)
+- [ ] Owner plays the loop (a New game through the first gift, then a free Choice) and checks the done criteria below.
 
 **Done when:** the full loop Village > Run > Results > Choice > Village works and persists across restarts.
 
