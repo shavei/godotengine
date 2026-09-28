@@ -24,10 +24,10 @@ Report back by ID ("A1 ok, C2 bug: ..."), screenshots welcome.
 ## C. First run: movement and combat feel
 
 - [x] **C1.** Stamina bar, HP, flasks and power slots show.
-- [ ] **C2.** Moving, attacking while moving, the 3-hit combo and turning mid-combo feel responsive (nothing sticky).
+- [x] **C2.** Moving, attacking while moving, the 3-hit combo and turning mid-combo feel responsive (nothing sticky).
 - [x] **C3.** Dodge through enemies; stamina runs out and refills.
 - [x] **C4.** Flask heals; a hit while drinking cancels it and keeps the charge.
-- [ ] **C5.** Aiming with mouse and with right stick; aim assist helps with the stick.
+- [x] **C5.** Aiming with mouse and with right stick; aim assist helps with the stick.
 - [x] **C6.** Enemies: Tusk Boar (charges, stunned by walls), Seedling / Sproutling (split), Thorn Archer (arrows leave thorns when they miss).
 - [ ] **C7.** Hit-stop and screen shake feel good, not too much.
 
