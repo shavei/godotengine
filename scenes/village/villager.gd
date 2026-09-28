@@ -16,6 +16,10 @@ const OUTLINE: Color = Color(0.05, 0.03, 0.05)
 ## How far a gift shifts the villager's clothes toward the power's color.
 const PALETTE_SHIFT: float = 0.5
 const GOLD: Color = Color(1, 0.82, 0.35)
+## Where the name sits: at their feet, or above their head (clear of a crown) while the
+## hero stands on them and would cover it.
+const NAME_BELOW: Vector2 = Vector2(-60, 16)
+const NAME_ABOVE: Vector2 = Vector2(-60, -44)
 
 var data: VillagerData
 var state: VillagerState
@@ -46,6 +50,8 @@ func _ready() -> void:
 	spot.show_ring = false
 	spot.color = Color(0.95, 0.9, 0.78)
 	spot.chosen.connect(func(_spot: InteractSpot, hero: Hero) -> void: talked_to.emit(self, hero))
+	spot.body_entered.connect(func(_body: Node2D) -> void: queue_redraw())
+	spot.body_exited.connect(func(_body: Node2D) -> void: queue_redraw())
 	_update_caption()
 
 
@@ -97,9 +103,13 @@ func _draw() -> void:
 		label = "%s  %s" % [data.display_name, progress]
 		label_color = power.color
 		_draw_rank_props(body)
-	var at: Vector2 = Vector2(-60, 16)
+	var at: Vector2 = name_position()
 	draw_string_outline(font, at, label, HORIZONTAL_ALIGNMENT_CENTER, 120, 8, 3, OUTLINE)
 	draw_string(font, at, label, HORIZONTAL_ALIGNMENT_CENTER, 120, 8, label_color)
+
+
+func name_position() -> Vector2:
+	return NAME_ABOVE if spot != null and spot.is_occupied() else NAME_BELOW
 
 
 ## An Adept's star on the chest, a Master's crown above the head. The newest one grows in

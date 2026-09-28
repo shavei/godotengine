@@ -8,8 +8,8 @@ Persistent project memory. Read at the start of every session, update at the end
 - **Also:** Controls remapping menu (title > Controls) added at the owner's request, ahead of the M7 Settings menu.
 - **Next step:** Owner tries M5 PR 3: title > Playtest log: on, play a run and a Choice, then Open log folder and look at the file; in the editor (F5), press ` (or F2) in the village and try `give_power fire`, `set_tp farmer 7` (after a gift) and `add_renown 10`, and `skip_room` / `god_mode` in a run. Then run the Playtest builds workflow on GitHub (Actions) and try the Windows zip. Then the prototype gate: 5+ external testers, 2+ hours each, log files back, `tools/metrics_report.gd`. Earlier M5 notes: owner plays M5 PR 1: title > New game, give the first power to Tilly, then play 3 runs and watch Tilly reach Adept after the third (star, pennant, Adept service). Note the Healer is gone from a new village until Renown 2. Answers to the M5 PR 1 questions in the session log. Then M5 PR 2 (merge PR 1 first): keep playing until Tilly reaches Master (7 runs after the gift), watch her lesson, then press Tab / Back in the village for the character sheet and try Regrowth in a run. Then M5 PR 3 (metrics logging, debug console, playtester builds).
 - **Also:** Combat feel pass (merged): quick turns, swings keep momentum, stable facing, no swallowed finisher press. Owner feedback on it still welcome.
-- **Also:** Village fixes (owner's first playtest): the gate's caption sits above its ring (the welcome line hid it), and gamepad back paddles show as "Paddle 1" to "Paddle 4" (was "Button 17").
-- **Last updated:** 2026-09-28 (village fixes)
+- **Also:** Village fixes (owner's first playtest): the gate's caption sits above its ring, gamepad back paddles show as "Paddle 1" to "Paddle 4" (merged); then the camera looks 32 px past the bottom wall so the sign never covers walkable ground, a villager's name moves above their head while the hero stands on them, and the sign returns to the welcome line when the hero walks off whoever spoke.
+- **Last updated:** 2026-09-28 (village fixes 2)
 
 ## The game in brief
 
@@ -164,6 +164,7 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-28 | Debug console on ` or F2 (debug builds), pauses the game; `give_power` puts the power at the Shrine, `add_renown` adds saved `VillageState.bonus_renown`, `god_mode` is a static `Hero` flag; closing it in the village reloads the village | Tests the village loop without playing runs. Renown stays counted from the village; the debug bonus is one number on top. Reloading lets rank-up, lesson and Renown moments play as they would. |
 | 2026-09-28 | Playtest builds: Windows and Linux release exports with the PCK embedded, made by a GitHub workflow (by hand or on a `v*` tag); release builds hide the test rooms and debug tools; macOS later | The owner is on Windows; builds from CI need no local export templates. macOS needs signing and notarization to open without warnings. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
+| 2026-09-28 | Village camera may look `HUD_BAND` (32 px) below the room; the sign and help lines sit over the bottom wall and the dark below it | Owner's screenshots: captions near the bottom (the gate, Maren's Use hint) hid under the sign. Moving one caption fixed one spot; the band fixes every spot, since a 3-line sign now ends above the floor's bottom edge. |
 
 ## Rejected ideas (do not re-propose without new info)
 
@@ -210,6 +211,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-28 (village fixes 2):** Owner's second village screenshot: Maren's Use hint hid under a 2-line sign, the hero covered Maren's name, and the sign kept Brann's line after walking away. `Village.HUD_BAND` (camera `limit_bottom`), `Villager.name_position()` (above the head while the spot is occupied), `Village._say_for` / `_speaker` (walking off the spot that spoke brings back `welcome()`). 533 tests pass (2 new), no warnings, boot clean, checked with xvfb screenshots.
 
 - **2026-09-28 (village fixes):** Owner's screenshot of the village: the gate's caption (drawn below the ring) sat under the sign line, so the gate was easy to miss; the Hero hint read "Tab / Button 17" (a back paddle). `InteractSpot.caption_above` (the village gate uses it) and paddle names in `InputBindings.JOY_BUTTON_NAMES`. 531 tests pass (1 new, 1 assert added), no warnings, boot clean, checked with an xvfb screenshot.
 

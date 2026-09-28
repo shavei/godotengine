@@ -191,6 +191,30 @@ func test_talking_tells_the_service() -> void:
 	assert_true(text.contains("Adept: +3 flasks"), "a level 5 gift is Adept at once")
 
 
+
+func test_walking_off_a_villager_brings_back_the_welcome_line() -> void:
+	var scene: Village = await _open()
+	var farmer: Villager = scene.find_child("VillagerFarmer", true, false) as Villager
+	scene.hero.global_position = farmer.spot.global_position
+	await wait_physics_frames(3)
+	assert_true(farmer.spot.is_occupied())
+	assert_eq(farmer.name_position(), Villager.NAME_ABOVE, "the hero would cover a name at the feet")
+	scene.talk(farmer)
+	assert_true(scene.sign_label.text.begins_with("Tilly the Farmer"))
+	scene.hero.global_position = farmer.spot.global_position + Vector2(0, 80)
+	await wait_physics_frames(3)
+	assert_false(farmer.spot.is_occupied())
+	assert_eq(farmer.name_position(), Villager.NAME_BELOW)
+	assert_eq(scene.sign_label.text, "Welcome home to Emberwick.")
+
+
+func test_the_sign_and_help_lines_never_cover_walkable_ground() -> void:
+	var scene: Village = await _open()
+	var sign_top: float = scene.camera.limit_bottom + scene.sign_label.offset_top
+	assert_eq(scene.camera.limit_bottom, int(scene.room.get_rect().end.y) + Village.HUD_BAND)
+	assert_true(sign_top >= scene.room.get_inner_rect().end.y, "a 3-line sign ends above the floor's bottom edge")
+
+
 func test_the_shrine_glows_while_a_power_waits() -> void:
 	var scene: Village = await _open()
 	assert_eq(scene.shrine.caption, "Shrine")

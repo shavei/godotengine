@@ -36,6 +36,9 @@ const SHRINE_COLOR: Color = Color(1, 0.82, 0.45)
 const GATE_COLOR: Color = Color(0.7, 0.9, 0.6)
 const BOARD_COLOR: Color = Color(0.85, 0.75, 0.6)
 const INK: Color = Color(0.95, 0.9, 0.78)
+## How far the camera may look below the room: the sign and help lines then sit over the
+## bottom wall and the dark below it, never over ground the hero can walk on.
+const HUD_BAND: int = 32
 
 var village: VillageState
 var balance: BalanceData
@@ -59,6 +62,9 @@ var sheet: CharacterSheet
 ## Moments waiting to play after the current one (callables that start one).
 var _moments: Array[Callable] = []
 var _renown_label: Label
+## The spot whose words are on the sign (a villager, the board, the gate), or null.
+## Walking off it brings back the welcome line.
+var _speaker: InteractSpot = null
 
 @onready var hero: Hero = $Actors/Hero
 @onready var camera: GameCamera = $Camera
@@ -149,11 +155,11 @@ func use_spot(spot: InteractSpot, by: Hero) -> void:
 			SceneRouter.go(CHOICE_SCENE, {"player_id": by.player_id})
 		GATE:
 			if _offer_waits():
-				_say("A power waits at the Shrine. Settle it before you set out.")
+				_say_for(spot, "A power waits at the Shrine. Settle it before you set out.")
 			else:
 				start_run()
 		BOARD:
-			_say(board_text())
+			_say_for(spot, board_text())
 
 
 ## The notice board: Renown and who comes next, then the runs so far.
@@ -190,7 +196,7 @@ func prepare_run() -> void:
 func talk(villager: Villager, by: Hero = hero) -> void:
 	if busy():
 		return
-	_say(speech(villager))
+	_say_for(villager.spot, speech(villager))
 	if ShopPanel.sells_anything(villager.data, villager.state):
 		open_shop(villager, by)
 
@@ -489,6 +495,7 @@ func _add_villager(state: VillagerState) -> Villager:
 	villager.position = plot.position
 	villager.setup(data, state, balance)
 	villager.talked_to.connect(func(who: Villager, by: Hero) -> void: talk(who, by))
+	villager.spot.body_exited.connect(_on_spot_left.bind(villager.spot))
 	villagers.append(villager)
 	return villager
 
@@ -513,6 +520,7 @@ func _add_spot(kind: StringName, at: Vector2, tint: Color) -> InteractSpot:
 	spot.name = String(kind).capitalize()
 	spot.position = at
 	spot.chosen.connect(use_spot)
+	spot.body_exited.connect(_on_spot_left.bind(spot))
 	$Spots.add_child(spot)
 	return spot
 
@@ -532,6 +540,18 @@ func _villager_data(villager_id: StringName) -> VillagerData:
 
 func _say(text: String) -> void:
 	sign_label.text = text
+	_speaker = null
+
+
+## Puts a spot's words on the sign until the hero walks off it.
+func _say_for(spot: InteractSpot, text: String) -> void:
+	_say(text)
+	_speaker = spot
+
+
+func _on_spot_left(body: Node2D, spot: InteractSpot) -> void:
+	if body is Hero and spot == _speaker and not busy():
+		_say(welcome())
 
 
 func _fit_camera() -> void:
@@ -539,7 +559,7 @@ func _fit_camera() -> void:
 	camera.limit_left = int(bounds.position.x)
 	camera.limit_top = int(bounds.position.y)
 	camera.limit_right = int(bounds.end.x)
-	camera.limit_bottom = int(bounds.end.y)
+	camera.limit_bottom = int(bounds.end.y) + HUD_BAND
 	camera.global_position = hero.global_position
 	camera.reset_smoothing()
 	camera.reset_physics_interpolation()
