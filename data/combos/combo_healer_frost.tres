@@ -1,15 +1,30 @@
-[gd_resource type="Resource" script_class="ComboData" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="ComboData" load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/combo_data.gd" id="1_combo"]
 [ext_resource type="Script" path="res://scripts/resources/service_data.gd" id="2_service"]
+[ext_resource type="Script" path="res://scripts/resources/modifier_data.gd" id="3_mod"]
+
+[sub_resource type="Resource" id="Mod_novice_1"]
+script = ExtResource("3_mod")
+target = &"hero.damage_taken"
+value = -0.1
+condition = &"boss_room"
 
 [sub_resource type="Resource" id="Resource_novice"]
 script = ExtResource("2_service")
-description = "Numbing salve: 10% less damage taken on boss floors."
+description = "Numbing salve: 10% less damage taken in boss fights."
+modifiers = Array[ExtResource("3_mod")]([SubResource("Mod_novice_1")])
+
+[sub_resource type="Resource" id="Mod_adept_1"]
+script = ExtResource("3_mod")
+target = &"hero.damage_taken"
+value = -0.1
+condition = &"boss_room"
 
 [sub_resource type="Resource" id="Resource_adept"]
 script = ExtResource("2_service")
 description = "20% less."
+modifiers = Array[ExtResource("3_mod")]([SubResource("Mod_adept_1")])
 
 [resource]
 script = ExtResource("1_combo")

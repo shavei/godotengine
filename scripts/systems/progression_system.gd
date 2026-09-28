@@ -62,6 +62,33 @@ static func spend_point(hero: HeroState, attribute_id: StringName, balance: Bala
 	return true
 
 
+## Coins to reset every attribute point at the Shrine (docs/GDD.md Section 4.1).
+static func respec_cost(hero: HeroState, balance: BalanceData) -> int:
+	return hero.level * balance.respec_cost_per_level
+
+
+static func spent_points(hero: HeroState) -> int:
+	var total: int = 0
+	for attribute_id: StringName in HeroState.ATTRIBUTES:
+		total += hero.attribute(attribute_id)
+	return total
+
+
+static func can_respec(hero: HeroState, balance: BalanceData) -> bool:
+	return spent_points(hero) > 0 and hero.bank.can_afford(Wallet.COINS, respec_cost(hero, balance))
+
+
+## Pays the coins and turns every spent attribute point back into an unspent one.
+static func respec(hero: HeroState, balance: BalanceData) -> bool:
+	if not can_respec(hero, balance):
+		return false
+	hero.bank.spend(Wallet.COINS, respec_cost(hero, balance))
+	hero.attribute_points += spent_points(hero)
+	for attribute_id: StringName in HeroState.ATTRIBUTES:
+		hero.attributes[attribute_id] = 0
+	return true
+
+
 static func max_hp(hero: HeroState, balance: BalanceData) -> int:
 	return balance.hero_max_hp + (hero.level - 1) * balance.level_max_hp \
 			+ hero.attribute(HeroState.VIGOR) * balance.vigor_max_hp

@@ -110,6 +110,28 @@ extends Resource
 ## Training Points a powered villager needs for Adept and Master (docs/GDD.md Section 5.2).
 @export var adept_tp: int = 3
 @export var master_tp: int = 7
+## Resetting attributes at the Shrine costs this many coins per hero level (docs/GDD.md Section 4.1).
+@export var respec_cost_per_level: int = 50
+
+@export_group("Village services")
+## A revive token brings the hero back with this share of max HP, and this much grace.
+@export var revive_hp_fraction: float = 0.3
+@export var revive_iframes: float = 1.5
+## Radius of the fire burst a Fire Healer's revive sets off (its damage is the service's).
+@export var revive_blast_radius: float = 56.0
+## A Growth Farmer's flasks heal their extra share over this many seconds.
+@export var flask_regen_time: float = 5.0
+
+@export_group("Smith")
+## Weapon tiers, cheapest first (docs/GDD.md Sections 4.2 and 15.2). Tier 0 is the start.
+@export var weapon_tier_names: Array[String] = ["Iron", "Steel", "Runed", "Mythic"]
+@export var weapon_tier_multipliers: Array[float] = [1.0, 1.3, 1.7, 2.2]
+@export var weapon_tier_prices: Array[int] = [0, 300, 900, 2500]
+@export var weapon_tier_crystal: Array[int] = [0, 0, 0, 10]
+## Forge level each tier needs.
+@export var weapon_tier_forge_levels: Array[int] = [1, 2, 3, 3]
+## This tier (and up) also needs a Master Smith.
+@export var weapon_tier_master_from: int = 3
 
 @export_group("Status effects")
 ## Burn: damage per stack each tick, ticks every burn_interval seconds (docs/GDD.md Section 7.3).

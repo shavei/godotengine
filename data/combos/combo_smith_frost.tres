@@ -1,15 +1,35 @@
-[gd_resource type="Resource" script_class="ComboData" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="ComboData" load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/combo_data.gd" id="1_combo"]
 [ext_resource type="Script" path="res://scripts/resources/service_data.gd" id="2_service"]
+[ext_resource type="Script" path="res://scripts/resources/modifier_data.gd" id="3_mod"]
+
+[sub_resource type="Resource" id="Mod_novice_1"]
+script = ExtResource("3_mod")
+target = &"hero.weapon_chill_chance"
+value = 0.15
 
 [sub_resource type="Resource" id="Resource_novice"]
 script = ExtResource("2_service")
 description = "Sells a Frost infusion: weapon hits Chill 15% of the time."
+modifiers = Array[ExtResource("3_mod")]([SubResource("Mod_novice_1")])
+price = 100
+shop_name = "Frost infusion"
+
+[sub_resource type="Resource" id="Mod_adept_1"]
+script = ExtResource("3_mod")
+target = &"hero.weapon_chill_chance"
+value = 0.15
+
+[sub_resource type="Resource" id="Mod_adept_2"]
+script = ExtResource("3_mod")
+target = &"hero.damage_taken"
+value = -0.1
 
 [sub_resource type="Resource" id="Resource_adept"]
 script = ExtResource("2_service")
-description = "Chill 30% of the time. Sells armor that cuts damage taken by 10%."
+description = "Chill 30% of the time, and your armor cuts damage taken by 10%."
+modifiers = Array[ExtResource("3_mod")]([SubResource("Mod_adept_1"), SubResource("Mod_adept_2")])
 
 [resource]
 script = ExtResource("1_combo")

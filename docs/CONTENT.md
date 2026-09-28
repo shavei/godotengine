@@ -56,6 +56,8 @@ Format: **Novice** service / **Adept** upgrade / **Master Technique** (permanent
 | Light | Blessed weapons: +20% dmg to elites and bosses | +35% | **Gleam:** your crits make enemies Radiant |
 | Shadow | Serrated weapons: +10% crit chance | +20% | **Backstab:** hits from behind always crit |
 
+Prototype note (M4 PR 2): each Smith service is bought once per hero at the Forge (100 coins) and then works every run; "sells armor" upgrades come with the Adept rank. The Growth row counts fight rooms cleared without being hit; any hit resets it.
+
 ### 3.2 Farmer
 | Power | Novice | Adept | Master Technique |
 |---|---|---|---|
@@ -91,6 +93,8 @@ Format: **Novice** service / **Adept** upgrade / **Master Technique** (permanent
 | Wind | Fresh air: debuffs on you last 30% shorter | 50% | **Deep Breath:** stamina regen +30% |
 | Light | Blessing: +1 revive token, revives cleanse | +2 | **Grace:** once per floor, a fatal hit leaves you at 1 HP |
 | Shadow | Leech therapy: 2% lifesteal | 4% | **Siphon:** kills with a power heal 3 HP |
+
+Prototype note (M4 PR 2): every Mossy Hollow floor ends in a boss fight, so Frost's "boss floors" means the mini-boss and region boss rooms. Revive tokens are used by a lethal hit and carry between rooms.
 
 ### 3.5 Miller
 | Power | Novice | Adept | Master Technique |

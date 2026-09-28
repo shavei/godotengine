@@ -11,6 +11,9 @@ extends Node2D
 ## Every room saves the run as it is entered (the mid-run save). Clearing a fight gives
 ## XP; the run's end banks loot and XP (RunEnd) and opens the results screen. After a
 ## clear the region boss leaves power orbs; the hero takes one first (PowerOffer).
+##
+## Village services (GameState.services) shape the hero for the whole run: flasks, revive
+## tokens, max HP, infusions, healing per room cleared, and less damage in boss rooms.
 
 const ROOM_SCENE: String = "res://scenes/run/room.tscn"
 const TITLE_SCENE: String = "res://scenes/main/title.tscn"
@@ -63,6 +66,11 @@ var _entry_save: Dictionary = {}
 var _summary: RunSummary
 ## Loot amounts are seeded per room so co-op peers agree (docs/ARCHITECTURE.md Section 9).
 var _loot_rng: RandomNumberGenerator
+## What the village does for the local hero this run.
+var _services: ModifierStack
+## Fight rooms cleared in a row without being hit (a Growth Smith's mending gear).
+var _clean_rooms: int = 0
+var _hit_this_room: bool = false
 
 @onready var hero: Hero = $Actors/Hero
 @onready var hud: Hud = $Hud
@@ -87,7 +95,10 @@ func _ready() -> void:
 	hero.global_position = HERO_START
 	hero.reset_physics_interpolation()
 	hero.apply_progress(GameState.hero_state(hero.player_id))
+	_services = GameState.services(hero.player_id)
+	hero.apply_services(_services, _conditions())
 	_restore_hero()
+	hero.health.damaged.connect(_on_hero_damaged)
 	wallet = run.wallet(hero.player_id)
 	_loot_rng = LootRoller.rng_for(run.run_seed, run.floor_index, run.current_room_id, &"loot")
 	hud.bind_hero(hero)
@@ -313,7 +324,7 @@ func _on_door_entered(door: RoomDoor) -> void:
 		return
 	_leaving = true
 	scoop_loot(hero)
-	run.save_hero(hero.player_id, hero.health.hp, hero.health.max_hp, hero.flasks.charges)
+	run.save_hero(hero.player_id, hero.health.hp, hero.health.max_hp, hero.flasks.charges, hero.revives, _clean_rooms)
 	if door.room_id < 0:
 		run.advance_floor()
 	else:
@@ -351,6 +362,7 @@ func _on_room_cleared() -> void:
 	wave_label.text = "Room clear"
 	run.mark_cleared()
 	_award_room_xp()
+	_apply_room_services()
 	for pickup: Pickup in _pickups():
 		pickup.attract()
 	if not run.is_run_won():
@@ -534,7 +546,8 @@ func _on_hero_died(_player_id: int) -> void:
 ## Banks XP and loot at once (so quitting now cannot undo a fall) and deletes the run save.
 func _end_run(success: bool) -> void:
 	scoop_loot(hero)
-	var summaries: Dictionary[int, RunSummary] = RunEnd.finish(run, GameState.profile, success, hero.balance)
+	var services: Dictionary[int, ModifierStack] = {hero.player_id: _services}
+	var summaries: Dictionary[int, RunSummary] = RunEnd.finish(run, GameState.profile, success, hero.balance, services)
 	_summary = summaries.get(hero.player_id)
 	GameState.end_run()
 	GameState.save_profile()
@@ -572,6 +585,8 @@ func write_quit_save() -> void:
 		"hp": mini(int(carry.get("hp", hero.health.hp)), hero.health.hp),
 		"max_hp": hero.health.max_hp,
 		"flasks": mini(int(carry.get("flasks", hero.flasks.charges)), hero.flasks.charges),
+		"revives": mini(int(carry.get("revives", hero.revives)), hero.revives),
+		"clean_rooms": int(carry.get("clean_rooms", _clean_rooms)),
 	}
 	heroes[str(hero.player_id)] = entry
 	_entry_save["heroes"] = heroes
@@ -598,6 +613,40 @@ func _restore_hero() -> void:
 		return
 	hero.health.hp = clampi(snapshot["hp"], 1, hero.health.max_hp)
 	hero.flasks.charges = clampi(snapshot["flasks"], 0, hero.flasks.max_charges)
+	hero.set_revives(clampi(int(snapshot.get("revives", hero.revives)), 0, hero.revives))
+	_clean_rooms = maxi(0, int(snapshot.get("clean_rooms", 0)))
+	hero.set_mending(_clean_rooms)
+
+
+## Boss rooms switch on the services that only count there (a Frost Healer's salve).
+func _conditions() -> Array[StringName]:
+	var conditions: Array[StringName] = []
+	if map_room != null and map_room.is_boss():
+		conditions.append(ModifierStack.BOSS_ROOM)
+	return conditions
+
+
+## A fight room is clear: a Growth Healer heals, and mending gear grows if no hit landed.
+func _apply_room_services() -> void:
+	var heal: int = _services.count(ModifierStack.HEAL_PER_ROOM)
+	if heal > 0:
+		var healed: int = hero.health.heal(heal)
+		if healed > 0:
+			DamageNumber.spawn(actors, hero.global_position + Vector2(0, -32), "+%d" % healed, DamageNumber.COLOR_HEAL)
+	if _services.total(ModifierStack.MENDING_STEP) > 0.0 and not _hit_this_room:
+		var before: float = hero.mending_bonus(_clean_rooms)
+		_clean_rooms += 1
+		hero.set_mending(_clean_rooms)
+		if hero.mending_bonus(_clean_rooms) > before:
+			DamageNumber.spawn(actors, hero.global_position + Vector2(0, -44), "Gear +%d%%" % roundi(hero.mending_bonus(_clean_rooms) * 100.0), XP_COLOR)
+
+
+## Any hit resets mending gear.
+func _on_hero_damaged(_amount: int) -> void:
+	_hit_this_room = true
+	if _clean_rooms > 0:
+		_clean_rooms = 0
+		hero.set_mending(0)
 
 
 func _room_title() -> String:

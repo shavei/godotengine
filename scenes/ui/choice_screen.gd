@@ -8,6 +8,7 @@ extends Control
 ## already, let go). With no offer waiting, a kept power can be given away at any time.
 ## Villager cards preview the Novice and Adept services; the Technique shows as "???"
 ## until the Codex exists. Giving, letting go and leaving ask for a second press.
+## "Grow stronger" opens the Shrine's GrowthPanel: attribute points, power levels, respec.
 ## Reads SceneRouter.context["player_id"] (the local hero by default).
 
 const VILLAGE_SCENE: String = "res://scenes/village/village.tscn"
@@ -24,10 +25,12 @@ const LEAVE: StringName = &"leave"
 const GIVE: StringName = &"give"
 const GIVE_KEPT: StringName = &"give_kept"
 const BACK: StringName = &"back"
+const GROW: StringName = &"grow"
 ## Screen views beside the offer itself: pick a villager, or pick a kept power to give.
 const VIEW_OFFER: StringName = &"offer"
 const VIEW_VILLAGERS: StringName = &"villagers"
 const VIEW_KEPT: StringName = &"kept"
+const VIEW_GROW: StringName = &"grow"
 
 var player_id: int = GameState.LOCAL_PLAYER_ID
 var hero: HeroState
@@ -51,6 +54,10 @@ var _view: StringName = VIEW_OFFER
 ## The power being given, and whether it comes out of a kept slot.
 var _giving: StringName = &""
 var _giving_kept: bool = false
+## What the settled Choice did (the headline's subline once done).
+var _done_message: String = ""
+## The Grow stronger view's panel, while it shows.
+var growth: GrowthPanel
 
 
 func _ready() -> void:
@@ -99,13 +106,23 @@ func refresh() -> void:
 	_clear(_cards)
 	_clear(_slots)
 	_clear(_actions)
+	if growth != null:
+		remove_child(growth)
+		growth.queue_free()
+		growth = null
 	for i: int in GiftSystem.slot_count(balance):
 		_slots.add_child(_slot_view(hero.kept_powers[i] if i < hero.kept_powers.size() else null))
-	# Villager cards are tall and cover the slot row.
-	_slots.visible = _view != VIEW_VILLAGERS or done
+	# Villager cards and the growth panel are tall and cover the slot row.
+	_slots.visible = _view == VIEW_OFFER or _view == VIEW_KEPT or (done and _view != VIEW_GROW)
 	_slots_heading.visible = _slots.visible
+	if _view == VIEW_GROW:
+		_show_growth()
+		return
 	if done:
+		_headline.text = "The Choice is made"
+		_subline.text = _done_message
 		_add_action("Continue", &"continue", "ContinueButton")
+		_add_grow_action()
 	elif _view == VIEW_VILLAGERS:
 		_show_villagers()
 	elif _view == VIEW_KEPT:
@@ -178,6 +195,7 @@ func _show_decision(power_id: StringName) -> void:
 	if can_give:
 		_add_action("Give to a villager", GIVE, "GiveButton", power_id)
 	_add_action("Leave it behind", LEAVE, "LeaveButton")
+	_add_grow_action()
 
 
 ## No offer waits: the Shrine still lets the hero give a kept power away.
@@ -192,6 +210,48 @@ func _show_shrine() -> void:
 		_note.text = "A kept power you give away keeps its level: the villager starts training ahead."
 		_add_kept_gift_actions()
 	_add_action("Continue", &"continue", "ContinueButton")
+	_add_grow_action()
+
+
+## "Grow stronger" (it glows in gold while something waits to be spent).
+func _add_grow_action() -> void:
+	var button: Button = _add_action("Grow stronger", GROW, "GrowButton")
+	if GrowthPanel.has_anything_to_spend(hero, balance):
+		button.add_theme_color_override("font_color", GOLD)
+		button.add_theme_color_override("font_focus_color", GOLD)
+
+
+## The Shrine's growth: attribute points, power levels and respec.
+func _show_growth() -> void:
+	_headline.text = "Grow stronger"
+	_subline.text = "Spend attribute points and Power Shards. Kept powers level up here."
+	_note.text = ""
+	growth = GrowthPanel.new()
+	growth.setup(player_id, balance)
+	growth.save_on_spend = save_on_change
+	growth.changed.connect(_on_growth_changed)
+	growth.position = Vector2(20, 60)
+	growth.size = Vector2(600, 180)
+	add_child(growth)
+	_add_action("Back", BACK, "BackButton")
+	var first: Button = growth.default_focus()
+	if first != null and get_viewport() != null:
+		first.grab_focus()
+	else:
+		_focus_first()
+
+
+## Focus moves on when a spent button can no longer be pressed.
+func _on_growth_changed() -> void:
+	if get_viewport() == null:
+		return
+	var focused: Control = get_viewport().gui_get_focus_owner()
+	if focused == null or (focused is Button and (focused as Button).disabled):
+		var first: Button = growth.default_focus()
+		if first != null:
+			first.grab_focus()
+		else:
+			_focus_first()
 
 
 ## Every slot is full (or the Shrine with no offer): which kept power goes?
@@ -258,6 +318,10 @@ func _villager_card(villager: VillagerState, level: int) -> Button:
 	column.add_child(_card_text("Novice: %s" % combo.novice.description, INK, "Novice"))
 	column.add_child(_card_text("Adept: %s" % combo.adept.description, DIM, "Adept"))
 	column.add_child(_card_text("Master: ???", DIM, "Master"))
+	if combo.novice.price > 0:
+		column.add_child(_card_text("Bought once at the %s: %d coins." % [data.workplace if data != null else "shop", combo.novice.price], GOLD, "Price"))
+	elif combo.novice.only_in_raids():
+		column.add_child(_card_text("Works in raids, which have not started yet.", GOLD, "Raids"))
 	var points: int = GiftSystem.starting_tp(level)
 	if points > 0:
 		var rank_text: String = TrainingSystem.rank_name(TrainingSystem.rank_for_points(points, balance))
@@ -371,9 +435,8 @@ func _settle(message: String, note: String = "") -> void:
 
 func _finish(message: String, note: String = "") -> void:
 	done = true
+	_done_message = message
 	_save()
-	_headline.text = "The Choice is made"
-	_subline.text = message
 	refresh()
 	_note.text = note
 
@@ -390,6 +453,9 @@ func _on_action(action: StringName, button: Button, power_id: StringName) -> voi
 			continue_on()
 		BACK:
 			_view = VIEW_OFFER
+			refresh()
+		GROW:
+			_view = VIEW_GROW
 			refresh()
 		GIVE:
 			start_give(power_id, false)

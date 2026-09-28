@@ -1,8 +1,8 @@
 class_name ResultsScreen
 extends Control
 ## The results screen (docs/GDD.md Section 13): how the run went, XP and level-ups,
-## weapon mastery, and the loot found and kept. Level-ups give attribute points to spend
-## here, and banked Power Shards level up kept powers (docs/GDD.md Section 4.3).
+## weapon mastery, the loot found and kept, and what the village's services banked.
+## Attribute points and Power Shards are spent at the village Shrine (GrowthPanel).
 ## Reads SceneRouter.context["summary"] (a RunSummary for the local hero).
 ## Continue goes back to the village, where the Shrine glows while a boss's power offer
 ## waits (docs/GDD.md Section 3.1).
@@ -13,27 +13,15 @@ const INK: Color = Color(0.95, 0.9, 0.78)
 const DIM: Color = Color(0.72, 0.67, 0.6)
 const FELL: Color = Color(0.95, 0.5, 0.45)
 const GOOD: Color = Color(0.6, 0.95, 0.55)
-const ATTRIBUTE_TEXT: Dictionary = {
-	HeroState.MIGHT: ["Might", "+3% weapon damage"],
-	HeroState.VIGOR: ["Vigor", "+10 max HP, +5 stamina"],
-	HeroState.FOCUS: ["Focus", "+3% power damage, -1.5% cooldowns"],
-}
 ## Loot rows, in HUD order. The region material is added from the summary.
 const LOOT_ORDER: Array[StringName] = [Wallet.COINS, Wallet.WOOD, Wallet.ORE, Wallet.CRYSTAL, Wallet.SHARDS]
 
 var summary: RunSummary
 var hero: HeroState
 var balance: BalanceData
-## Save the profile after each spent point (tests turn it off).
-var save_on_spend: bool = true
 
 var _points_label: Label
-var _attribute_buttons: Dictionary[StringName, Button] = {}
 var _shards_label: Label
-## What the focused power's next upgrade does.
-var _power_note: Label
-## One button per kept power, in slot order.
-var _power_buttons: Array[Button] = []
 var _continue: Button
 
 
@@ -47,7 +35,7 @@ func _ready() -> void:
 		balance = BalanceData.new()
 	_build()
 	refresh()
-	_default_focus().grab_focus()
+	_continue.grab_focus()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -115,42 +103,16 @@ func _build() -> void:
 	note_label.custom_minimum_size = Vector2(220, 0)
 	right.add_child(note_label)
 
-	# Bottom: attribute points and Continue.
+	# Village income, then what waits at the Shrine.
+	var income: PackedStringArray = []
+	for currency: StringName in summary.income:
+		income.append("+%d %s" % [summary.income[currency], Wallet.currency_name(currency)])
+	var income_label: Label = _label("From the village: %s" % ", ".join(income) if not income.is_empty() else "", 9, GOOD, "Income")
+	_place(income_label, Vector2(0, 214), Vector2(640, 14), true)
 	_points_label = _label("", 10, GOLD, "Points")
-	_place(_points_label, Vector2(0, 190), Vector2(640, 16), true)
-	var row: HBoxContainer = HBoxContainer.new()
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", 8)
-	_place(row, Vector2(20, 208), Vector2(600, 36), false)
-	for attribute_id: StringName in HeroState.ATTRIBUTES:
-		var button: Button = Button.new()
-		button.name = "%sButton" % ATTRIBUTE_TEXT[attribute_id][0]
-		button.custom_minimum_size = Vector2(186, 34)
-		button.add_theme_font_size_override("font_size", 9)
-		button.pressed.connect(spend.bind(attribute_id))
-		row.add_child(button)
-		_attribute_buttons[attribute_id] = button
-
-	# Kept powers: spend banked shards for levels.
+	_place(_points_label, Vector2(0, 240), Vector2(640, 16), true)
 	_shards_label = _label("", 9, Wallet.currency_color(Wallet.SHARDS), "Shards")
-	_place(_shards_label, Vector2(0, 252), Vector2(640, 14), true)
-	var power_row: HBoxContainer = HBoxContainer.new()
-	power_row.name = "PowerRow"
-	power_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	power_row.add_theme_constant_override("separation", 8)
-	_place(power_row, Vector2(20, 268), Vector2(600, 26), false)
-	for kept: KeptPower in hero.kept_powers:
-		var button: Button = Button.new()
-		button.name = "%sLevelButton" % String(kept.power_id).capitalize()
-		button.custom_minimum_size = Vector2(186, 26)
-		button.add_theme_font_size_override("font_size", 8)
-		button.pressed.connect(level_up.bind(kept.power_id))
-		button.focus_entered.connect(_show_power_note.bind(kept.power_id))
-		button.mouse_entered.connect(_show_power_note.bind(kept.power_id))
-		power_row.add_child(button)
-		_power_buttons.append(button)
-	_power_note = _label("", 8, DIM, "PowerNote")
-	_place(_power_note, Vector2(0, 297), Vector2(640, 12), true)
+	_place(_shards_label, Vector2(0, 258), Vector2(640, 14), true)
 
 	_continue = Button.new()
 	_continue.name = "ContinueButton"
@@ -162,91 +124,11 @@ func _build() -> void:
 
 func refresh() -> void:
 	var points: int = hero.attribute_points
-	_points_label.text = "%d attribute point%s to spend" % [points, "" if points == 1 else "s"] if points > 0 \
+	_points_label.text = "%d attribute point%s to spend at the Shrine" % [points, "" if points == 1 else "s"] if points > 0 \
 			else "Level %d hero: %d HP" % [hero.level, ProgressionSystem.max_hp(hero, balance)]
-	for attribute_id: StringName in _attribute_buttons:
-		var button: Button = _attribute_buttons[attribute_id]
-		var info: Array = ATTRIBUTE_TEXT[attribute_id]
-		button.text = "%s %d\n%s" % [info[0], hero.attribute(attribute_id), info[1]]
-		button.disabled = not ProgressionSystem.can_spend_point(hero, attribute_id, balance)
-		button.focus_mode = Control.FOCUS_NONE if button.disabled else Control.FOCUS_ALL
-	_refresh_powers()
-	if _continue != null and get_viewport() != null:
-		var focused: Control = get_viewport().gui_get_focus_owner()
-		if focused == null or (focused is Button and (focused as Button).disabled):
-			_default_focus().grab_focus()
-
-
-## Points to spend first, then a power the shards can level, then Continue.
-func _default_focus() -> Button:
-	for button: Button in _attribute_buttons.values():
-		if not button.disabled:
-			return button
-	for button: Button in _power_buttons:
-		if not button.disabled:
-			return button
-	return _continue
-
-
-func _refresh_powers() -> void:
 	var shards: int = hero.bank.amount(Wallet.SHARDS)
-	_shards_label.text = "No kept powers yet. Power Shards: %d" % shards if hero.kept_powers.is_empty() \
-			else "Power Shards: %d. Spend them to level up a kept power." % shards
-	for i: int in _power_buttons.size():
-		var button: Button = _power_buttons[i]
-		var kept: KeptPower = hero.kept_powers[i] if i < hero.kept_powers.size() else null
-		if kept == null:
-			button.hide()
-			continue
-		var power: PowerData = ContentDB.get_item(&"powers", kept.power_id) as PowerData
-		var power_name: String = power.display_name if power != null else String(kept.power_id).capitalize()
-		if kept.level >= balance.power_level_cap:
-			button.text = "%s level %d\nHighest level" % [power_name, kept.level]
-		else:
-			var cost: int = PowerRules.level_up_cost(kept.level, balance)
-			button.text = "%s level %d > %d\n%d shards" % [power_name, kept.level, kept.level + 1, cost]
-		button.disabled = not GiftSystem.can_level_up(hero, kept.power_id, balance)
-		button.focus_mode = Control.FOCUS_NONE if button.disabled else Control.FOCUS_ALL
-
-
-## Shows what the next level of a kept power brings (every level: +20% damage; levels 3
-## and 5 add their upgrade).
-func _show_power_note(power_id: StringName) -> void:
-	var kept: KeptPower = GiftSystem.find(hero, power_id)
-	var power: PowerData = ContentDB.get_item(&"powers", power_id) as PowerData
-	if kept == null or power == null:
-		_power_note.text = ""
-		return
-	var next_level: int = kept.level + 1
-	if kept.level >= balance.power_level_cap:
-		_power_note.text = "%s is at its highest level." % power.ability_name
-	elif next_level == PowerRules.UPGRADE_LEVELS[0]:
-		_power_note.text = "%s level 3: %s" % [power.ability_name, power.level3_text]
-	elif next_level == PowerRules.UPGRADE_LEVELS[1]:
-		_power_note.text = "%s level 5: %s" % [power.ability_name, power.level5_text]
-	else:
-		_power_note.text = "%s level %d: +%d%% power damage." % [power.ability_name, next_level, roundi(balance.power_damage_per_level * 100.0)]
-
-
-## Spends one attribute point and saves the profile.
-func spend(attribute_id: StringName) -> void:
-	if not ProgressionSystem.spend_point(hero, attribute_id, balance):
-		return
-	if save_on_spend:
-		GameState.save_profile()
-	refresh()
-
-
-## Spends banked shards on the next level of a kept power and saves the profile.
-func level_up(power_id: StringName) -> void:
-	var new_level: int = GiftSystem.level_up(hero, power_id, balance, GameState.profile.run_count)
-	if new_level == 0:
-		return
-	EventBus.power_leveled.emit(summary.player_id, power_id, new_level)
-	if save_on_spend:
-		GameState.save_profile()
-	refresh()
-	_show_power_note(power_id)
+	var can_level: bool = hero.kept_powers.any(func(kept: KeptPower) -> bool: return GiftSystem.can_level_up(hero, kept.power_id, balance))
+	_shards_label.text = "Power Shards: %d. The Shrine can level up a kept power." % shards if can_level else "Power Shards: %d" % shards
 
 
 func continue_on() -> void:

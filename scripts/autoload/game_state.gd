@@ -57,6 +57,20 @@ func hero_state(player_id: int) -> HeroState:
 	return profile.hero(player_id)
 
 
+## What the village does for this hero's runs (docs/ARCHITECTURE.md Section 5).
+func services(player_id: int) -> ModifierStack:
+	var villagers: Array[VillagerData] = []
+	for item: Resource in ContentDB.get_all(&"villagers"):
+		if item is VillagerData:
+			villagers.append(item)
+	var combos: Array[ComboData] = []
+	for item: Resource in ContentDB.get_all(&"combos"):
+		if item is ComboData:
+			combos.append(item)
+	var balance: BalanceData = ContentDB.get_item(&"balance", &"default") as BalanceData
+	return ModifierStack.collect(hero_state(player_id), profile.village, balance if balance != null else BalanceData.new(), villagers, combos)
+
+
 # --- Run in progress ---------------------------------------------------------
 
 func has_saved_run() -> bool:

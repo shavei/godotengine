@@ -1,8 +1,9 @@
 class_name HeroState
 extends RefCounted
 ## One hero's long-term progress (docs/ARCHITECTURE.md Section 4.2): level, XP,
-## attributes, weapon mastery, banked loot, kept powers and a boss's power offer. ProfileState keeps one per
-## player_id. Techniques join in M5. GiftSystem enforces the kept power rules.
+## attributes, weapon mastery and tiers, banked loot, kept powers, a boss's power offer
+## and the village services bought. ProfileState keeps one per player_id. Techniques join
+## in M5. GiftSystem enforces the kept power rules, ShopSystem the purchases.
 
 const MIGHT: StringName = &"might"
 const VIGOR: StringName = &"vigor"
@@ -24,6 +25,10 @@ var kept_powers: Array[KeptPower] = []
 ## The region boss's power orbs not settled yet (PowerOffer): two or more to pick from,
 ## then the one taken until it is kept, merged or left behind. Empty most of the time.
 var power_offer: Array[StringName] = []
+## weapon_id -> tier bought from the Smith (0 Iron, 1 Steel, 2 Runed, 3 Mythic).
+var weapon_tiers: Dictionary[StringName, int] = {}
+## Combo ids of priced services bought once (a Smith infusion).
+var bought_services: Array[StringName] = []
 
 
 func attribute(attribute_id: StringName) -> int:
@@ -34,6 +39,14 @@ func mastery_xp(weapon_id: StringName) -> int:
 	return weapon_mastery.get(weapon_id, 0)
 
 
+func weapon_tier(weapon_id: StringName) -> int:
+	return weapon_tiers.get(weapon_id, 0)
+
+
+func has_bought(service_id: StringName) -> bool:
+	return bought_services.has(service_id)
+
+
 func to_dict() -> Dictionary:
 	var attrs: Dictionary = {}
 	for key: StringName in attributes:
@@ -41,6 +54,9 @@ func to_dict() -> Dictionary:
 	var mastery: Dictionary = {}
 	for key: StringName in weapon_mastery:
 		mastery[String(key)] = weapon_mastery[key]
+	var tiers: Dictionary = {}
+	for key: StringName in weapon_tiers:
+		tiers[String(key)] = weapon_tiers[key]
 	return {
 		"level": level,
 		"xp": xp,
@@ -50,6 +66,8 @@ func to_dict() -> Dictionary:
 		"bank": bank.to_dict(),
 		"kept_powers": kept_powers.map(func(kept: KeptPower) -> Dictionary: return kept.to_dict()),
 		"power_offer": power_offer.map(func(id: StringName) -> String: return String(id)),
+		"weapon_tiers": tiers,
+		"bought_services": bought_services.map(func(id: StringName) -> String: return String(id)),
 	}
 
 
@@ -74,4 +92,11 @@ static func from_dict(data: Dictionary) -> HeroState:
 		var power_id: StringName = StringName(str(entry))
 		if power_id != &"" and not hero.power_offer.has(power_id):
 			hero.power_offer.append(power_id)
+	var tiers: Dictionary = data.get("weapon_tiers", {})
+	for key: Variant in tiers:
+		hero.weapon_tiers[StringName(str(key))] = maxi(0, int(tiers[key]))
+	for entry: Variant in data.get("bought_services", []):
+		var service_id: StringName = StringName(str(entry))
+		if service_id != &"" and not hero.bought_services.has(service_id):
+			hero.bought_services.append(service_id)
 	return hero

@@ -215,3 +215,67 @@ func test_the_gate_starts_a_run_or_continues_the_saved_one() -> void:
 	assert_signal_emit_count(EventBus, "run_started", 1)
 	SaveManager.delete_slot(GameState.slot)
 	SaveManager.save_dir = original_dir
+
+
+# --- Shops (M4 PR 2) ---------------------------------------------------------------
+
+func test_talking_to_the_smith_opens_the_forge_and_steel_can_be_bought() -> void:
+	GameState.hero_state(0).bank.add(Wallet.COINS, 320)
+	var scene: Village = await _open()
+	var smith: Villager = scene.find_child("VillagerSmith", true, false) as Villager
+	scene.talk(smith)
+	var shop: ShopPanel = scene.shop
+	assert_not_null(shop, "the Smith sells weapon tiers")
+	shop.save_on_buy = false
+	await wait_process_frames(1)
+	assert_false(scene.hero.is_physics_processing(), "the hero waits while shopping")
+	var tier: Button = shop.find_child("TierButton", true, false)
+	assert_true(tier.text.begins_with("Steel Sword: x1.3 damage (now Iron)"), tier.text)
+	assert_false(tier.disabled)
+	assert_true(tier.has_focus())
+	assert_null(shop.find_child("ServiceButton", true, false), "no power, no infusion")
+	tier.pressed.emit()
+	assert_eq(GameState.hero_state(0).weapon_tier(&"sword"), 1)
+	assert_eq(GameState.hero_state(0).bank.amount(Wallet.COINS), 20)
+	assert_almost_eq(scene.hero.stats.weapon_tier, 1.3, 0.001, "the hero carries Steel at once")
+	assert_true(tier.disabled, "Runed needs Forge level 3")
+	assert_true(tier.text.ends_with("Runed needs Forge level 3."), tier.text)
+	shop.close()
+	await wait_physics_frames(2)
+	assert_null(scene.shop)
+	assert_true(scene.hero.is_physics_processing())
+
+
+func test_a_smith_with_a_power_sells_the_infusion_once() -> void:
+	var village: VillageState = GameState.profile.village
+	GiftSystem.give(village, village.index_of(&"smith"), &"fire")
+	GameState.hero_state(0).bank.add(Wallet.COINS, 150)
+	var scene: Village = await _open()
+	scene.talk(scene.find_child("VillagerSmith", true, false) as Villager)
+	var shop: ShopPanel = scene.shop
+	shop.save_on_buy = false
+	await wait_process_frames(1)
+	var service: Button = shop.find_child("ServiceButton", true, false)
+	assert_true(service.text.begins_with("Sells a Fire infusion: weapon hits Burn 15%"), service.text)
+	assert_true(service.has_focus(), "Steel costs more than the hero has")
+	assert_true(shop.buy_service())
+	assert_true(GameState.hero_state(0).has_bought(&"smith_fire"))
+	assert_true(service.disabled)
+	assert_true(service.text.ends_with("Yours already."))
+	assert_false(shop.buy_service(), "once only")
+
+
+func test_villagers_with_nothing_to_sell_only_talk() -> void:
+	var scene: Village = await _open()
+	var farmer: Villager = scene.find_child("VillagerFarmer", true, false) as Villager
+	scene.talk(farmer)
+	assert_null(scene.shop)
+	assert_true(scene.sign_label.text.contains("+1 flask charge every run."))
+	var guard: Villager = scene.find_child("VillagerGuard", true, false) as Villager
+	assert_true(scene.speech(guard).contains("Raids have not started yet."))
+
+
+func test_the_shrine_says_when_there_is_something_to_spend() -> void:
+	GameState.hero_state(0).attribute_points = 1
+	var scene: Village = await _open()
+	assert_eq(scene.shrine.caption, "Shrine: grow stronger")

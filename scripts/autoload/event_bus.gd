@@ -17,6 +17,8 @@ signal power_leveled(player_id: int, power_id: StringName, new_level: int)
 signal villager_ranked_up(villager_index: int, new_rank: int)
 signal technique_learned(player_id: int, technique_id: StringName)
 signal renown_changed(points: int, level: int)
+## Something was bought from a villager (a weapon tier or a service, by id).
+signal village_purchase(player_id: int, item_id: StringName)
 
 # Runs
 signal run_started(region_id: StringName, seed: int)
@@ -32,6 +34,8 @@ signal camera_shake_requested(trauma: float)
 
 # Combat
 signal hero_died(player_id: int)
+## A revive token brought the hero back up.
+signal hero_revived(player_id: int)
 
 # Saving
 signal game_saved(slot: int)

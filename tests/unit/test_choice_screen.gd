@@ -296,3 +296,38 @@ func test_the_shrine_gives_a_kept_power_away_with_no_offer() -> void:
 
 func test_continue_goes_back_to_the_village() -> void:
 	assert_eq(ChoiceScreen.VILLAGE_SCENE, "res://scenes/village/village.tscn")
+
+
+# --- Grow stronger (M4 PR 2) --------------------------------------------------------
+
+func test_grow_stronger_spends_points_at_the_shrine_and_comes_back() -> void:
+	hero.attribute_points = 2
+	var screen: ChoiceScreen = await _open()
+	var grow: Button = _button(screen, "GrowButton")
+	assert_not_null(grow, "the Shrine offers growth with no offer waiting")
+	grow.pressed.emit()
+	await wait_process_frames(1)
+	assert_not_null(screen.growth)
+	assert_eq(screen.find_child("Headline", true, false).text, "Grow stronger")
+	var might: Button = screen.growth.find_child("MightButton", true, false)
+	assert_true(might.has_focus())
+	might.pressed.emit()
+	might.pressed.emit()
+	assert_eq(hero.attribute(HeroState.MIGHT), 2)
+	assert_eq(hero.attribute_points, 0)
+	_button(screen, "BackButton").pressed.emit()
+	await wait_process_frames(1)
+	assert_null(screen.growth)
+	assert_eq(screen.find_child("Headline", true, false).text, "No power is waiting")
+
+
+func test_grow_stronger_is_there_while_deciding_and_after() -> void:
+	hero.power_offer = [&"fire"] as Array[StringName]
+	var screen: ChoiceScreen = await _open()
+	assert_not_null(_button(screen, "GrowButton"), "level up before deciding")
+	screen.keep()
+	assert_not_null(_button(screen, "GrowButton"))
+	_button(screen, "GrowButton").pressed.emit()
+	_button(screen, "BackButton").pressed.emit()
+	assert_eq(screen.find_child("Headline", true, false).text, "The Choice is made")
+	assert_eq(screen.find_child("Subline", true, false).text, "Fire is kept in slot 1.")
