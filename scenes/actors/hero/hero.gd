@@ -12,6 +12,9 @@ const GROUP: StringName = &"heroes"
 const ENEMY_BODY_LAYER: int = 3
 ## Rumble (strength, seconds) when the hero is hit.
 const HURT_RUMBLE: Vector2 = Vector2(0.6, 0.18)
+## With no aim input the hero faces where it moves, but only when the move stick is
+## pushed at least this far. Letting go of a stick (and its spring-back) never turns it.
+const FACE_MIN_TILT: float = 0.5
 
 @export var player_id: int = 0
 ## Left empty, these load from ContentDB (weapon_sword, balance_default).
@@ -97,9 +100,12 @@ func is_buffered(action: StringName) -> bool:
 
 func aim_direction() -> Vector2:
 	var aim: Vector2 = input.get_aim(global_position)
-	if aim == Vector2.ZERO:
-		aim = input.get_move().normalized()
-	return aim if aim != Vector2.ZERO else facing
+	if aim != Vector2.ZERO:
+		return aim
+	var move: Vector2 = input.get_move()
+	if move.length() >= FACE_MIN_TILT:
+		return move.normalized()
+	return facing
 
 
 func update_facing() -> void:
@@ -168,11 +174,19 @@ func try_dodge() -> bool:
 
 ## Accelerates toward the input direction. `speed_scale` slows the hero (drinking).
 func move_with_input(delta: float, speed_scale: float = 1.0) -> void:
-	var dir: Vector2 = input.get_move()
-	var target: Vector2 = dir * balance.hero_move_speed * speed_scale
-	var rate: float = balance.hero_acceleration if dir != Vector2.ZERO else balance.hero_friction
-	velocity = velocity.move_toward(target, rate * delta)
+	velocity = steer(velocity, input.get_move() * balance.hero_move_speed * speed_scale, balance, delta)
 	apply_movement()
+
+
+## Moves `current` toward `target` velocity: speeds up at acceleration, stops at friction,
+## and turning against the current motion uses both, so a reversal is as quick as a stop.
+static func steer(current: Vector2, target: Vector2, tuning: BalanceData, delta: float) -> Vector2:
+	var rate: float = tuning.hero_friction
+	if target != Vector2.ZERO:
+		rate = tuning.hero_acceleration
+		if current.dot(target) < 0.0:
+			rate += tuning.hero_friction
+	return current.move_toward(target, rate * delta)
 
 
 ## Moves with the current velocity plus any knockback.

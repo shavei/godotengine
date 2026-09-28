@@ -259,3 +259,66 @@ func test_apply_balance_updates_stamina_regen() -> void:
 	hero.balance = tuned
 	hero.apply_balance()
 	assert_eq(hero.stamina.regen_per_second, 99.0)
+
+
+func test_steer_reverses_as_fast_as_it_stops() -> void:
+	var tuning: BalanceData = BalanceData.new()
+	var turned: Vector2 = Hero.steer(Vector2(100, 0), Vector2(-100, 0), tuning, 0.01)
+	assert_almost_eq(turned.x, 100.0 - (tuning.hero_acceleration + tuning.hero_friction) * 0.01, 0.01)
+	var sped_up: Vector2 = Hero.steer(Vector2.ZERO, Vector2(100, 0), tuning, 0.01)
+	assert_almost_eq(sped_up.x, tuning.hero_acceleration * 0.01, 0.01)
+	var stopped: Vector2 = Hero.steer(Vector2(100, 0), Vector2.ZERO, tuning, 0.01)
+	assert_almost_eq(stopped.x, 100.0 - tuning.hero_friction * 0.01, 0.01)
+
+
+func test_turning_around_is_quick() -> void:
+	input.move = Vector2.RIGHT
+	await wait_physics_frames(20)
+	input.move = Vector2.LEFT
+	await wait_physics_frames(6)
+	assert_lt(hero.velocity.x, -50.0, "already running the other way after 0.1 s")
+
+
+func test_attack_keeps_running_momentum() -> void:
+	input.move = Vector2.RIGHT
+	await wait_physics_frames(20)
+	input.aim = Vector2.RIGHT
+	input.press(&"attack")
+	await wait_physics_frames(2)
+	assert_true(hero.state_machine.is_in(&"Attack"))
+	var old_snap: float = hero.weapon.combo[0].lunge_speed + hero.balance.hero_move_speed * hero.balance.attack_move_scale
+	assert_gt(hero.velocity.x, old_snap, "no sudden stop at the start of the swing")
+
+
+func test_small_stick_tilt_keeps_facing() -> void:
+	hero.facing = Vector2.RIGHT
+	input.move = Vector2(0, 0.3)
+	await wait_physics_frames(3)
+	assert_eq(hero.facing, Vector2.RIGHT, "a stick drifting back to center does not turn the hero")
+	input.move = Vector2.DOWN
+	await wait_physics_frames(2)
+	assert_eq(hero.facing, Vector2.DOWN)
+
+
+func test_attack_pressed_during_finisher_starts_next_combo() -> void:
+	input.aim = Vector2.RIGHT
+	hero.combo_step = hero.weapon.combo.size() - 1
+	hero.combo_timer = 1.0
+	input.press(&"attack")
+	await wait_physics_frames(2)
+	assert_true(hero.state_machine.is_in(&"Attack"))
+	# Press near the end of the finisher's recovery, inside the input buffer.
+	var finisher: AttackData = hero.weapon.combo[-1]
+	var frames: int = int((finisher.windup + finisher.active + finisher.recovery) * 60.0)
+	await wait_physics_frames(frames - 5)
+	input.press(&"attack")
+	await wait_physics_frames(10)
+	assert_true(hero.state_machine.is_in(&"Attack"), "the press was kept, not swallowed")
+	assert_eq(hero.combo_step, 0, "a new combo starts at the first swing")
+
+
+func test_released_right_stick_keeps_aim_briefly() -> void:
+	var local: LocalInputSource = autofree(LocalInputSource.new())
+	assert_eq(local.stick_aim(Vector2(0.9, 0), 1000), Vector2.RIGHT)
+	assert_eq(local.stick_aim(Vector2.ZERO, 1000 + LocalInputSource.STICK_AIM_HOLD_MSEC - 50), Vector2.RIGHT)
+	assert_eq(local.stick_aim(Vector2.ZERO, 1000 + LocalInputSource.STICK_AIM_HOLD_MSEC + 50), Vector2.ZERO)

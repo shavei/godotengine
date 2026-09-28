@@ -7,7 +7,8 @@ Persistent project memory. Read at the start of every session, update at the end
 - **Phase:** M0 done. M1 (combat core) code done (3 PRs merged); only the owner's gamepad playtest item is still open. M2 (run structure): all 4 PRs of code done. PR 1 to 3 merged; PR 4 (XP, results screen, death rules, mid-run save) open for the owner to play.
 - **Also:** Controls remapping menu (title > Controls) added at the owner's request, ahead of the M7 Settings menu.
 - **Next step:** Owner plays a full run start to finish (the results screen shows the time: target 12 to 15 min), tries Save and quit plus Continue run, and answers the M2 PR 4 questions in the session log. That closes M2; then M3 (kept powers). The M1 gamepad tuning can happen any time in the Tuning room (title screen).
-- **Last updated:** 2026-09-28 (M2 PR 4)
+- **Also:** Combat feel pass (owner: movement and fighting "clunky", aim and hero "not predictable"): quick turns, swings keep momentum, stable facing, no swallowed finisher press. Open for the owner to play.
+- **Last updated:** 2026-09-28 (combat feel pass)
 
 ## The game in brief
 
@@ -100,6 +101,7 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-28 | Attribute points are spent on the results screen; Focus is locked until kept powers exist | The design names no place to spend points before the Shrine (M4). Focus does nothing without powers, so a point spent there now would be wasted. |
 | 2026-09-28 | Weapon mastery starts at 1; mastery n (2 to 10) needs `150 * n^1.4` total | GDD said "1 to 10" and "n requires 150 * n^1.4", which disagree at n = 1. Tallied on results; unlocks wait for M8 weapons. |
 | 2026-09-28 | Mid-run save: every room load writes `run_slot_0.json`; Esc is now Save and quit (replaces "Esc leaves to the title, no confirm") and the title shows Continue run | Room boundaries per ARCHITECTURE 10. A quit restarts the room, but HP and flasks are saved no higher than at the quit and the room's loot drops again, so quitting is never a free heal or loot farm. |
+| 2026-09-28 | Feel pass: turning against your motion brakes at acceleration + friction; swings ease from run speed instead of snapping; the move stick sets facing only past half tilt; a released right stick keeps its aim 0.25 s; a cursor within 6 px keeps the last aim; an attack press during the finisher stays buffered | Owner: movement and fighting "clunky", aiming "not the best", hero "not predictable". Causes found in code: a full reversal took 0.2 s (slidey), a swing cut run speed to 66 px/s on its first frame, letting go of the stick could turn the hero so the next swing went the wrong way, a flick-aim was forgotten the instant the stick was released, and a press during the finisher was used up and did nothing. Tests added for each; all fail on the old code. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 
 ## Rejected ideas (do not re-propose without new info)
@@ -141,6 +143,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-28 (combat feel pass):** Owner feedback: speed fine, but movement and fighting feel clunky, aim is not the best, the hero is not predictable. Fixes: `Hero.steer` (reversals brake at acceleration + friction, 0.1 s instead of 0.2 s), attack keeps momentum and adds the lunge on top, facing from the move stick only past half tilt (`Hero.FACE_MIN_TILT`), right stick aim held 0.25 s after release and a mouse dead zone of 6 px (`LocalInputSource`), finisher no longer swallows an attack press. Checked that Godot keeps quick taps during hit-stop (probe), so input polling was left alone. 269 tests pass, no warnings, boot clean. Questions for the owner: do turns and swings feel smoother? Does the hero now attack where you expect with the controller? Does a flick of the right stick then attack go where you flicked? Anything still feel off (describe the moment: what you pressed, what you expected, what happened)?
 
 - **2026-09-28 (M2 PR 4):** XP, results screen, death rules and mid-run save. `ProgressionSystem` (XP curve, levels, attribute points, Might/Vigor stats, mastery curve), `HeroState` and `ProfileState` saved to slot 0 (loaded at boot), `EconomySystem` (keep 50% on a fall), `RunEnd` + `RunSummary`, `results.tscn` (XP bar, level-up, mastery, loot found vs kept, spend points on Might or Vigor), mid-run save on every room load, Esc is Save and quit, title shows Continue run and a level line. `Hero.apply_progress` applies level and attributes. 263 tests pass, no warnings, boot clean, checked with xvfb screenshots (results after a fall and after a clear, title with Continue run) and a real-router run (clear gives +15 XP, a fall banks 23 coins as 11 and lands on Results). Questions for the owner: does a full run land in 12 to 15 minutes? Does keeping half on a fall feel fair or too harsh? Is the results screen clear at a glance? Is Might vs Vigor a real choice? Does Save and quit plus Continue run work on your machine?
 
