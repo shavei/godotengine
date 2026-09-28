@@ -35,7 +35,7 @@ Report back by ID ("A1 ok, C2 bug: ..."), screenshots welcome.
 
 - [x] **D1.** Doors show the next room's type letter; Tab shows the map.
 - [x] **D2.** Rooms seen: Fight, Elite (Elder Boar or Spore Witch), Merchant, Event, Rest, Treasure.
-- [ ] **D3.** Loot pops out, drifts to you, flies to you after a room clears.
+- [x] **D3.** Loot pops out, drifts to you, flies to you after a room clears.
 - [x] **D4.** Merchant: flask, heal, Power Shard; wares you cannot use are greyed out.
 - [ ] **D5.** Events (Mossy Shrine, Wishing Well): HP costs never kill; the last choice is always free.
 - [ ] **D6.** Mini-boss **Mother Toad:** tongue pulls you in, belly flop lands where you stood, enrages at half HP.
