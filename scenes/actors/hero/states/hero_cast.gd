@@ -10,7 +10,7 @@ func enter(msg: Dictionary = {}) -> void:
 	var hero: Hero = actor
 	_slot = msg.get("slot", 0)
 	_time = 0.0
-	hero.facing = hero.attack_direction()
+	hero.facing = hero.power_direction(_power(hero))
 
 
 func physics_update(delta: float) -> void:
@@ -22,6 +22,11 @@ func physics_update(delta: float) -> void:
 	hero.move_with_input(delta, hero.balance.power_cast_move_scale)
 	if _time < hero.balance.power_cast_time:
 		return
-	hero.facing = hero.attack_direction()
+	hero.facing = hero.power_direction(_power(hero))
 	hero.cast_power(_slot)
 	machine.transition_to(&"Move")
+
+
+func _power(hero: Hero) -> PowerData:
+	var entry: PowerLoadout.Slot = hero.powers.slot(_slot)
+	return entry.power if entry != null else null

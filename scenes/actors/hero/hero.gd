@@ -130,6 +130,17 @@ func update_facing() -> void:
 
 ## Aim for a new swing: stick aim turns toward a close target (AimAssist).
 func attack_direction() -> Vector2:
+	return _assisted_aim(balance.aim_assist_angle, balance.aim_assist_range)
+
+
+## Aim for a cast: stick aim turns toward a target within the power's reach, so a
+## fireball can find an enemy far beyond sword range.
+func power_direction(power: PowerData) -> Vector2:
+	var reach: float = maxf(power.projectile_range, balance.aim_assist_range) if power != null else balance.aim_assist_range
+	return _assisted_aim(balance.power_aim_assist_angle, reach)
+
+
+func _assisted_aim(max_angle: float, max_range: float) -> Vector2:
 	var aim: Vector2 = aim_direction()
 	if not input.wants_aim_assist():
 		return aim
@@ -138,7 +149,7 @@ func attack_direction() -> Vector2:
 		var target: Node2D = node as Node2D
 		if target != null:
 			targets.append(target.global_position)
-	return AimAssist.pick(global_position, aim, targets, balance.aim_assist_angle, balance.aim_assist_range)
+	return AimAssist.pick(global_position, aim, targets, max_angle, max_range)
 
 
 ## Copies live BalanceData numbers into the helpers that keep their own copy

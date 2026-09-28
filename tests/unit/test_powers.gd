@@ -584,3 +584,34 @@ func test_tuning_room_toggles_powers_within_the_slot_cap() -> void:
 	TuningPanel.close()
 	assert_eq(room_hero.powers.power_count(), 2)
 	assert_eq(room_hero.powers.slot(0).power.id, &"frost")
+
+
+# --- Stick aim for powers ------------------------------------------------------
+
+func test_stick_fireball_finds_a_target_beyond_sword_range() -> void:
+	_equip([&"fire"])
+	var dummy: TrainingDummy = _dummy(Vector2(260, 100))
+	input.aim_assist = true
+	input.aim = Vector2.RIGHT.rotated(deg_to_rad(15))
+	await _cast(0)
+	await wait_physics_frames(50)
+	assert_lt(dummy.health.hp, dummy.health.max_hp, "a stick cast 15 degrees off still hits at 160 px")
+
+
+func test_mouse_fireball_is_not_assisted() -> void:
+	_equip([&"fire"])
+	var dummy: TrainingDummy = _dummy(Vector2(260, 100))
+	input.aim_assist = false
+	input.aim = Vector2.RIGHT.rotated(deg_to_rad(15))
+	await _cast(0)
+	await wait_physics_frames(50)
+	assert_eq(dummy.health.hp, dummy.health.max_hp, "the mouse goes exactly where it points")
+
+
+func test_power_assist_ignores_targets_beyond_the_power_reach() -> void:
+	_dummy(Vector2(100 + _power(&"fire").projectile_range + 40, 100))
+	input.aim_assist = true
+	input.aim = Vector2.RIGHT.rotated(deg_to_rad(15))
+	await wait_physics_frames(1)
+	assert_almost_eq(hero.power_direction(_power(&"fire")).angle(), deg_to_rad(15), 0.01)
+	assert_almost_eq(hero.attack_direction().angle(), deg_to_rad(15), 0.01, "sword assist stays short")

@@ -543,6 +543,7 @@ Live values are in `data/balance/balance_default.tres` and `data/weapons/weapon_
 - The hero slides along walls at any angle, never sticks on a wall it touches at a slant.
 - **Facing and aim:** with no aim input the hero faces where the move stick points, but only when it is pushed past half tilt, so letting go of the stick never turns the hero. A released right stick keeps its aim for 0.25 s (flick, then attack). A mouse cursor within 6 px of the hero keeps the last aim.
 - **Stick aim assist:** with a gamepad, a new swing turns toward the target closest to the aim line within 30 degrees either side and 64 px (owner set it back from a 60 degree, 84 px trial). Mouse aim is never assisted. Set the angle to 0 to turn it off.
+- **Stick power aim assist:** a cast turns toward the target closest to the aim line within 20 degrees either side (`power_aim_assist_angle`), as far as the power flies (Ember Bolt and Frost Shard: their range, 220 and 170 px). Sword reach (64 px) was far too short for a fireball, so stick fireballs mostly missed (owner playtest).
 - **Rumble:** light tap on each sword hit (stronger on crits and the finisher), 0.6 for 0.18 s when the hero is hit. `rumble_strength` scales it (0 = off, also the future accessibility slider). Owner tried 5 and settled back on 1.
 - **Low stamina:** pressing dodge without enough stamina blinks the stamina bar red.
 - Tune these live in the Tuning room (title screen) with a controller: Start opens the tuning menu. F4 opens it in any room (docs/ARCHITECTURE.md Section 11).
@@ -623,7 +624,7 @@ Live values: `data/powers/power_*.tres` and `data/balance/balance_default.tres` 
 | Stone | Bulwark | Shield soaks 30 damage for 4 s, then bursts: 25 damage, 40 px radius, 60 stagger | 8 s |
 | Growth | Bramble | Patch at your feet, 40 px radius, 4 s: roots enemies inside (checked 4 times a second), heals you 2 HP/s inside | 7 s |
 
-- Casting: press the Power button; a 0.12 s wind-up (half speed, still aiming, stick aim assist applies), then the power goes off and its cooldown starts. A dodge or a hit during the wind-up cancels it and spends nothing. A power can cancel a swing's recovery, like a dodge.
+- Casting: press the Power button; a 0.12 s wind-up (half speed, still aiming, stick power aim assist applies: see Section 15.5), then the power goes off and its cooldown starts. A dodge or a hit during the wind-up cancels it and spends nothing. A power can cancel a swing's recovery, like a dodge.
 - Bulwark bursts when the shield breaks or when its 4 s run out. A hit the shield soaks up fully does not stagger the hero ("Blocked").
 - Up close all 3 Frost shards hit the same enemy: that is 3 Chill stacks, an instant freeze. Point blank is the risk that pays.
 - Power damage: `base * (1 + 0.2 * (level - 1)) * (1 + Focus bonus) * crit`. Powers use the hero's crit chance but not the weapon tier or Might.
