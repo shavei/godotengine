@@ -164,6 +164,7 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-28 | Debug console on ` or F2 (debug builds), pauses the game; `give_power` puts the power at the Shrine, `add_renown` adds saved `VillageState.bonus_renown`, `god_mode` is a static `Hero` flag; closing it in the village reloads the village | Tests the village loop without playing runs. Renown stays counted from the village; the debug bonus is one number on top. Reloading lets rank-up, lesson and Renown moments play as they would. |
 | 2026-09-28 | Playtest builds: Windows and Linux release exports with the PCK embedded, made by a GitHub workflow (by hand or on a `v*` tag); release builds hide the test rooms and debug tools; macOS later | The owner is on Windows; builds from CI need no local export templates. macOS needs signing and notarization to open without warnings. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
+| 2026-09-28 | Village camera may look `HUD_BAND` (32 px) below the room; the sign and help lines sit over the bottom wall and the dark below it | Owner's screenshots: captions near the bottom (the gate, Maren's Use hint) hid under the sign. Moving one caption fixed one spot; the band fixes every spot, since a 3-line sign now ends above the floor's bottom edge. |
 
 ## Rejected ideas (do not re-propose without new info)
 
@@ -189,7 +190,6 @@ All checked by web search on 2026-09-27. See `docs/RESEARCH.md` for sources.
 | Mercenary bidding | Band of Mercenaries |
 
 Runner-up ideas still considered original (keep for later or a future project): **Double or Nothing** (bet on your own performance each room), **Forget Me** (memories are currency).
-| 2026-09-28 | Village camera may look `HUD_BAND` (32 px) below the room; the sign and help lines sit over the bottom wall and the dark below it | Owner's screenshots: captions near the bottom (the gate, Maren's Use hint) hid under the sign. Moving one caption fixed one spot; the band fixes every spot, since a 3-line sign now ends above the floor's bottom edge. |
 
 ## Open questions
 
