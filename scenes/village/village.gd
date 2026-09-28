@@ -13,6 +13,8 @@ extends Node2D
 ## the village shows what they did: a VillageMoment for every villager reaching Adept or
 ## Master, then one for every new Renown level with the villager who moves in. The gate
 ## stays shut while a power waits, so every run's power is settled before the next.
+## A Master teaches the hero their Technique right after (TechniqueSystem): a lesson
+## moment calls the hero over to them. The Map button opens the character sheet.
 ## Placeholder art until M7.
 
 const RUN_ROOM_SCENE: String = "res://scenes/run/room.tscn"
@@ -20,6 +22,8 @@ const CHOICE_SCENE: String = "res://scenes/ui/choice_screen.tscn"
 const TITLE_SCENE: String = "res://scenes/main/title.tscn"
 const VILLAGER_SCENE: PackedScene = preload("res://scenes/village/villager.tscn")
 const CEREMONY_SCENE: PackedScene = preload("res://scenes/ui/gift_ceremony.tscn")
+## Where the hero stands for a lesson: beside the Master (below would cover their prompt).
+const LESSON_STEP: Vector2 = Vector2(30, 4)
 const GOLD: Color = Color(1, 0.82, 0.45)
 ## Where the hero stands after leaving the Shrine: just below it.
 const SHRINE_STEP: Vector2 = Vector2(0, 44)
@@ -48,8 +52,10 @@ var save_on_change: bool = true
 var shop: ShopPanel
 ## The gift ceremony while it plays, or null.
 var ceremony: GiftCeremony
-## The rank-up or Renown moment playing, or null.
+## The rank-up, lesson or Renown moment playing, or null.
 var moment: VillageMoment
+## The character sheet while open, or null.
+var sheet: CharacterSheet
 ## Moments waiting to play after the current one (callables that start one).
 var _moments: Array[Callable] = []
 var _renown_label: Label
@@ -70,8 +76,8 @@ func _ready() -> void:
 		hero.position = $Spots/Shrine.position + SHRINE_STEP
 	hero.reset_physics_interpolation()
 	_fit_camera()
-	$Overlay/Help.text = "Move %s    Use %s    Title %s" % [
-		InputBindings.move_hint(), InputBindings.hint(&"interact"), InputBindings.hint(&"pause")]
+	$Overlay/Help.text = "Move %s    Use %s    Hero %s    Title %s" % [
+		InputBindings.move_hint(), InputBindings.hint(&"interact"), InputBindings.hint(&"map"), InputBindings.hint(&"pause")]
 	shrine = _add_spot(SHRINE, $Spots/Shrine.position, SHRINE_COLOR)
 	gate = _add_spot(GATE, $Spots/Gate.position, GATE_COLOR)
 	board = _add_spot(BOARD, $Spots/Board.position, BOARD_COLOR)
@@ -102,6 +108,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		_leaving = true
 		SceneRouter.go(TITLE_SCENE)
+	elif event.is_action_pressed(&"map") and not _leaving:
+		get_viewport().set_input_as_handled()
+		open_sheet(hero)
 
 
 ## Updates the Shrine, gate, houses and villagers from the saved state.
@@ -124,9 +133,9 @@ func refresh() -> void:
 	_renown_label.text = RenownSystem.text(village, balance)
 
 
-## True while a shop, the gift ceremony or a moment holds the hero still.
+## True while a shop, the character sheet, the gift ceremony or a moment holds the hero still.
 func busy() -> bool:
-	return shop != null or ceremony != null or moment != null
+	return shop != null or sheet != null or ceremony != null or moment != null
 
 
 ## Shrine: the Choice screen. Gate: a run. Board: the village news.
@@ -197,6 +206,8 @@ func speech(villager: Villager) -> String:
 	var service: String = _service_text(combo.novice)
 	if villager.rank >= TrainingSystem.ADEPT:
 		service += " Adept: " + _service_text(combo.adept)
+	if villager.rank == TrainingSystem.MASTER and combo.technique != null:
+		service += " Taught you %s." % combo.technique.display_name
 	return "%s (%s, %s): \"%s\"\n%s %s" % [data.title(), power_name, villager.progress, combo.gift_line, base, service]
 
 
@@ -245,9 +256,10 @@ func _on_ceremony_finished(villager: Villager, first_gift: bool) -> void:
 
 # --- Training and Renown (docs/GDD.md Sections 5.2 and 5.5) -------------------------
 
-## Once nothing waits at the Shrine: applies the runs' training ticks, moves in the
-## villagers a new Renown level brings, saves, and plays a moment for each rank-up and
-## each new Renown level. Returns the rank-ups.
+## Once nothing waits at the Shrine: applies the runs' training ticks, teaches the hero
+## every new Master's Technique, moves in the villagers a new Renown level brings, saves,
+## and plays a moment for each rank-up, then each lesson, then each new Renown level.
+## Returns the rank-ups.
 func grow() -> Array[RankUp]:
 	if _offer_waits():
 		return []
@@ -265,7 +277,8 @@ func grow() -> Array[RankUp]:
 			levels.append(level)
 		village.renown_seen = renown_level
 		EventBus.renown_changed.emit(RenownSystem.points(village, balance), renown_level)
-	if rank_ups.is_empty() and levels.is_empty():
+	var lessons: Array[ComboData] = teach()
+	if rank_ups.is_empty() and levels.is_empty() and lessons.is_empty():
 		return rank_ups
 	if save_on_change:
 		GameState.save_profile()
@@ -274,6 +287,8 @@ func grow() -> Array[RankUp]:
 	refresh()
 	for event: RankUp in rank_ups:
 		_moments.append(play_rank_up.bind(event))
+	for combo: ComboData in lessons:
+		_moments.append(play_lesson.bind(combo))
 	for level: int in levels:
 		_moments.append(play_renown.bind(level, arrivals))
 	_next_moment()
@@ -313,6 +328,35 @@ func play_rank_up(event: RankUp) -> VillageMoment:
 		if plot != null:
 			plot.rank_blend = amount
 	return _start_moment(villager, villager.power.color, title, line, detail, reveal)
+
+
+## Every Master whose Technique the hero does not know teaches it now. Returns their
+## combos (the lessons to show).
+func teach() -> Array[ComboData]:
+	var state: HeroState = GameState.hero_state(hero.player_id)
+	var lessons: Array[ComboData] = TechniqueSystem.lessons(state, village, balance, GameState.combos())
+	for combo: ComboData in lessons:
+		if TechniqueSystem.learn(state, combo.technique.id):
+			EventBus.technique_learned.emit(hero.player_id, combo.technique.id)
+	return lessons
+
+
+## A Master calls the hero over and teaches them their Technique.
+func play_lesson(combo: ComboData) -> VillageMoment:
+	var villager: Villager = villager_node(combo.villager_id)
+	if villager == null or combo.technique == null:
+		return null
+	hero.global_position = villager.global_position + LESSON_STEP
+	hero.facing = Vector2.LEFT
+	hero.reset_physics_interpolation()
+	var technique: TechniqueData = combo.technique
+	var title: String = "%s teaches you %s!" % [villager.data.display_name, technique.display_name]
+	var line: String = "\"%s\"" % technique.lesson_line if not technique.lesson_line.is_empty() else ""
+	var detail: String = "Technique: %s Always active, never takes a slot." % technique.description
+	var tint: Color = villager.power.color if villager.power != null else GOLD
+	var glow: Callable = func(amount: float) -> void:
+		hero.visual.modulate = Color.WHITE.lerp(tint.lightened(0.4), sin(amount * PI))
+	return _start_moment(villager, tint, title, line, detail, glow)
 
 
 ## A new Renown level: whoever moves in at it fades in on their plot.
@@ -372,6 +416,25 @@ func _plot_of(state: VillagerState) -> VillagePlot:
 		if plot.index == state.plot:
 			return plot
 	return null
+
+
+## Opens the character sheet; the hero stands still until it closes.
+func open_sheet(by: Hero) -> CharacterSheet:
+	if busy():
+		return null
+	sheet = CharacterSheet.new()
+	sheet.setup(by.player_id, balance)
+	sheet.closed.connect(_on_sheet_closed.bind(by))
+	$Overlay.add_child(sheet)
+	sheet.position = Vector2(110, 24)
+	by.velocity = Vector2.ZERO
+	by.set_physics_process(false)
+	return sheet
+
+
+func _on_sheet_closed(by: Hero) -> void:
+	sheet = null
+	by.set_physics_process.call_deferred(true)
 
 
 ## Opens `villager`'s shop; the hero stands still until it closes.

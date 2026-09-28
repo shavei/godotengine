@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="TechniqueData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/technique_data.gd" id="1_tech"]
+[ext_resource type="Script" path="res://scripts/resources/modifier_data.gd" id="2_mod"]
+
+[sub_resource type="Resource" id="Mod_1"]
+script = ExtResource("2_mod")
+target = &"hero.floor_heal"
+value = 0.15
+
+[resource]
+script = ExtResource("1_tech")
+id = &"second_wind"
+display_name = "Second Wind"
+description = "Heal 15% of your max HP as you reach each new floor."
+lesson_line = "Every new floor is a fresh breath. Take it, and heal a little on the way down."
+modifiers = Array[ExtResource("2_mod")]([SubResource("Mod_1")])

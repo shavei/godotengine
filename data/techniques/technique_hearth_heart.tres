@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="TechniqueData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/technique_data.gd" id="1_tech"]
+[ext_resource type="Script" path="res://scripts/resources/modifier_data.gd" id="2_mod"]
+
+[sub_resource type="Resource" id="Mod_1"]
+script = ExtResource("2_mod")
+target = &"hero.flask_burn_time"
+value = 5
+
+[resource]
+script = ExtResource("1_tech")
+id = &"hearth_heart"
+display_name = "Hearth Heart"
+description = "Drinking a flask makes your weapon hits Burn for 5 s."
+lesson_line = "A warm meal lights a fire inside. Drink, and carry the hearth into the fight."
+modifiers = Array[ExtResource("2_mod")]([SubResource("Mod_1")])

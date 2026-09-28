@@ -163,6 +163,7 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 - Techniques are **permanent passives**, always active, never take a slot.
 - The Technique ceremony plays in the village after the training tick: the villager calls you over and teaches you (short animation, Codex entry).
 - Techniques are how giving pays the player back. By the late game a player has 6 to 10 Techniques.
+- **Built (M5 PR 2):** the 16 prototype Techniques work in runs. Right after the training tick that makes a Master (or on the next village visit for a Master from an older save), the Master calls the hero to their side and teaches the Technique in a short lesson moment (their line, what it does). The Codex entry waits for the Codex. The character sheet (Map button in the village) lists every Technique learned and who taught it. A "perfect dodge" (Cold Temper) is a dodge that rolls through an attack.
 
 ### 4.6 Player power budget (target)
 | Hours | Level | Kept powers | Techniques | Weapon tier |
@@ -689,6 +690,7 @@ Live values: the villager and combo files in `data/villagers/` and `data/combos/
 - Respec: 50 coins per hero level.
 - Gift ceremony: 7.5 s (Spark rises 0.4 s, flies 1.0 to 2.3 s, the palette swap takes 0.9 s, the line shows at 3.2 s). The first one can be continued 1.5 s after its line shows. A gift shifts the villager's clothes 50% toward the power's color.
 - The forced first gift goes to `first_gift_villager` (the Farmer) in `balance_default.tres`.
+- Techniques (M5 PR 2): numbers in each `data/techniques/` file's modifiers (Stoneguard +20 max HP, Anvil Skin -50% on the first hit in a room, Living Steel 1 HP per weapon kill, Hearth Heart 5 s, Second Serving 1 flask a floor, Regrowth 1 HP/s with no enemy around, Rally Flame +30% power damage below 30% HP, Fever +20% swing speed below 50% HP, Thornmail 5 damage, Second Wind 15% max HP) and the Techniques group of `balance_default.tres`: `low_hp_fraction` 0.3, `half_hp_fraction` 0.5; Ember Step a patch every 20 px, 12 px radius, 2 s, 3 damage and Burn every 0.5 s; Cold Temper Chills within 72 px (1 stack); Cold Blood runs time at 0.4 for 1.5 real seconds.
 - Training (M5): Adept at 3 TP, Master at 7 (`adept_tp`, `master_tp`), 1 TP per run. Renown: `renown_per_gift` 1, `renown_per_master` 2, `renown_levels` 0, 4, 9, 15, 22, 30, 39, 49, 60, 72. Rank-up and Renown moments: 4.5 s, burst at 0.5 s, reveal over 0.8 s, line at 1.2 s, skippable from 0.6 s.
 
 All numbers here are starting points for tuning. Update this section when they change.

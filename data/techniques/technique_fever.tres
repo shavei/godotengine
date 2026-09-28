@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="TechniqueData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/technique_data.gd" id="1_tech"]
+[ext_resource type="Script" path="res://scripts/resources/modifier_data.gd" id="2_mod"]
+
+[sub_resource type="Resource" id="Mod_1"]
+script = ExtResource("2_mod")
+target = &"hero.attack_speed"
+value = 0.2
+condition = &"half_hp"
+
+[resource]
+script = ExtResource("1_tech")
+id = &"fever"
+display_name = "Fever"
+description = "Below 50% HP you swing 20% faster."
+lesson_line = "A fever is the body fighting back. When you are hurt, fight back faster."
+modifiers = Array[ExtResource("2_mod")]([SubResource("Mod_1")])

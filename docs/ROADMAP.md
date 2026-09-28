@@ -114,8 +114,8 @@ Split into small PRs, each playable: (1) the training tick, rank-ups shown in th
 
 - [x] `TrainingSystem.tick` with thresholds 3 and 7 (unit tested). (PR 1: every run leaves a tick in `ProfileState.training_due`; the village applies it once nothing waits at the Shrine, so a power given after a run trains with that run. The gate stays shut while a power waits. The results screen previews the tick.)
 - [x] Rank-up presentation in the village (Adept visual, Master visual). (PR 1: a short moment per rank-up: bars, the camera on the villager, a burst, then their line and new service. Adept: a star in the power's color and a pennant on the roof. Master: a gold crown and a second, gold pennant. Names show Training Points, "Novice 2/3".)
-- [ ] 16 prototype Techniques implemented (modifier-based where possible, behavior scripts for Ember Step, Cold Temper and others).
-- [ ] Technique lesson ceremony; character sheet shows Techniques.
+- [x] 16 prototype Techniques implemented (modifier-based where possible, behavior scripts for Ember Step, Cold Temper and others). (PR 2: `TechniqueData` per combo, 13 are modifiers the hero reads, 3 are `TechniqueBehavior` scripts: Ember Step, Cold Temper, Cold Blood. Guard Techniques work in runs.)
+- [x] Technique lesson ceremony; character sheet shows Techniques. (PR 2: the new Master calls the hero over right after their rank-up moment and teaches it: their line and what it does. The character sheet opens with the Map button in the village: level, attributes, max HP in runs, weapon, kept powers, Techniques and who taught them. The Codex entry waits for the Codex.)
 - [x] Renown points and levels 1 to 3 (Healer arrival at Renown 2). (PR 1: points come from the village itself, +1 per villager holding a power and +2 per Master, so they cannot drift. A new level plays a moment with the newcomer fading in. Renown shows in the village's top right and on the notice board. The Healer no longer lives there from the start.)
 - [ ] Local metrics logging (GDD Section 17).
 - [ ] Debug console commands (ARCHITECTURE Section 11).

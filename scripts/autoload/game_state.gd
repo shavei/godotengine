@@ -70,13 +70,33 @@ func hero_state(player_id: int) -> HeroState:
 	return profile.hero(player_id)
 
 
-## What the village does for this hero's runs (docs/ARCHITECTURE.md Section 5).
+## What the village and the hero's Techniques do for this hero's runs
+## (docs/ARCHITECTURE.md Section 5).
 func services(player_id: int) -> ModifierStack:
-	var combos: Array[ComboData] = []
+	return ModifierStack.collect(hero_state(player_id), profile.village, balance(), roster(), combos(), all_techniques())
+
+
+## Every villager+power combo in the game's content.
+func combos() -> Array[ComboData]:
+	var result: Array[ComboData] = []
 	for item: Resource in ContentDB.get_all(&"combos"):
 		if item is ComboData:
-			combos.append(item)
-	return ModifierStack.collect(hero_state(player_id), profile.village, balance(), roster(), combos)
+			result.append(item)
+	return result
+
+
+## Every Technique in the game's content.
+func all_techniques() -> Array[TechniqueData]:
+	var result: Array[TechniqueData] = []
+	for item: Resource in ContentDB.get_all(&"techniques"):
+		if item is TechniqueData:
+			result.append(item)
+	return result
+
+
+## The Techniques this hero has learned, in the order they were taught.
+func techniques(player_id: int) -> Array[TechniqueData]:
+	return TechniqueSystem.known(hero_state(player_id), all_techniques())
 
 
 # --- Run in progress ---------------------------------------------------------

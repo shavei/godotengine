@@ -130,6 +130,24 @@ extends Resource
 ## A Growth Farmer's flasks heal their extra share over this many seconds.
 @export var flask_regen_time: float = 5.0
 
+@export_group("Techniques")
+## HP shares below which a Technique's "low_hp" and "half_hp" conditions hold (Rally
+## Flame, Fever) and Cold Blood slows time.
+@export var low_hp_fraction: float = 0.3
+@export var half_hp_fraction: float = 0.5
+## Ember Step: a small fire patch every this many px of a dodge, burning what stands in it.
+@export var ember_step_spacing: float = 20.0
+@export var ember_step_radius: float = 12.0
+@export var ember_step_duration: float = 2.0
+@export var ember_step_damage: float = 3.0
+@export var ember_step_interval: float = 0.5
+## Cold Temper: a perfect dodge Chills enemies this close, this many stacks.
+@export var cold_temper_radius: float = 72.0
+@export var cold_temper_stacks: int = 1
+## Cold Blood: time runs at this speed for this many real seconds.
+@export var cold_blood_time_scale: float = 0.4
+@export var cold_blood_duration: float = 1.5
+
 @export_group("Smith")
 ## Weapon tiers, cheapest first (docs/GDD.md Sections 4.2 and 15.2). Tier 0 is the start.
 @export var weapon_tier_names: Array[String] = ["Iron", "Steel", "Runed", "Mythic"]

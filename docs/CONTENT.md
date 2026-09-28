@@ -96,6 +96,8 @@ Prototype note (M4 PR 2): each Smith service is bought once per hero at the Forg
 
 Prototype note (M4 PR 2): every Mossy Hollow floor ends in a boss fight, so Frost's "boss floors" means the mini-boss and region boss rooms. Revive tokens are used by a lethal hit and carry between rooms.
 
+Prototype note (M5 PR 2, Technique readings for the 16 [P] combos): each Technique is a `TechniqueData` in `data/techniques/`. "Perfect dodge" (Cold Temper) means a dodge that rolls through an attack. "Up close" attackers (Hold the Line, Thornmail) are enemies whose own attack hit you, not arrows or thorn patches. Rooted Stance also keeps a hit from breaking your swing, not only the knockback. Regrowth's "out of combat" means no enemy is alive in the room. Second Wind heals when you reach a floor (on floor 1 you are already full). Iron Bones means no knockback and no hurt stagger, and Fever's "attack speed" runs the whole swing faster.
+
 ### 3.5 Miller
 | Power | Novice | Adept | Master Technique |
 |---|---|---|---|

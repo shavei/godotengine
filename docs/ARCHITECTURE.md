@@ -129,8 +129,7 @@ class_name ComboData extends Resource     # one per villager+power (64); 16 prot
 @export var power_id: StringName
 @export var novice: ServiceData
 @export var adept: ServiceData
-@export var technique_name: String    # text stub until `technique: TechniqueData` (M5)
-@export var technique_text: String
+@export var technique: TechniqueData  # what a Master teaches (M5 PR 2)
 @export var gift_line: String         # villager line when given the power
 # Later: master_line (M5)
 
@@ -149,12 +148,16 @@ class_name ModifierData extends Resource  # built in M4 PR 2
 @export var value: float
 @export var condition: StringName     # optional: &"boss_room" (later &"below_30_hp" ...)
 
-class_name TechniqueData extends Resource
+class_name TechniqueData extends Resource  # built in M5 PR 2: 16 in data/techniques/
 @export var id: StringName
 @export var display_name: String
 @export var description: String
+@export var lesson_line: String       # the Master's words in the lesson moment
 @export var modifiers: Array[ModifierData]
-@export var behavior_script: Script   # for effects that are more than stat mods (Ember Step trail)
+@export var behavior_script: Script   # a TechniqueBehavior for effects that are more than stat mods (Ember Step trail)
+# TechniqueBehavior (scripts/techniques/) is a Node the hero carries in run rooms
+# (Hero.apply_techniques); it listens to hero signals: dodge_started, perfect_dodge,
+# health changes. Prototype: Ember Step, Cold Temper, Cold Blood (13 of 16 are modifiers only).
 
 class_name FusionData extends Resource    # one per power pair (28)
 @export var power_a: StringName
@@ -213,12 +216,13 @@ var plot: int                  # the house plot they live on
 var is_apprentice: bool
 var power_id: StringName       # &"" if none
 var training_points: int       # rank is TrainingSystem.rank(): 0 none, 1 Novice, 2 Adept, 3 Master
-var technique_taught: bool
+# technique_taught: not stored. TechniqueSystem.lessons() compares Masters with each
+# hero's HeroState.techniques, so it cannot drift and every co-op hero learns (M5 PR 2).
 ```
 
 `RunState` (`scripts/state/run_state.gd`) holds only the current run: region, seed, floor, `FloorMap`, current room (-1 = the floor's corridor), path, rooms cleared, time played, and per-hero carry-over (hp, flasks, the run loot `Wallet`, XP earned, damage dealt per weapon; later trinkets, fusion meter) keyed by `player_id`. It is saved at room boundaries for crash safety but is not part of long-term progression.
 
-**Built so far (M2 PR 4):** `ProfileState` holds `run_count`, `runs_won` and `heroes` (player_id -> `HeroState`). `HeroState` holds level, XP toward the next level, unspent attribute points, attributes, weapon mastery XP and `bank` (a `Wallet` of banked coins, materials, Crystal and shards; the `coins`, `materials` and `shards` fields above are this one Wallet). Both have `to_dict()` / `from_dict()`. `RunState.to_dict()` / `from_dict(data, region)` is the mid-run save; the floor map is rebuilt from the seed, so only ids are stored. M3 PR 1: `HeroState.kept_powers` (`KeptPower`: power_id, level, last_leveled_run) in slot order, saved with the hero. M3 PR 3: `HeroState.power_offer` (power ids): the region boss's orbs until one is taken, then the taken power until it is kept, merged, given or left; saved with the hero so a quit never loses it. M4 PR 1: `ProfileState.village` (`VillageState`: `plot_count` and `villagers`, each a `VillagerState` with villager_id, plot, power_id, training_points). `VillageState.admit(roster, renown_level)` moves in villagers whose Renown level is reached (home plot if free); `GameState` calls it for a new profile and after loading, so old saves get the starting villagers. Buildings, damaged buildings, Renown and raid timing join later. M4 PR 2: `HeroState.weapon_tiers` (weapon_id -> tier bought from the Smith) and `bought_services` (combo ids of priced services), both saved; the run carry (`RunState.heroes[player_id]`) also holds `revives` (tokens left) and `clean_rooms` (fight rooms cleared in a row without a hit). `VillageState.workplace_level(id)` returns 2 until buildings (M6). M5 PR 1: `ProfileState.training_due` (training ticks the runs left waiting; `RunEnd.finish` adds one per run) and `VillageState.renown_seen` (the highest Renown level whose moment has played; saves from before Renown take their current level).
+**Built so far (M2 PR 4):** `ProfileState` holds `run_count`, `runs_won` and `heroes` (player_id -> `HeroState`). `HeroState` holds level, XP toward the next level, unspent attribute points, attributes, weapon mastery XP and `bank` (a `Wallet` of banked coins, materials, Crystal and shards; the `coins`, `materials` and `shards` fields above are this one Wallet). Both have `to_dict()` / `from_dict()`. `RunState.to_dict()` / `from_dict(data, region)` is the mid-run save; the floor map is rebuilt from the seed, so only ids are stored. M3 PR 1: `HeroState.kept_powers` (`KeptPower`: power_id, level, last_leveled_run) in slot order, saved with the hero. M3 PR 3: `HeroState.power_offer` (power ids): the region boss's orbs until one is taken, then the taken power until it is kept, merged, given or left; saved with the hero so a quit never loses it. M4 PR 1: `ProfileState.village` (`VillageState`: `plot_count` and `villagers`, each a `VillagerState` with villager_id, plot, power_id, training_points). `VillageState.admit(roster, renown_level)` moves in villagers whose Renown level is reached (home plot if free); `GameState` calls it for a new profile and after loading, so old saves get the starting villagers. Buildings, damaged buildings, Renown and raid timing join later. M4 PR 2: `HeroState.weapon_tiers` (weapon_id -> tier bought from the Smith) and `bought_services` (combo ids of priced services), both saved; the run carry (`RunState.heroes[player_id]`) also holds `revives` (tokens left) and `clean_rooms` (fight rooms cleared in a row without a hit). `VillageState.workplace_level(id)` returns 2 until buildings (M6). M5 PR 1: `ProfileState.training_due` (training ticks the runs left waiting; `RunEnd.finish` adds one per run) and `VillageState.renown_seen` (the highest Renown level whose moment has played; saves from before Renown take their current level). M5 PR 2: `HeroState.techniques` (ids in the order taught, saved); the run carry also holds `floor` (the floor the hero was last on: a new floor refills Second Serving's `free_flasks` and heals with Second Wind) and `free_flasks`.
 
 ---
 
@@ -236,9 +240,10 @@ var technique_taught: bool
 | `TrainingSystem` | `tick(village, balance) -> Array[RankUp]` | +1 TP each powered villager, applies threshold reductions, returns rank-ups and techniques to teach. Built (M4 PR 1): `rank(villager, balance)`, `rank_for_points`, `rank_name` (thresholds `adept_tp`, `master_tp` in `BalanceData`). M5 PR 1: `tick`, `train_due(profile, balance)` (applies `ProfileState.training_due`), `preview(village, balance, ticks)` (results screen), `next_rank_points`, `progress_text` ("Novice 2/3"). A `RankUp` holds villager, power, rank before and after. Threshold reductions (Training Grounds) join in M6. |
 | `FusionSystem` | `get_active_fusion(hero) -> FusionData` | Two highest-level distinct kept powers, both >= 3, tie-break by `last_leveled_run`. |
 | `NeighborSystem` | `get_active_bonuses(village) -> Array[ServiceData]` | Plot adjacency graph from the village map resource; Adept+ checks; Resonance. |
+| `TechniqueSystem` | `lessons(hero, village, balance, combos)`, `learn(hero, id)`, `knows`, `known(hero, all)`, `teacher(combos, id)` | Built (M5 PR 2): a Master whose Technique the hero does not know has a lesson; the village teaches it after the training tick (`Village.teach`, `EventBus.technique_learned`). `ModifierStack.collect(..., techniques)` adds the known Techniques' modifiers; the hero reads the new targets (first hit, heal on kill, flask burn, calm regen, steady, power damage and swing speed with `low_hp` / `half_hp` conditions from its own HP, thorns, chill attackers, floor heal, free flasks). |
 | `RenownSystem` | `points(village, balance)`, `level_for(points, balance)`, `level`, `next_level_points`, `text`, `arrivals_at(level, roster)` | Drives villager arrivals and region unlocks. Built (M5 PR 1): points are counted from the village (`renown_per_gift` per villager holding a power, `renown_per_master` more per Master) instead of added per event, so they cannot drift; raids won and building levels join in M6. `GameState.admit_villagers()` moves in by the real level. |
 | `ProgressionSystem` | `xp_for_level`, `add_xp(hero, xp, balance) -> levels`, `room_xp(type)`, `spend_point`, `respec_cost`, `can_respec`/`respec` (M4 PR 2), `max_hp`, `max_stamina`, `weapon_damage_bonus`, `mastery_level` | Formulas from `BalanceData`. `Hero.apply_progress(HeroState)` applies level, Vigor and Might at the start of every room. |
-| `ModifierStack` | `collect(hero, village, balance, villagers, combos)`, `total(target, base, conditions)`, `count`, `income()`, `active_services`, `is_unlocked` | Gathers modifiers from techniques, services, neighbor bonuses, meals, trinkets; computes final stats. One place for all stat math. Built (M4 PR 2): services only. Every villager's base service, plus the combo's Novice and (from Adept) Adept services; a priced service counts once bought. `total` = (base + adds) * muls, with conditions like `boss_room`. `GameState.services(player_id)` collects from ContentDB. `Hero.apply_services` reads it at the start of every room; `RunEnd.finish` banks `income()`. |
+| `ModifierStack` | `collect(hero, village, balance, villagers, combos)`, `total(target, base, conditions)`, `count`, `income()`, `active_services`, `is_unlocked` | Gathers modifiers from techniques, services, neighbor bonuses, meals, trinkets; computes final stats. One place for all stat math. Built (M4 PR 2): services only; M5 PR 2 adds the hero's Techniques. Every villager's base service, plus the combo's Novice and (from Adept) Adept services; a priced service counts once bought. `total` = (base + adds) * muls, with conditions like `boss_room`. `GameState.services(player_id)` collects from ContentDB. `Hero.apply_services` reads it at the start of every room; `RunEnd.finish` banks `income()`. |
 | `ShopSystem` | `next_tier`, `tier_problem`, `buy_tier`, `forge_level`, `service_problem`, `buy_service` | Built (M4 PR 2): buying from villagers with banked coins. Weapon tiers need the Forge level (`weapon_tier_forge_levels`, plus `smith.forge_bonus`) and a Master Smith from `weapon_tier_master_from`; each check returns why not ("" if it can). |
 | `CombatMath` | `damage(attacker_stats, defender_stats, hit) -> DamageResult` | Crit, armor, statuses. Deterministic given an RNG seed. |
 | `EconomySystem` | Costs, drops, death penalty | M2 PR 2 has the run side: `Wallet` (a hero's run loot: add, spend, spend_all, to_dict; one per `player_id` in `RunState.wallets`) and `LootRoller` (`roll(DropTable, rng)`, `split_piles`, `rng_for(run_seed, floor, room, salt)`). M2 PR 4: `kept_amount(amount, fraction)` and `bank_run_loot(run_wallet, bank, fraction)`. |

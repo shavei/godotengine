@@ -4,6 +4,9 @@ extends Area2D
 ## and applies it to the linked HealthComponent.
 
 signal hurt(result: DamageResult, hitbox: HitboxComponent)
+## An attack touched this hurtbox while it was invincible (a dodge's i-frames). Emitted
+## every frame the attack overlaps, so listeners keep their own once-per-dodge rule.
+signal dodged(hitbox: HitboxComponent)
 
 @export var health: HealthComponent
 ## While true, hits are ignored (dodge i-frames, post-hit grace).
@@ -27,7 +30,11 @@ func can_be_hit() -> bool:
 
 ## Called by a HitboxComponent. Returns the result, or null if the hit was ignored.
 func receive_hit(hitbox: HitboxComponent) -> DamageResult:
-	if not can_be_hit() or hitbox.attack == null:
+	if hitbox.attack == null:
+		return null
+	if not can_be_hit():
+		if invincible and health != null and not health.is_dead():
+			dodged.emit(hitbox)
 		return null
 	var result: DamageResult = CombatMath.damage(hitbox.attack.damage, hitbox.stats, stats, rng)
 	health.take_damage(result.amount)
