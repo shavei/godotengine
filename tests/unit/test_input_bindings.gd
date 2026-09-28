@@ -102,6 +102,13 @@ func test_triggers_and_sticks_bind_but_the_aim_stick_does_not() -> void:
 	assert_eq(InputBindings.event_name(InputBindings.primary(&"map", G)), "LT")
 
 
+func test_menus_go_back_with_escape_or_b() -> void:
+	var escape: InputEventKey = InputEventKey.new()
+	escape.keycode = KEY_ESCAPE
+	assert_true(InputMap.action_has_event(&"ui_cancel", escape))
+	assert_true(InputMap.action_has_event(&"ui_cancel", _button(JOY_BUTTON_B)))
+
+
 func test_back_paddles_have_names() -> void:
 	InputBindings.rebind(&"map", _button(JOY_BUTTON_PADDLE2))
 	assert_eq(InputBindings.event_name(InputBindings.primary(&"map", G)), "Paddle 2")
