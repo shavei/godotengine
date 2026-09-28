@@ -117,9 +117,9 @@ Split into small PRs, each playable: (1) the training tick, rank-ups shown in th
 - [x] 16 prototype Techniques implemented (modifier-based where possible, behavior scripts for Ember Step, Cold Temper and others). (PR 2: `TechniqueData` per combo, 13 are modifiers the hero reads, 3 are `TechniqueBehavior` scripts: Ember Step, Cold Temper, Cold Blood. Guard Techniques work in runs.)
 - [x] Technique lesson ceremony; character sheet shows Techniques. (PR 2: the new Master calls the hero over right after their rank-up moment and teaches it: their line and what it does. The character sheet opens with the Map button in the village: level, attributes, max HP in runs, weapon, kept powers, Techniques and who taught them. The Codex entry waits for the Codex.)
 - [x] Renown points and levels 1 to 3 (Healer arrival at Renown 2). (PR 1: points come from the village itself, +1 per villager holding a power and +2 per Master, so they cannot drift. A new level plays a moment with the newcomer fading in. Renown shows in the village's top right and on the notice board. The Healer no longer lives there from the start.)
-- [ ] Local metrics logging (GDD Section 17).
-- [ ] Debug console commands (ARCHITECTURE Section 11).
-- [ ] Build for playtesters (Windows and Linux).
+- [x] Local metrics logging (GDD Section 17). (PR 3: `Metrics` autoload, opt-in with Playtest log on the title; one JSON file per session with every Choice and its time, run, rank-up, Technique and Renown level; `tools/metrics_report.gd` prints the gate numbers.)
+- [x] Debug console commands (ARCHITECTURE Section 11). (PR 3: ` or F2 in debug builds: give_power, set_tp, add_renown, skip_room, god_mode, help.)
+- [x] Build for playtesters (Windows and Linux). (PR 3: `export_presets.cfg` and the Playtest builds workflow, which exports, boots the Linux build and zips both with `docs/PLAYTEST.md`; release builds hide the test rooms and debug tools.)
 
 **Prototype gate (must pass before M6):**
 - [ ] 5+ external playtesters, 2+ hours each.

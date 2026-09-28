@@ -16,6 +16,8 @@ signal dodged(hitbox: HitboxComponent)
 
 var stats: CombatStats = CombatStats.new()
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+## The hitbox that landed the last hit (set before the damage, so a death can tell who).
+var last_hitbox: HitboxComponent
 
 
 func _ready() -> void:
@@ -37,6 +39,7 @@ func receive_hit(hitbox: HitboxComponent) -> DamageResult:
 			dodged.emit(hitbox)
 		return null
 	var result: DamageResult = CombatMath.damage(hitbox.attack.damage, hitbox.stats, stats, rng)
+	last_hitbox = hitbox
 	health.take_damage(result.amount)
 	hurt.emit(result, hitbox)
 	if not health.is_dead():

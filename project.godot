@@ -22,10 +22,12 @@ EventBus="*res://scripts/autoload/event_bus.gd"
 ContentDB="*res://scripts/autoload/content_db.gd"
 GameState="*res://scripts/autoload/game_state.gd"
 SaveManager="*res://scripts/autoload/save_manager.gd"
+Metrics="*res://scripts/autoload/metrics.gd"
 SceneRouter="*res://scripts/autoload/scene_router.gd"
 AudioManager="*res://scripts/autoload/audio_manager.gd"
 DebugOverlay="*res://scripts/autoload/debug_overlay.gd"
 TuningPanel="*res://scripts/autoload/tuning_panel.gd"
+DebugConsole="*res://scripts/autoload/debug_console.gd"
 
 [display]
 

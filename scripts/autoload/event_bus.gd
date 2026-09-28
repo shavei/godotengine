@@ -12,6 +12,9 @@ signal power_given(player_id: int, power_id: StringName, villager_index: int)
 signal power_merged(player_id: int, power_id: StringName, new_level: int)
 ## A kept power was raised a level with Power Shards.
 signal power_leveled(player_id: int, power_id: StringName, new_level: int)
+## A power offer was settled, or a kept power given at the Shrine. `record` is a
+## MetricsLog.choice_record() (power, level, action, villager, seconds on screen).
+signal choice_made(player_id: int, record: Dictionary)
 ## The gift ceremony for a villager ended (watched to the end or skipped).
 signal gift_ceremony_finished(villager_index: int)
 
@@ -25,6 +28,8 @@ signal village_purchase(player_id: int, item_id: StringName)
 # Runs
 signal run_started(region_id: StringName, seed: int)
 signal run_ended(success: bool)
+## One hero's results for a run that just ended (after run_ended).
+signal run_summarized(summary: RunSummary)
 signal room_cleared
 
 # Raids

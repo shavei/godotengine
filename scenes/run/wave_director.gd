@@ -52,6 +52,14 @@ func start() -> void:
 	_start_next_wave()
 
 
+## Stops the encounter: no more waves or spawns (the debug console's skip_room).
+func stop() -> void:
+	_next_wave_in = -1.0
+	for entry: Dictionary in _pending:
+		(entry["marker"] as Node).queue_free()
+	_pending.clear()
+
+
 func is_room_cleared() -> bool:
 	return tracker != null and tracker.is_room_cleared()
 

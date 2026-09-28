@@ -135,3 +135,28 @@ theme_override_colors/font_color = Color(0.55, 0.5, 0.45, 1)
 theme_override_font_sizes/font_size = 8
 text = "v0.0.1"
 horizontal_alignment = 2
+
+[node name="Playtest" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = -24.0
+offset_right = 300.0
+offset_bottom = -4.0
+grow_vertical = 0
+theme_override_constants/separation = 4
+
+[node name="LogButton" type="Button" parent="Playtest"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Playtest log: off"
+
+[node name="FolderButton" type="Button" parent="Playtest"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Open log folder"

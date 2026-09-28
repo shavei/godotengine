@@ -5,6 +5,9 @@ extends Control
 ## mid-run) shows Continue run; the profile line says when a power waits at the Shrine.
 ## New game (second press to confirm) starts a fresh profile, first gift tutorial included.
 ## Controls stay (they are per machine).
+## Playtest log (bottom left) turns local metrics on or off (Metrics); while on, Open log
+## folder shows where the session files are. Release builds (playtesters) hide the M1
+## test rooms.
 
 const RUN_ROOM_SCENE: String = "res://scenes/run/room.tscn"
 const VILLAGE_SCENE: String = "res://scenes/village/village.tscn"
@@ -14,6 +17,8 @@ const TUNING_ROOM_SCENE: String = "res://scenes/run/tuning_room.tscn"
 const CONTROLS_SCENE: String = "res://scenes/ui/controls_menu.tscn"
 const NEW_GAME_TEXT: String = "New game"
 const NEW_GAME_CONFIRM: String = "Sure? Your progress is lost"
+const LOG_ON_TEXT: String = "Playtest log: on"
+const LOG_OFF_TEXT: String = "Playtest log: off"
 
 ## The New game button asked "Sure?" and waits for a second press.
 var _new_game_armed: bool = false
@@ -32,6 +37,11 @@ func _ready() -> void:
 	%WaveButton.pressed.connect(_on_wave_pressed)
 	%TuningButton.pressed.connect(_on_tuning_pressed)
 	%ControlsButton.pressed.connect(_on_controls_pressed)
+	%LogButton.pressed.connect(toggle_playtest_log)
+	%FolderButton.pressed.connect(Metrics.open_folder)
+	for button: Button in [%PlayButton, %WaveButton, %TuningButton]:
+		button.visible = OS.is_debug_build()
+	refresh_playtest_log()
 	%ContinueButton.visible = GameState.has_saved_run()
 	if %ContinueButton.visible:
 		%ContinueButton.grab_focus()
@@ -49,6 +59,19 @@ func refresh_profile() -> void:
 	%Profile.text = "Level %d%s  |  %d coins banked  |  Runs %d" % [hero.level, xp_text, hero.bank.amount(Wallet.COINS), GameState.profile.run_count]
 	if not hero.power_offer.is_empty():
 		%Profile.text += "\nA power waits at the Shrine."
+
+
+## Playtest log on or off (saved), and the folder button while it is on.
+func toggle_playtest_log() -> void:
+	Metrics.set_enabled(not Metrics.enabled)
+	refresh_playtest_log()
+
+
+func refresh_playtest_log() -> void:
+	%LogButton.text = LOG_ON_TEXT if Metrics.enabled else LOG_OFF_TEXT
+	%LogButton.tooltip_text = "Saves your Choices and runs to a file on this computer, to send to the developer."
+	%FolderButton.visible = Metrics.enabled
+	%FolderButton.tooltip_text = Metrics.folder_path()
 
 
 func _on_continue_pressed() -> void:

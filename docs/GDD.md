@@ -719,6 +719,14 @@ Log locally (opt-in for testers) to a JSON file per session:
 - Rank-ups, Technique unlocks, Fusion used, neighbor bonuses active.
 - Raids: result, buildings damaged.
 
+How it works (M5):
+- Opt-in: **Playtest log** on the title (off by default, remembered). **Open log folder** shows the files. Nothing is sent anywhere.
+- One file per session, `user://metrics/session_<date>T<time>.json`, rewritten after every event.
+- Choice actions: keep, merge, give, replace (let a kept power go), leave, give_kept (a kept power given later, or to make room). The time is from when the power shows on the Choice screen to the Choice.
+- Cause of death: what landed the last hit (enemy id, `<enemy>_arrow`, `thorn_patch`, `root_wall`). Room path: every room as `floor:type`.
+- Renown levels are logged too. Fusions, neighbor bonuses and raids join when they exist (M6).
+- `tools/metrics_report.gd` sums a folder of sessions into the prototype gate numbers. The forced first gift is not counted as a Choice; giving a kept power to make room counts as keeping the new one.
+
 Key questions for every playtest:
 1. Did you hesitate on the Choice? Why?
 2. Did you ever regret a gift? A keep?

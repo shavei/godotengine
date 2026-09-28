@@ -40,6 +40,9 @@ const REVIVE_COLOR: Color = Color(1, 0.85, 0.5)
 const REVIVE_BLAST_COLOR: Color = Color(1, 0.5, 0.2)
 const TECHNIQUE_COLOR: Color = Color(1, 0.82, 0.45)
 
+## Debug console god_mode: every hero takes no damage (dev builds only; lasts until the game closes).
+static var god_mode: bool = false
+
 @export var player_id: int = 0
 ## Left empty, these load from ContentDB (weapon_sword, balance_default).
 @export var weapon: WeaponData
@@ -121,6 +124,7 @@ func _ready() -> void:
 	flasks = FlaskPouch.new(balance.flask_charges, balance.flask_heal_fraction)
 	powers = PowerLoadout.new(GiftSystem.slot_count(balance))
 	health.set_max_hp(balance.hero_max_hp, true)
+	health.invulnerable = god_mode
 	stats.weapon_tier = weapon.tier_multiplier if weapon != null else 1.0
 	apply_balance()
 	# Each hero gets its own shape because attacks resize it.
@@ -548,6 +552,26 @@ func _on_hurt(result: DamageResult, source: HitboxComponent) -> void:
 	combo_step = 0
 	if not health.is_dead():
 		state_machine.transition_to(&"Hurt")
+
+
+## What landed the last hit on the hero, as a content id ("thorn_archer", or
+## "thorn_archer_arrow" for its arrow; hazards by name: "thorn_patch"). For metrics.
+func last_hit_by() -> String:
+	var source: HitboxComponent = hurtbox.last_hitbox
+	if source == null or not is_instance_valid(source):
+		return "unknown"
+	var node: Node = source.get_parent()
+	while node != null and node != get_tree().current_scene:
+		if node is Enemy and (node as Enemy).data != null:
+			return String((node as Enemy).data.id)
+		if node is ThornArrow and (node as ThornArrow).data != null:
+			return "%s_arrow" % (node as ThornArrow).data.id
+		if node is ThornPatch:
+			return "thorn_patch"
+		if node is RootWall:
+			return "root_wall"
+		node = node.get_parent()
+	return String(source.get_parent().name).to_snake_case() if source.get_parent() != null else "unknown"
 
 
 ## An enemy that hit the hero up close (its own attack, not an arrow) is Chilled (Hold the

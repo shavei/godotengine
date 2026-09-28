@@ -15,6 +15,8 @@ var plot_count: int = START_PLOTS
 ## The highest Renown level the village has shown (its level-up moment plays once).
 ## -1 in saves from before Renown: the village takes the current level without a moment.
 var renown_seen: int = 1
+## Renown points added by the debug console (add_renown). 0 in real play.
+var bonus_renown: int = 0
 
 
 ## The villager with this job, or null if they have not arrived.
@@ -71,6 +73,7 @@ func to_dict() -> Dictionary:
 	return {
 		"plot_count": plot_count,
 		"renown_seen": renown_seen,
+		"bonus_renown": bonus_renown,
 		"villagers": villagers.map(func(villager: VillagerState) -> Dictionary: return villager.to_dict()),
 	}
 
@@ -79,6 +82,7 @@ static func from_dict(data: Dictionary) -> VillageState:
 	var village: VillageState = VillageState.new()
 	village.plot_count = maxi(START_PLOTS, int(data.get("plot_count", START_PLOTS)))
 	village.renown_seen = int(data.get("renown_seen", -1))
+	village.bonus_renown = int(data.get("bonus_renown", 0))
 	for entry: Variant in data.get("villagers", []):
 		if entry is Dictionary:
 			var villager: VillagerState = VillagerState.from_dict(entry)

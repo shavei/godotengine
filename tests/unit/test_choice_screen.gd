@@ -395,3 +395,74 @@ func test_a_gift_sets_up_the_ceremony() -> void:
 	screen.start_give(&"stone", false)
 	assert_true(screen.give(_village().index_of(&"guard")))
 	assert_eq(screen.ceremony, {"villager_id": &"guard", "power_id": &"stone", "first_gift": false})
+
+
+# --- Metrics (EventBus.choice_made) -------------------------------------------
+
+func _choices_made() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for i: int in get_signal_emit_count(EventBus, "choice_made"):
+		result.append(get_signal_parameters(EventBus, "choice_made", i)[1])
+	return result
+
+
+func test_keep_reports_the_choice_and_its_time() -> void:
+	hero.power_offer = [&"frost"] as Array[StringName]
+	watch_signals(EventBus)
+	var screen: ChoiceScreen = await _open()
+	_button(screen, "KeepButton").pressed.emit()
+	var made: Array[Dictionary] = _choices_made()
+	assert_eq(made.size(), 1)
+	assert_eq(made[0]["action"], "keep")
+	assert_eq(made[0]["power"], "frost")
+	assert_eq(made[0]["level"], 1)
+	assert_gte(float(made[0]["seconds"]), 0.0)
+
+
+func test_a_gift_reports_the_villager() -> void:
+	hero.power_offer = [&"growth"] as Array[StringName]
+	watch_signals(EventBus)
+	var screen: ChoiceScreen = await _open()
+	_button(screen, "GiveButton").pressed.emit()
+	await wait_process_frames(1)
+	var farmer: Button = _button(screen, "FarmerCard")
+	farmer.pressed.emit()
+	farmer.pressed.emit()
+	var made: Array[Dictionary] = _choices_made()
+	assert_eq(made.size(), 1)
+	assert_eq(made[0]["action"], "give")
+	assert_eq(made[0]["villager"], "farmer")
+	assert_false(made[0].has("first_gift"))
+
+
+func test_leaving_and_merging_are_reported() -> void:
+	hero.kept_powers.append(KeptPower.create(&"fire", 2))
+	hero.power_offer = [&"fire"] as Array[StringName]
+	watch_signals(EventBus)
+	var screen: ChoiceScreen = await _open()
+	_button(screen, "MergeButton").pressed.emit()
+	hero.power_offer = [&"stone"] as Array[StringName]
+	screen.done = false
+	screen.refresh()
+	screen.leave()
+	var made: Array[Dictionary] = _choices_made()
+	assert_eq(made.map(func(r: Dictionary) -> String: return r["action"]), ["merge", "leave"])
+	assert_eq(made[0]["level"], 3, "the merged level")
+
+
+func test_giving_a_kept_power_to_make_room_reports_both_powers() -> void:
+	for id: StringName in [&"fire", &"frost", &"stone"]:
+		hero.kept_powers.append(KeptPower.create(id, 3))
+	hero.power_offer = [&"growth"] as Array[StringName]
+	watch_signals(EventBus)
+	var screen: ChoiceScreen = await _open()
+	screen.start_give(&"frost", true)
+	await wait_process_frames(1)
+	screen.give(_village().index_of(&"guard"))
+	var made: Array[Dictionary] = _choices_made()
+	assert_eq(made.size(), 1)
+	assert_eq(made[0]["action"], "give_kept")
+	assert_eq(made[0]["power"], "frost")
+	assert_eq(made[0]["level"], 3)
+	assert_eq(made[0]["kept"], "growth")
+	assert_eq(made[0]["villager"], "guard")

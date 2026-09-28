@@ -610,3 +610,39 @@ func test_a_cleared_fight_heals_and_grows_mending_gear() -> void:
 	assert_eq(room.hero.stats.damage_bonus, 0.0)
 	room._apply_room_services()
 	assert_eq(room._clean_rooms, 0, "this room had a hit")
+
+
+func test_skip_room_clears_a_fight_at_once() -> void:
+	var run: RunState = RunState.start(region, 5)
+	run.enter(run.next_choices()[0])
+	var room: RunRoom = await _spawn_room(run)
+	await wait_physics_frames(60)
+	assert_true(room.skip_room())
+	await wait_physics_frames(1)
+	assert_true(run.room_cleared)
+	assert_eq(get_tree().get_nodes_in_group(Enemy.GROUP).size(), 0)
+	for door: RoomDoor in _doors(room):
+		assert_false(door.locked)
+	assert_false(room.skip_room(), "clear already")
+
+
+func test_a_fall_names_what_hit_the_hero_last() -> void:
+	var run: RunState = RunState.start(region, 5)
+	run.enter(run.next_choices()[0])
+	var room: RunRoom = await _spawn_room(run)
+	var boar: Enemy = Enemy.create(ContentDB.get_item(&"enemies", &"tusk_boar"))
+	room.actors.add_child(boar)
+	await wait_physics_frames(1)
+	room.hero.hurtbox.last_hitbox = boar.hitbox
+	room.hero.revives = 0
+	watch_signals(EventBus)
+	room.hero.health.take_damage(10000)
+	await wait_physics_frames(1)
+	assert_signal_emitted(EventBus, "run_summarized")
+	var summary: RunSummary = get_signal_parameters(EventBus, "run_summarized")[0]
+	assert_false(summary.success)
+	assert_eq(summary.death_cause, "tusk_boar")
+	assert_eq(summary.region_id, &"mossy_hollow")
+	assert_eq(summary.route, run.route)
+	assert_eq(summary.route.size(), 1)
+	assert_true(summary.route[0].begins_with("1:"))
