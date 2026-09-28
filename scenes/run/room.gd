@@ -372,6 +372,18 @@ func _on_room_cleared() -> void:
 	_open_exits()
 
 
+## Debug console skip_room: the fight ends at once (enemies still up drop nothing) and
+## the room counts as cleared. False if it is clear already or the run is over.
+func skip_room() -> bool:
+	if _summary != null or _leaving or run.room_cleared:
+		return false
+	director.stop()
+	for enemy: Node in get_tree().get_nodes_in_group(Enemy.GROUP):
+		enemy.queue_free()
+	_on_room_cleared()
+	return true
+
+
 func _on_rest_chosen(spot: InteractSpot, who: Hero) -> void:
 	if spot.kind == REST_HEAL:
 		who.health.heal(roundi(who.health.max_hp * who.balance.rest_heal_fraction))
@@ -551,9 +563,13 @@ func _end_run(success: bool) -> void:
 	var services: Dictionary[int, ModifierStack] = {hero.player_id: _services}
 	var summaries: Dictionary[int, RunSummary] = RunEnd.finish(run, GameState.profile, success, hero.balance, services)
 	_summary = summaries.get(hero.player_id)
+	if _summary != null and not success:
+		_summary.death_cause = hero.last_hit_by()
 	GameState.end_run()
 	GameState.save_profile()
 	EventBus.run_ended.emit(success)
+	for summary: RunSummary in summaries.values():
+		EventBus.run_summarized.emit(summary)
 
 
 func _show_results() -> void:

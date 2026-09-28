@@ -16,6 +16,8 @@ var hp: int = 0
 var shield: int = 0
 ## How much of the last hit the shield soaked up.
 var last_absorbed: int = 0
+## Takes no damage at all (the debug console's god_mode).
+var invulnerable: bool = false
 
 
 func _ready() -> void:
@@ -29,7 +31,7 @@ func is_dead() -> bool:
 ## Applies damage (the shield soaks it up first) and returns how much HP was lost.
 func take_damage(amount: int) -> int:
 	last_absorbed = 0
-	if amount <= 0 or is_dead():
+	if amount <= 0 or is_dead() or invulnerable:
 		return 0
 	if shield > 0:
 		last_absorbed = mini(shield, amount)

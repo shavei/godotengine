@@ -65,6 +65,10 @@ var _giving_kept: bool = false
 var _done_message: String = ""
 ## The Grow stronger view's panel, while it shows.
 var growth: GrowthPanel
+## When the screen opened, and when the waiting power first showed (-1 before), in
+## msec: how long a Choice took (metrics, EventBus.choice_made).
+var _opened_msec: int = 0
+var _waiting_since_msec: int = -1
 
 
 func _ready() -> void:
@@ -74,6 +78,7 @@ func _ready() -> void:
 	balance = ContentDB.get_item(&"balance", &"default") as BalanceData
 	if balance == null:
 		balance = BalanceData.new()
+	_opened_msec = Time.get_ticks_msec()
 	_build()
 	refresh()
 
@@ -117,6 +122,8 @@ func refresh() -> void:
 		remove_child(growth)
 		growth.queue_free()
 		growth = null
+	if _waiting_since_msec < 0 and not done and PowerOffer.waiting_power(hero) != &"":
+		_waiting_since_msec = Time.get_ticks_msec()
 	for i: int in GiftSystem.slot_count(balance):
 		_slots.add_child(_slot_view(hero.kept_powers[i] if i < hero.kept_powers.size() else null))
 	# Villager cards and the growth panel are tall and cover the slot row.
@@ -385,6 +392,7 @@ func keep() -> bool:
 	if kept == null:
 		return false
 	EventBus.power_kept.emit(player_id, power_id)
+	_log_choice(MetricsLog.KEEP, power_id, kept.level)
 	_settle("%s is kept in slot %d." % [_name(power_id), hero.kept_powers.size()])
 	return true
 
@@ -398,6 +406,7 @@ func merge() -> bool:
 	if new_level == 0:
 		return false
 	EventBus.power_merged.emit(player_id, power_id, new_level)
+	_log_choice(MetricsLog.MERGE, power_id, new_level)
 	_settle("%s merged: now level %d." % [_name(power_id), new_level])
 	return true
 
@@ -413,6 +422,7 @@ func replace(old_id: StringName) -> bool:
 	if GiftSystem.replace(hero, old_id, power_id, GameState.profile.run_count) == null:
 		return false
 	EventBus.power_kept.emit(player_id, power_id)
+	_log_choice(MetricsLog.REPLACE, power_id, 1, &"", old_id)
 	_settle("%s is gone. %s is kept in slot %d." % [_name(old_id), _name(power_id), slot + 1])
 	return true
 
@@ -422,6 +432,8 @@ func leave() -> void:
 	if _first_gift_active():
 		return
 	var power_id: StringName = PowerOffer.waiting_power(hero)
+	var kept: KeptPower = GiftSystem.find(hero, power_id)
+	_log_choice(MetricsLog.LEAVE, power_id, kept.level if kept != null else 1)
 	_settle("You left %s behind." % _name(power_id))
 
 
@@ -441,6 +453,7 @@ func give(villager_index: int) -> bool:
 	var first_gift: bool = _first_gift_active()
 	var waiting: StringName = PowerOffer.waiting_power(hero)
 	var run_number: int = GameState.profile.run_count
+	var level: int = _giving_level()
 	var villager: VillagerState
 	if not _giving_kept:
 		villager = GiftSystem.give(village, villager_index, _giving, 1)
@@ -453,6 +466,10 @@ func give(villager_index: int) -> bool:
 	FirstGift.complete(GameState.profile)
 	ceremony = {"villager_id": villager.villager_id, "power_id": _giving, "first_gift": first_gift}
 	EventBus.power_given.emit(player_id, _giving, villager_index)
+	if _giving_kept:
+		_log_choice(MetricsLog.GIVE_KEPT, _giving, level, villager.villager_id, waiting)
+	else:
+		_log_choice(MetricsLog.GIVE, _giving, level, villager.villager_id, &"", first_gift)
 	var data: VillagerData = _villager(villager.villager_id)
 	var who: String = data.title() if data != null else String(villager.villager_id)
 	var message: String = "%s now holds %s." % [who, _name(_giving)]
@@ -490,6 +507,15 @@ func _finish(message: String, note: String = "") -> void:
 	_save()
 	refresh()
 	_note.text = note
+
+
+## Tells EventBus (and so the metrics log) what the Choice was and how long it took.
+func _log_choice(action: String, power_id: StringName, level: int, villager_id: StringName = &"",
+		other_power: StringName = &"", first_gift: bool = false) -> void:
+	var since: int = _waiting_since_msec if _waiting_since_msec >= 0 else _opened_msec
+	var seconds: float = (Time.get_ticks_msec() - since) / 1000.0
+	EventBus.choice_made.emit(player_id, MetricsLog.choice_record(action, power_id, level, seconds,
+			GameState.profile.run_count, villager_id, other_power, first_gift))
 
 
 func _save() -> void:

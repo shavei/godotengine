@@ -91,6 +91,8 @@ func test_mid_run_save_round_trips_through_json() -> void:
 	assert_eq(loaded.floor_index, 0)
 	assert_eq(loaded.current_room_id, run.current_room_id)
 	assert_eq(loaded.path, run.path)
+	assert_eq(loaded.route, run.route)
+	assert_eq(loaded.route.size(), 2, "the route keeps every room entered (metrics)")
 	assert_false(loaded.room_cleared, "the room starts over")
 	assert_eq(loaded.rooms_cleared, 1)
 	assert_almost_eq(loaded.elapsed, 93.5, 0.001)
@@ -125,3 +127,17 @@ func test_saved_run_for_another_region_or_a_missing_room_is_refused() -> void:
 	assert_null(RunState.from_dict(data, null))
 	data["room"] = 9999
 	assert_null(RunState.from_dict(data, region))
+
+
+func test_route_spans_floors() -> void:
+	var run: RunState = RunState.start(region, 42)
+	while not run.is_floor_done():
+		run.enter(run.next_choices()[0])
+		run.mark_cleared()
+	run.advance_floor()
+	run.enter(run.next_choices()[0])
+	assert_eq(run.path.size(), 1, "the path is this floor's")
+	assert_gt(run.route.size(), 2)
+	assert_true(run.route[0].begins_with("1:"))
+	assert_true(run.route.back().begins_with("2:"))
+	assert_eq(run.route[run.route.size() - 2], "1:%s" % MapRoom.MINI_BOSS, "floor 1 ends at its mini-boss")

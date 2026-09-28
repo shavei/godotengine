@@ -18,6 +18,8 @@ var current_room_id: int = -1
 var room_cleared: bool = true
 ## Room ids visited on the current floor, in order.
 var path: Array[int] = []
+## Every room entered this run, in order, as "floor:type" ("1:combat", "3:boss"). For metrics.
+var route: Array[String] = []
 ## player_id -> { "hp": int, "max_hp": int, "flasks": int, "revives": int, "clean_rooms": int }
 ## (revive tokens left; fight rooms cleared in a row without being hit).
 var heroes: Dictionary = {}
@@ -75,6 +77,7 @@ func enter(room_id: int) -> bool:
 		return false
 	current_room_id = room_id
 	path.append(room_id)
+	route.append("%d:%s" % [floor_index + 1, current_room().type])
 	room_cleared = false
 	return true
 
@@ -168,6 +171,7 @@ func to_dict() -> Dictionary:
 		"room": current_room_id,
 		"room_cleared": room_cleared,
 		"path": path.duplicate(),
+		"route": route.duplicate(),
 		"rooms_cleared": rooms_cleared,
 		"elapsed": elapsed,
 		"heroes": hero_data,
@@ -188,6 +192,8 @@ static func from_dict(data: Dictionary, run_region: RegionData) -> RunState:
 	run._build_floor(floor_number)
 	for room_id: Variant in data.get("path", []):
 		run.path.append(int(room_id))
+	for entry: Variant in data.get("route", []):
+		run.route.append(str(entry))
 	run.current_room_id = int(data.get("room", -1))
 	if run.current_room_id >= 0 and run.current_room() == null:
 		return null

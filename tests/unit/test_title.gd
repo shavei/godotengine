@@ -134,3 +134,28 @@ func test_new_game_asks_first_then_starts_a_fresh_profile() -> void:
 	SaveManager.delete_slot(GameState.slot)
 	SaveManager.save_dir = original_dir
 	GameState.profile = original_profile
+
+
+func test_playtest_log_button_turns_metrics_on_and_off() -> void:
+	var enabled: bool = Metrics.enabled
+	var settings: String = Metrics.settings_path
+	Metrics.settings_path = "user://test_title_settings.cfg"
+	Metrics.enabled = false
+	await wait_process_frames(1)
+	title.refresh_playtest_log()
+	assert_eq(title.get_node("%LogButton").text, "Playtest log: off")
+	assert_false(title.get_node("%FolderButton").visible)
+	title.get_node("%LogButton").pressed.emit()
+	assert_true(Metrics.enabled)
+	assert_eq(title.get_node("%LogButton").text, "Playtest log: on")
+	assert_true(title.get_node("%FolderButton").visible)
+	title.get_node("%LogButton").pressed.emit()
+	assert_false(Metrics.enabled)
+	DirAccess.remove_absolute(Metrics.settings_path)
+	Metrics.settings_path = settings
+	Metrics.enabled = enabled
+
+
+func test_debug_builds_show_the_test_rooms() -> void:
+	await wait_process_frames(1)
+	assert_eq(title.get_node("%TuningButton").visible, OS.is_debug_build())

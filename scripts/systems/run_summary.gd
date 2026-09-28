@@ -5,6 +5,11 @@ extends RefCounted
 var player_id: int = 0
 var success: bool = false
 var region_name: String = ""
+var region_id: StringName = &""
+## Every room entered, as "floor:type" (RunState.route).
+var route: Array[String] = []
+## What landed the killing blow (Hero.last_hit_by()), or "" after a clear.
+var death_cause: String = ""
 ## 1-based floor the run ended on.
 var floor_reached: int = 1
 var floor_count: int = 3

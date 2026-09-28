@@ -18,6 +18,8 @@ static func finish(run: RunState, profile: ProfileState, success: bool, balance:
 		summary.player_id = player_id
 		summary.success = success
 		summary.region_name = run.region.display_name
+		summary.region_id = run.region.id
+		summary.route = run.route.duplicate()
 		summary.floor_reached = run.floor_index + 1
 		summary.floor_count = run.region.floor_count
 		summary.rooms_cleared = run.rooms_cleared

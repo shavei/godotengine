@@ -3,13 +3,14 @@ extends RefCounted
 ## Renown (docs/GDD.md Section 5.5): how far the village has grown. Points come from what
 ## the village holds, so they can never drift from it: +1 for every gift (every villager
 ## holding a power) and +2 for every Master. Raids won and building levels join in M6.
+## The debug console can add points on top (VillageState.bonus_renown).
 ## Levels 1 to 10 follow `BalanceData.renown_levels`; a level moves in the villagers who
 ## arrive at it (VillageState.admit).
 
 
 ## Renown points the village has earned.
 static func points(village: VillageState, balance: BalanceData) -> int:
-	var total: int = 0
+	var total: int = village.bonus_renown
 	for villager: VillagerState in village.villagers:
 		if not villager.has_power():
 			continue

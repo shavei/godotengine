@@ -20,6 +20,7 @@ Single player first. Multiplayer (co-op runs, village visits, raid help) is opti
 | `docs/ARCHITECTURE.md` | Technical plan: Godot project layout, autoloads, data resources, systems, save format, multiplayer readiness, testing. |
 | `docs/ROADMAP.md` | Milestones M0 to M12 with tasks, done criteria and playtest questions. |
 | `docs/RESEARCH.md` | Prior-art research and design lessons, with sources. |
+| `docs/PLAYTEST.md` | The playtest build's README: how testers run it, turn on the log and send it; how to make builds and read the logs. |
 
 If code and docs disagree, stop and ask, or fix the doc in the same change. Never let them drift silently.
 
@@ -57,6 +58,7 @@ If code and docs disagree, stop and ask, or fix the doc in the same change. Neve
   - Warnings: `godot --headless -s tools/check_warnings.gd` (must report no warnings; the editor shows them in the debugger's Errors tab, headless runs do not)
   - Boot check: `godot --headless --quit-after 180` (must print no errors)
 - CI (`.github/workflows/tests.yml`) runs the same four steps on every push to `main` and every PR.
+- Playtest builds: `.github/workflows/build.yml` (run by hand or on a `v*` tag) exports Windows and Linux from `export_presets.cfg`. Metrics from testers: `godot --headless -s tools/metrics_report.gd -- <folder>`.
 - Cloud sessions: Godot is not preinstalled. Download the Linux build from `https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip` and put it on the PATH as `godot`.
 - Before committing gameplay code: run the tests and the boot check, and launch the affected scene once.
 
