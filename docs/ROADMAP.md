@@ -110,11 +110,13 @@ Split into small PRs, each playable: (1) villagers, combos, the village scene an
 ---
 
 ## M5: Training and Techniques (PROTOTYPE GATE)
-- [ ] `TrainingSystem.tick` with thresholds 3 and 7 (unit tested).
-- [ ] Rank-up presentation in the village (Adept visual, Master visual).
+Split into small PRs, each playable: (1) the training tick, rank-ups shown in the village, Renown levels 1 to 3 with the Healer arriving at Renown 2, (2) the 16 prototype Techniques, the lesson ceremony and the character sheet, (3) metrics logging, debug console commands and playtester builds.
+
+- [x] `TrainingSystem.tick` with thresholds 3 and 7 (unit tested). (PR 1: every run leaves a tick in `ProfileState.training_due`; the village applies it once nothing waits at the Shrine, so a power given after a run trains with that run. The gate stays shut while a power waits. The results screen previews the tick.)
+- [x] Rank-up presentation in the village (Adept visual, Master visual). (PR 1: a short moment per rank-up: bars, the camera on the villager, a burst, then their line and new service. Adept: a star in the power's color and a pennant on the roof. Master: a gold crown and a second, gold pennant. Names show Training Points, "Novice 2/3".)
 - [ ] 16 prototype Techniques implemented (modifier-based where possible, behavior scripts for Ember Step, Cold Temper and others).
 - [ ] Technique lesson ceremony; character sheet shows Techniques.
-- [ ] Renown points and levels 1 to 3 (Healer arrival at Renown 2).
+- [x] Renown points and levels 1 to 3 (Healer arrival at Renown 2). (PR 1: points come from the village itself, +1 per villager holding a power and +2 per Master, so they cannot drift. A new level plays a moment with the newcomer fading in. Renown shows in the village's top right and on the notice board. The Healer no longer lives there from the start.)
 - [ ] Local metrics logging (GDD Section 17).
 - [ ] Debug console commands (ARCHITECTURE Section 11).
 - [ ] Build for playtesters (Windows and Linux).

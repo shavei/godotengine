@@ -110,6 +110,11 @@ extends Resource
 ## Training Points a powered villager needs for Adept and Master (docs/GDD.md Section 5.2).
 @export var adept_tp: int = 3
 @export var master_tp: int = 7
+## Renown points for each gift and each Master (docs/GDD.md Section 5.5).
+@export var renown_per_gift: int = 1
+@export var renown_per_master: int = 2
+## Renown points each level needs: level 1 at 0, level 2 at 4, ... level 10 at 72.
+@export var renown_levels: Array[int] = [0, 4, 9, 15, 22, 30, 39, 49, 60, 72]
 ## Resetting attributes at the Shrine costs this many coins per hero level (docs/GDD.md Section 4.1).
 @export var respec_cost_per_level: int = 50
 ## The villager the first power must be given to (docs/GDD.md Section 16, the forced first

@@ -3,7 +3,9 @@ extends Node2D
 ## A villager standing in front of their house (docs/GDD.md Section 5.1). Placeholder
 ## body until sprites (M7): their job color and their name at their feet. Once they hold
 ## a power their clothes take on its color (a palette swap and a sash), with a glow, its
-## icon beside their head and their rank (pillar 4: see your choices). Stand next to them and press Interact to talk (`talked_to`).
+## icon beside their head and their rank with Training Points (pillar 4: see your choices).
+## Training shows too: an Adept wears a star in the power's color, a Master a gold crown.
+## Stand next to them and press Interact to talk (`talked_to`).
 
 signal talked_to(villager: Villager, hero: Hero)
 
@@ -13,12 +15,20 @@ const SKIN: Color = Color(0.93, 0.8, 0.66)
 const OUTLINE: Color = Color(0.05, 0.03, 0.05)
 ## How far a gift shifts the villager's clothes toward the power's color.
 const PALETTE_SHIFT: float = 0.5
+const GOLD: Color = Color(1, 0.82, 0.35)
 
 var data: VillagerData
 var state: VillagerState
 ## The power they hold, or null.
 var power: PowerData
 var rank: int = TrainingSystem.NONE
+## "Novice 2/3" under their name (TrainingSystem.progress_text).
+var progress: String = ""
+## How far their newest rank prop shows (0 to 1). A rank-up moment plays it from 0.
+var rank_blend: float = 1.0:
+	set(value):
+		rank_blend = clampf(value, 0.0, 1.0)
+		queue_redraw()
 ## How far the villager wears their power's colors (0 to 1). The gift ceremony plays it
 ## from 0; otherwise it is always 1.
 var gift_blend: float = 1.0:
@@ -45,6 +55,7 @@ func setup(villager_data: VillagerData, villager_state: VillagerState, balance: 
 	state = villager_state
 	power = ContentDB.get_item(&"powers", state.power_id) as PowerData if state.has_power() else null
 	rank = TrainingSystem.rank(state, balance)
+	progress = TrainingSystem.progress_text(state, balance)
 	name = "Villager%s" % String(state.villager_id).capitalize()
 	_update_caption()
 	queue_redraw()
@@ -83,11 +94,38 @@ func _draw() -> void:
 	if blend > 0.0:
 		PowerIcon.draw(self, power.icon_shape, Vector2(15, -26), 11.0, Color(power.color, blend))
 	if blend >= 1.0:
-		label = "%s  %s" % [data.display_name, TrainingSystem.rank_name(rank)]
+		label = "%s  %s" % [data.display_name, progress]
 		label_color = power.color
+		_draw_rank_props(body)
 	var at: Vector2 = Vector2(-60, 16)
 	draw_string_outline(font, at, label, HORIZONTAL_ALIGNMENT_CENTER, 120, 8, 3, OUTLINE)
 	draw_string(font, at, label, HORIZONTAL_ALIGNMENT_CENTER, 120, 8, label_color)
+
+
+## An Adept's star on the chest, a Master's crown above the head. The newest one grows in
+## with `rank_blend`.
+func _draw_rank_props(body: Vector2) -> void:
+	if rank >= TrainingSystem.ADEPT:
+		var star: float = rank_blend if rank == TrainingSystem.ADEPT else 1.0
+		if star > 0.0:
+			_draw_star(body + Vector2(-4, 2), 4.0 * star, power.color.lightened(0.35), star)
+	if rank >= TrainingSystem.MASTER and rank_blend > 0.0:
+		var top: Vector2 = Vector2(0, -BODY_RADIUS * 2 - HEAD_RADIUS * 2 - 1)
+		var w: float = 6.0 * rank_blend
+		var crown: PackedVector2Array = [top + Vector2(-w, 0), top + Vector2(-w, -4 * rank_blend),
+				top + Vector2(-w * 0.4, -1.5 * rank_blend), top + Vector2(0, -6 * rank_blend),
+				top + Vector2(w * 0.4, -1.5 * rank_blend), top + Vector2(w, -4 * rank_blend), top + Vector2(w, 0)]
+		draw_colored_polygon(crown, Color(GOLD, rank_blend))
+		draw_polyline(PackedVector2Array(crown + PackedVector2Array([crown[0]])), Color(OUTLINE, rank_blend), 1.0)
+
+
+func _draw_star(center: Vector2, radius: float, tint: Color, alpha: float) -> void:
+	var points: PackedVector2Array = []
+	for i: int in 10:
+		var r: float = radius if i % 2 == 0 else radius * 0.45
+		points.append(center + Vector2.from_angle(-PI / 2 + i * PI / 5) * r)
+	draw_colored_polygon(points, Color(tint, alpha))
+	draw_polyline(PackedVector2Array(points + PackedVector2Array([points[0]])), Color(OUTLINE, alpha), 1.0)
 
 
 ## Their clothes: the job color, shifted toward the power's color once they hold one.

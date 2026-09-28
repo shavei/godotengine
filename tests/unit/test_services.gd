@@ -21,6 +21,8 @@ func before_each() -> void:
 	HitStop.enabled = false
 	_original_profile = GameState.profile
 	GameState.new_profile()
+	# The Healer moves in at Renown 2.
+	GameState.admit_villagers(2)
 	_balance = ContentDB.get_item(&"balance", &"default") as BalanceData
 
 

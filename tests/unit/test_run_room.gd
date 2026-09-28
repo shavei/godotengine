@@ -19,6 +19,8 @@ func before_all() -> void:
 
 func before_each() -> void:
 	GameState.new_profile()
+	# The Healer moves in at Renown 2.
+	GameState.admit_villagers(2)
 
 
 func after_each() -> void:
