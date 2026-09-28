@@ -1,9 +1,12 @@
 extends Node
-## Owns the current profile (heroes keyed by player_id; the village joins in M4) and the
+## Owns the current profile (heroes keyed by player_id, and the shared village) and the
 ## run in progress. Loads and saves both through SaveManager.
 ## Rule: never store per-player data directly on this node; key it by player_id.
 
 const LOCAL_PLAYER_ID: int = 0
+## Renown arrives in M5. Until then the village counts as Renown 2, so the four
+## prototype villagers (Smith, Farmer, Guard and the Healer) all live there.
+const RENOWN_LEVEL_UNTIL_M5: int = 2
 
 ## The save slot in use. One slot until a slot picker exists.
 var slot: int = 0
@@ -17,6 +20,17 @@ var run: RunState = null
 func new_profile() -> void:
 	profile = ProfileState.new()
 	profile.hero(LOCAL_PLAYER_ID)
+	admit_villagers()
+
+
+## Moves in the villagers whose Renown level is reached (a fresh village, or an old save
+## from before a villager existed).
+func admit_villagers() -> void:
+	var roster: Array[VillagerData] = []
+	for item: Resource in ContentDB.get_all(&"villagers"):
+		if item is VillagerData:
+			roster.append(item)
+	profile.village.admit(roster, RENOWN_LEVEL_UNTIL_M5)
 
 
 func has_profile() -> bool:
@@ -31,6 +45,7 @@ func load_profile() -> void:
 	else:
 		profile = ProfileState.from_dict(data)
 		profile.hero(LOCAL_PLAYER_ID)
+		admit_villagers()
 
 
 func save_profile() -> Error:

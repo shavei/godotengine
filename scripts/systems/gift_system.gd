@@ -1,9 +1,10 @@
 class_name GiftSystem
 extends RefCounted
-## The Choice rules (docs/GDD.md Section 3): keep a power in one of the 3 slots, or merge
-## it into the same kept power for +1 level, or let a kept power go to make room. Kept powers also level up with banked Power
-## Shards (GDD 4.3). Giving to villagers joins in M4.
-## Callers emit the EventBus signals (power_kept, power_merged, power_leveled).
+## The Choice rules (docs/GDD.md Section 3): keep a power in one of the 3 slots, merge
+## it into the same kept power for +1 level, or give it to a villager forever. With every
+## slot full, a kept power can be given away to make room. Kept powers also level up
+## with banked Power Shards (GDD 4.3).
+## Callers emit the EventBus signals (power_kept, power_merged, power_leveled, power_given).
 
 
 static func slot_count(balance: BalanceData) -> int:
@@ -86,9 +87,61 @@ static func replace(hero: HeroState, old_id: StringName, new_id: StringName, run
 	return old
 
 
-## Takes a power out of its slot (the gift flow in M4 hands it on). Later slots move up.
+## Takes a power out of its slot (give_kept hands it on). Later slots move up.
 static func release(hero: HeroState, power_id: StringName) -> KeptPower:
 	var kept: KeptPower = find(hero, power_id)
 	if kept != null:
 		hero.kept_powers.erase(kept)
 	return kept
+
+
+# --- Giving (docs/GDD.md Section 3.2) ------------------------------------------
+
+## Training Points a gift starts with: the power's level - 1 (a level 5 gift starts at 4).
+static func starting_tp(level: int) -> int:
+	return maxi(level - 1, 0)
+
+
+## One power per villager, and gifts are permanent: only a villager with no power can take one.
+static func can_give(village: VillageState, villager_index: int) -> bool:
+	return villager_index >= 0 and villager_index < village.villagers.size() \
+			and not village.villagers[villager_index].has_power()
+
+
+## Indexes of the villagers who can take a power.
+static func open_villagers(village: VillageState) -> Array[int]:
+	var result: Array[int] = []
+	for i: int in village.villagers.size():
+		if can_give(village, i):
+			result.append(i)
+	return result
+
+
+## Gives a power at `level` to a villager, for good. Returns the villager, or null.
+static func give(village: VillageState, villager_index: int, power_id: StringName, level: int = 1) -> VillagerState:
+	if power_id == &"" or not can_give(village, villager_index):
+		return null
+	var villager: VillagerState = village.villagers[villager_index]
+	villager.power_id = power_id
+	villager.training_points = starting_tp(level)
+	return villager
+
+
+## Gives a kept power away: it leaves its slot and the villager starts from its level.
+static func give_kept(village: VillageState, hero: HeroState, power_id: StringName, villager_index: int) -> VillagerState:
+	var kept: KeptPower = find(hero, power_id)
+	if kept == null or not can_give(village, villager_index):
+		return null
+	release(hero, power_id)
+	return give(village, villager_index, power_id, kept.level)
+
+
+## Every slot is full: `old_id` goes to the villager and `new_id` takes its slot at level 1.
+static func give_kept_to_make_room(village: VillageState, hero: HeroState, old_id: StringName, new_id: StringName,
+		villager_index: int, run_number: int = 0) -> VillagerState:
+	if not can_give(village, villager_index):
+		return null
+	var old: KeptPower = replace(hero, old_id, new_id, run_number)
+	if old == null:
+		return null
+	return give(village, villager_index, old.power_id, old.level)

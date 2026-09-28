@@ -106,6 +106,11 @@ extends Resource
 ## Power orbs the region boss drops; the hero takes one (docs/GDD.md Section 3.1).
 @export var boss_orb_count: int = 2
 
+@export_group("Village")
+## Training Points a powered villager needs for Adept and Master (docs/GDD.md Section 5.2).
+@export var adept_tp: int = 3
+@export var master_tp: int = 7
+
 @export_group("Status effects")
 ## Burn: damage per stack each tick, ticks every burn_interval seconds (docs/GDD.md Section 7.3).
 @export var burn_damage: int = 3

@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ComboData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/combo_data.gd" id="1_combo"]
+[ext_resource type="Script" path="res://scripts/resources/service_data.gd" id="2_service"]
+
+[sub_resource type="Resource" id="Resource_novice"]
+script = ExtResource("2_service")
+description = "Sells a Stone infusion: +25% stagger damage."
+
+[sub_resource type="Resource" id="Resource_adept"]
+script = ExtResource("2_service")
+description = "+50% stagger damage. Sells armor for +15% max HP."
+
+[resource]
+script = ExtResource("1_combo")
+id = &"smith_stone"
+villager_id = &"smith"
+power_id = &"stone"
+novice = SubResource("Resource_novice")
+adept = SubResource("Resource_adept")
+technique_name = "Anvil Skin"
+technique_text = "The first hit each room deals 50% less."
+gift_line = "Feel that weight? Your blade will land like a rockslide."

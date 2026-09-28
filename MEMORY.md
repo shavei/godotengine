@@ -4,11 +4,11 @@ Persistent project memory. Read at the start of every session, update at the end
 
 ## Current status
 
-- **Phase:** M0 done. M1 (combat core) code done; only the owner's gamepad playtest item is still open. M2 (run structure): all 4 PRs merged (the owner's run-length and death-rule answers are still welcome). M3 (kept powers): PR 1 (powers, level 1 abilities, statuses, HUD slots, keep/merge rules) and PR 2 (level 3 and 5 upgrades, shard costs, leveling on the results screen, Focus unlocked, shard drops cut) merged; PR 3 (boss power orbs and the keep screen) open: real runs now earn powers.
+- **Phase:** M0 done. M1 (combat core) code done; only the owner's gamepad playtest item is still open. M2 (run structure): all 4 PRs merged (the owner's run-length and death-rule answers are still welcome). M3 (kept powers): all 3 PRs merged (owner: powers feel earned). M4 (village and the Choice) started at the owner's request: PR 1 (villagers, 16 combos, `GiftSystem.give`, the village scene, the Give flow and the saved loop Village > Run > Results > Shrine > Village) open.
 - **Also:** Controls remapping menu (title > Controls) added at the owner's request, ahead of the M7 Settings menu.
-- **Next step:** Owner plays a few full runs with M3 PR 3: clear the Warden, take an orb, keep or merge it on the keep screen, and checks the M3 done criteria (earn powers, keep up to 3, level with shards, powers feel distinct). Answers to the PR 3 questions in the session log (PR 1 and 2 questions still welcome). Then M4 (village and the Choice).
+- **Next step:** Owner plays M4 PR 1: title > Go to the village, walk to the gate, clear a run, back in the village walk to the glowing Shrine and give a power; check the villager and house change, and that it is still there after a restart. Answers to the M4 PR 1 questions in the session log. Then M4 PR 2 (services that change runs via `ModifierStack`, Shrine leveling) and PR 3 (gift ceremony, forced first gift).
 - **Also:** Combat feel pass (merged): quick turns, swings keep momentum, stable facing, no swallowed finisher press. Owner feedback on it still welcome.
-- **Last updated:** 2026-09-28 (power aim assist)
+- **Last updated:** 2026-09-28 (M4 PR 1)
 
 ## The game in brief
 
@@ -123,6 +123,13 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-28 | Keep screen before the village: Keep, Merge, let a kept power go (every slot full; the new power takes its slot at level 1), Leave it behind; letting go and leaving need a second press. A power let go is lost until M4's gift flow | GDD 3.1's full-slot rule is "give one away or discard the new one"; without villagers, letting go is the stand-in. The second press stops a stray button from throwing away a leveled power. |
 | 2026-09-28 | Orbs are always different powers; a kept power at level 5 is offered only when the pool has too few others | Two copies, or a power that can only be left behind, would make the pick empty (pillar 1). One sentence, tested. |
 | 2026-09-28 | Power casts get their own stick aim assist: 20 degrees either side, reaching as far as the power flies (`PowerData.projectile_range`); swings keep 30 degrees / 64 px | Owner: the fireball is really hard to aim on an Xbox controller. Casts used the melee assist, which only looks 64 px out, while Ember Bolt flies 220 px, so at fireball range there was no help. A narrower cone than melee keeps a far target from stealing a cast aimed elsewhere. Tunable in F4 (Power aim assist angle). |
+| 2026-09-28 | M4 split into 3 PRs: (1) villagers, combos, village scene, Give flow and the saved loop; (2) services that change runs (`ModifierStack`, Farmer flasks, Healer revives, Smith shop, Guard stub) and Shrine leveling; (3) gift ceremony and the forced first gift | Same one-feature-per-PR workflow; the owner can judge whether giving feels like a real choice before services are tuned around it. |
+| 2026-09-28 | Results always lead back to the village; the Shrine glows while a power waits and opens the Choice screen; the title's "A power is waiting" and "Start a run" became "Go to the village" (runs start at the gate, which continues a saved run) | GDD 3.1 "back in the village, the Shrine glows". Walking to the Shrine is diegetic (pillar 4). The gate continuing a saved run means the village can never throw away a run by accident. |
+| 2026-09-28 | Until Renown exists (M5) the village counts as Renown 2, so the Healer lives there from the start | The roadmap lists the Healer's services in M4 but Renown in M5. `VillageState.admit` already reads `arrives_at_renown`, so M5 only swaps the constant for the real level. |
+| 2026-09-28 | Full slots: "Give a kept power away" replaces "let a kept power go"; letting go comes back only when every villager holds a power | GDD 3.1 says a kept power goes to the gift flow. With 4 villagers and 4 powers, all villagers can be full, and then a power has nowhere to go. |
+| 2026-09-28 | Giving asks for a second press on the villager card (like Let go and Leave) | Gifts are permanent; a stray button must not decide one. The note under the cards says who gets it. |
+| 2026-09-28 | Technique shows "???" on every villager card for now | GDD 3.1 shows it only if discovered in the Codex, which comes later, so nothing is discovered yet. The Technique name and text are in `ComboData` already for M5. |
+| 2026-09-28 | Villagers live on plots by `VillagerState.plot` (not a `plots` dictionary on `VillageState`) | One source of truth per villager, simpler to save; `VillageState.on_plot(i)` answers the other way. ARCHITECTURE updated. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 
 ## Rejected ideas (do not re-propose without new info)
@@ -153,7 +160,7 @@ Runner-up ideas still considered original (keep for later or a future project): 
 ## Open questions
 
 - Frost up close: all 3 shards hitting one enemy is an instant freeze. Intended as a risk-for-reward, but watch whether it makes Frost the obvious keep (pillar 1).
-- Until M4, a new power with every slot full can only replace a kept power (lost) or be left. That pushes toward Leave, the "always keep what I have" habit pillar 1 warns about; M4's Give answers it. Watch whether it feels bad in M3 playtests.
+- With 4 prototype villagers and one power each, the village fills after 4 gifts; after that the only choices are keep, merge or leave (or let go). Apprentices (Renown 8) are the design's answer, far away. Watch whether the prototype gate runs hit this.
 
 - Save and quit restarts the current room with full enemies. It cannot heal or duplicate loot, but a hero about to lose a fight can quit and retry it at the same HP. Acceptable for now (Hades works the same); revisit if playtests abuse it.
 
@@ -166,6 +173,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-28 (M4 PR 1):** Owner: "lets start M4". Split M4 into 3 PRs. PR 1: `VillagerData`, `ServiceData`, `ComboData` (+ 4 villagers, 16 combos with Novice/Adept text, Technique stub and a gift line each), `VillagerState`, `VillageState` (saved in `ProfileState`, `admit` by Renown), `TrainingSystem.rank`, `BalanceData.adept_tp`/`master_tp`, `GiftSystem.give`/`give_kept`/`give_kept_to_make_room` (TP carry-over `level - 1`). `village.tscn` (6 plots with houses, villagers, Shrine, gate, notice board), `villager.tscn`, `VillagePlot`. Choice screen: Give to a villager (cards with previews, second press), give a kept power away to make room, Shrine gives kept powers with no offer. Title, results and Choice screen route through the village. 388 tests pass, no warnings, boot clean, checked with xvfb screenshots (village, talking to a villager, Choice with Give, villager cards). Questions for the owner: when a power waits, is it a hard choice now (keep vs give)? Are the villager cards clear at a glance? Does the village show your gifts clearly enough (glow, icon, roof trim) for now? Is walking to the Shrine and the gate fine, or too much walking? Does the second press to give feel safe or annoying?
 
 - **2026-09-28 (power aim assist):** Owner: powers feel earned (M3 done criteria), but the fireball is really hard to aim on an Xbox controller. Cause: casts used the sword's aim assist (64 px reach) while the fireball flies 220 px. Added `Hero.power_direction(power)` (reach = the power's range, `power_aim_assist_angle` 20 degrees) used by the Cast state, and an F4 entry. New test (stick fireball 15 degrees off hits a dummy 160 px away) fails on the old code. 361 tests pass, no warnings, boot clean. Questions for the owner: do stick fireballs land now? Does the cast ever snap to an enemy you did not mean (then lower Power aim assist angle in F4)?
 

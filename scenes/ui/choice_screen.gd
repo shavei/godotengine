@@ -1,13 +1,16 @@
 class_name ChoiceScreen
 extends Control
-## The keep screen (docs/GDD.md Section 3.1, the Choice screen without Give until the
-## village exists in M4). Settles the hero's power offer (HeroState.power_offer):
-## first take one orb if none was taken in the boss room, then Keep it in a free slot,
-## Merge it into the same kept power (+1 level), let a kept power go to make room, or
-## leave it behind. Letting go and leaving ask for a second press.
+## The Choice screen (docs/GDD.md Section 3.1), opened at the village Shrine. Settles the
+## hero's power offer (HeroState.power_offer): first take one orb if none was taken in
+## the boss room, then Keep it in a free slot, Merge it into the same kept power
+## (+1 level), Give it to a villager forever, or leave it behind. With every slot full a
+## kept power can be given away to make room (or, when every villager holds a power
+## already, let go). With no offer waiting, a kept power can be given away at any time.
+## Villager cards preview the Novice and Adept services; the Technique shows as "???"
+## until the Codex exists. Giving, letting go and leaving ask for a second press.
 ## Reads SceneRouter.context["player_id"] (the local hero by default).
 
-const TITLE_SCENE: String = "res://scenes/main/title.tscn"
+const VILLAGE_SCENE: String = "res://scenes/village/village.tscn"
 const GOLD: Color = Color(1, 0.78, 0.45)
 const INK: Color = Color(0.95, 0.9, 0.78)
 const DIM: Color = Color(0.72, 0.67, 0.6)
@@ -15,11 +18,20 @@ const WARN: Color = Color(0.95, 0.5, 0.45)
 const GOOD: Color = Color(0.6, 0.95, 0.55)
 const PANEL: Color = Color(0.2, 0.16, 0.13)
 const CARD_SIZE: Vector2 = Vector2(190, 118)
+const VILLAGER_CARD_SIZE: Vector2 = Vector2(140, 176)
 const SLOT_SIZE: Vector2 = Vector2(150, 34)
 const LEAVE: StringName = &"leave"
+const GIVE: StringName = &"give"
+const GIVE_KEPT: StringName = &"give_kept"
+const BACK: StringName = &"back"
+## Screen views beside the offer itself: pick a villager, or pick a kept power to give.
+const VIEW_OFFER: StringName = &"offer"
+const VIEW_VILLAGERS: StringName = &"villagers"
+const VIEW_KEPT: StringName = &"kept"
 
 var player_id: int = GameState.LOCAL_PLAYER_ID
 var hero: HeroState
+var village: VillageState
 var balance: BalanceData
 ## Save the profile after each change (tests turn it off).
 var save_on_change: bool = true
@@ -32,13 +44,19 @@ var _cards: HBoxContainer
 var _slots: HBoxContainer
 var _actions: HBoxContainer
 var _note: Label
+var _slots_heading: Label
 ## The button that asked "Sure?" and waits for a second press, or null.
 var _armed: Button
+var _view: StringName = VIEW_OFFER
+## The power being given, and whether it comes out of a kept slot.
+var _giving: StringName = &""
+var _giving_kept: bool = false
 
 
 func _ready() -> void:
 	player_id = int(SceneRouter.context.get("player_id", GameState.LOCAL_PLAYER_ID))
 	hero = GameState.hero_state(player_id)
+	village = GameState.profile.village
 	balance = ContentDB.get_item(&"balance", &"default") as BalanceData
 	if balance == null:
 		balance = BalanceData.new()
@@ -47,7 +65,7 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# Leaving early is safe: an unsettled offer waits in the save (title: "A power is waiting").
+	# Leaving early is safe: an unsettled offer waits in the save (the Shrine keeps glowing).
 	if event.is_action_pressed(&"ui_cancel") or event.is_action_pressed(&"pause"):
 		get_viewport().set_input_as_handled()
 		continue_on()
@@ -64,7 +82,8 @@ func _build() -> void:
 	_place(_subline, Vector2(0, 36), Vector2(640, 14))
 	_cards = _row("Cards", 12)
 	_place(_cards, Vector2(20, 56), Vector2(600, CARD_SIZE.y))
-	_place(_label("Your powers", 9, DIM, "SlotsHeading"), Vector2(0, 182), Vector2(640, 14))
+	_slots_heading = _label("Your powers", 9, DIM, "SlotsHeading")
+	_place(_slots_heading, Vector2(0, 182), Vector2(640, 14))
 	_slots = _row("Slots", 8)
 	_place(_slots, Vector2(20, 198), Vector2(600, SLOT_SIZE.y))
 	_actions = _row("Actions", 8)
@@ -82,17 +101,21 @@ func refresh() -> void:
 	_clear(_actions)
 	for i: int in GiftSystem.slot_count(balance):
 		_slots.add_child(_slot_view(hero.kept_powers[i] if i < hero.kept_powers.size() else null))
+	# Villager cards are tall and cover the slot row.
+	_slots.visible = _view != VIEW_VILLAGERS or done
+	_slots_heading.visible = _slots.visible
 	if done:
 		_add_action("Continue", &"continue", "ContinueButton")
+	elif _view == VIEW_VILLAGERS:
+		_show_villagers()
+	elif _view == VIEW_KEPT:
+		_show_kept_to_give()
 	elif PowerOffer.is_picking(hero):
 		_show_pick()
 	elif PowerOffer.waiting_power(hero) != &"":
 		_show_decision(PowerOffer.waiting_power(hero))
 	else:
-		_headline.text = "No power is waiting"
-		_subline.text = "Clear a region's boss to earn one."
-		_note.text = ""
-		_add_action("Continue", &"continue", "ContinueButton")
+		_show_shrine()
 	_focus_first()
 
 
@@ -127,25 +150,126 @@ func _show_decision(power_id: StringName) -> void:
 	_fill_card(card, power_id)
 	_cards.add_child(card)
 	var kept: KeptPower = GiftSystem.find(hero, power_id)
+	var can_give: bool = not GiftSystem.open_villagers(village).is_empty()
 	match PowerOffer.choice_for(hero, power_id, balance):
 		PowerOffer.KEEP:
-			_subline.text = "Keep it in a free slot, or leave it behind."
+			_subline.text = "Keep it in a free slot, or give it to a villager forever." if can_give \
+					else "Keep it in a free slot, or leave it behind."
 			_add_action("Keep it (slot %d)" % (hero.kept_powers.size() + 1), PowerOffer.KEEP, "KeepButton")
-			_note.text = "Kept powers go on the Power buttons in your next run."
+			_note.text = "Kept powers go on the Power buttons in your next run. A villager trains a gift and serves the village with it."
 		PowerOffer.MERGE:
 			_subline.text = "You keep %s already. Merge them for a level." % _name(power_id)
 			_add_action("Merge: level %d > %d" % [kept.level, kept.level + 1], PowerOffer.MERGE, "MergeButton")
 			_note.text = _level_note(power, kept.level + 1)
 		PowerOffer.MAXED:
 			_subline.text = "Your %s is at its highest level already." % _name(power_id)
-			_note.text = "There is nothing to merge. Giving powers to villagers comes with the village."
+			_note.text = "There is nothing to merge. A villager can still use it." if can_give else "There is nothing to merge."
 		PowerOffer.REPLACE:
-			_subline.text = "Every slot is full. Let a kept power go to make room, or leave this one."
-			for other: KeptPower in hero.kept_powers:
-				_add_action("Let %s go (lv %d)" % [_name(other.power_id), other.level], PowerOffer.REPLACE,
-						"Let%sGoButton" % String(other.power_id).capitalize(), other.power_id)
-			_note.text = "A power you let go is gone, with the shards spent on it. Giving it to a villager comes with the village."
+			if can_give:
+				_subline.text = "Every slot is full. Give one power away to make room, or leave this one."
+				_add_action("Give a kept power away", GIVE_KEPT, "GiveKeptButton")
+				_note.text = "A kept power you give away keeps its level: the villager starts training ahead. %s takes its slot." % _name(power_id)
+			else:
+				_subline.text = "Every slot is full. Let a kept power go to make room, or leave this one."
+				for other: KeptPower in hero.kept_powers:
+					_add_action("Let %s go (lv %d)" % [_name(other.power_id), other.level], PowerOffer.REPLACE,
+							"Let%sGoButton" % String(other.power_id).capitalize(), other.power_id)
+				_note.text = "Every villager holds a power already. A power you let go is gone, with the shards spent on it."
+	if can_give:
+		_add_action("Give to a villager", GIVE, "GiveButton", power_id)
 	_add_action("Leave it behind", LEAVE, "LeaveButton")
+
+
+## No offer waits: the Shrine still lets the hero give a kept power away.
+func _show_shrine() -> void:
+	_headline.text = "No power is waiting"
+	var can_give: bool = not GiftSystem.open_villagers(village).is_empty()
+	if hero.kept_powers.is_empty() or not can_give:
+		_subline.text = "Clear a region's boss to earn one."
+		_note.text = ""
+	else:
+		_subline.text = "You can give a kept power to a villager here, at any time."
+		_note.text = "A kept power you give away keeps its level: the villager starts training ahead."
+		_add_kept_gift_actions()
+	_add_action("Continue", &"continue", "ContinueButton")
+
+
+## Every slot is full (or the Shrine with no offer): which kept power goes?
+func _show_kept_to_give() -> void:
+	var waiting: StringName = PowerOffer.waiting_power(hero)
+	_headline.text = "Give a kept power away"
+	_subline.text = "%s takes its slot at level 1." % _name(waiting) if waiting != &"" else "Pick the power to give."
+	_note.text = "It keeps its level: the villager starts with that many Training Points, less one."
+	_add_kept_gift_actions()
+	_add_action("Back", BACK, "BackButton")
+
+
+func _add_kept_gift_actions() -> void:
+	for kept: KeptPower in hero.kept_powers:
+		_add_action("Give %s (lv %d)" % [_name(kept.power_id), kept.level], GIVE_KEPT,
+				"Give%sButton" % String(kept.power_id).capitalize(), kept.power_id)
+
+
+## One card per villager: who they are and what the power would make of their service.
+func _show_villagers() -> void:
+	var level: int = _giving_level()
+	_headline.text = "Give %s to a villager" % _name(_giving)
+	_subline.text = "Gifts are forever. They train it, and it comes back to you as a Technique."
+	_note.text = "Pick a villager, then press again to give."
+	var order: Array[VillagerState] = village.villagers.duplicate()
+	order.sort_custom(func(a: VillagerState, b: VillagerState) -> bool: return a.plot < b.plot)
+	for villager: VillagerState in order:
+		_cards.add_child(_villager_card(villager, level))
+	_add_action("Back", BACK, "BackButton")
+
+
+func _villager_card(villager: VillagerState, level: int) -> Button:
+	var data: VillagerData = _villager(villager.villager_id)
+	var combo: ComboData = ContentDB.get_item(&"combos", ComboData.id_for(villager.villager_id, _giving)) as ComboData
+	var tint: Color = data.color if data != null else INK
+	var card: Button = Button.new()
+	card.name = "%sCard" % String(villager.villager_id).capitalize()
+	card.custom_minimum_size = VILLAGER_CARD_SIZE
+	card.disabled = villager.has_power()
+	card.add_theme_stylebox_override("normal", _box(PANEL, tint.darkened(0.45)))
+	card.add_theme_stylebox_override("hover", _box(PANEL.lightened(0.05), tint))
+	card.add_theme_stylebox_override("pressed", _box(PANEL.lightened(0.1), tint))
+	card.add_theme_stylebox_override("disabled", _box(PANEL.darkened(0.35), DIM.darkened(0.5)))
+	var focus: StyleBoxFlat = _box(Color.TRANSPARENT, tint.lightened(0.3))
+	focus.set_border_width_all(2)
+	card.add_theme_stylebox_override("focus", focus)
+	var index: int = village.villagers.find(villager)
+	card.pressed.connect(func() -> void: _on_villager_pressed(card, index))
+	var column: VBoxContainer = VBoxContainer.new()
+	column.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 6)
+	column.add_theme_constant_override("separation", 2)
+	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(column)
+	column.add_child(_label(data.display_name if data != null else String(villager.villager_id), 11, tint, "Name"))
+	column.add_child(_label("the %s" % data.job_name if data != null else "", 8, DIM, "Job"))
+	if villager.has_power():
+		var rank: int = TrainingSystem.rank(villager, balance)
+		column.add_child(_card_text("Holds %s (%s)." % [_name(villager.power_id), TrainingSystem.rank_name(rank)], INK, "Holds"))
+		column.add_child(_card_text("One power each, for good.", DIM, "Rule"))
+		return card
+	if combo == null:
+		column.add_child(_card_text("No service for %s yet." % _name(_giving), DIM, "Novice"))
+		return card
+	column.add_child(_card_text("Novice: %s" % combo.novice.description, INK, "Novice"))
+	column.add_child(_card_text("Adept: %s" % combo.adept.description, DIM, "Adept"))
+	column.add_child(_card_text("Master: ???", DIM, "Master"))
+	var points: int = GiftSystem.starting_tp(level)
+	if points > 0:
+		var rank_text: String = TrainingSystem.rank_name(TrainingSystem.rank_for_points(points, balance))
+		column.add_child(_card_text("Starts at %d TP (%s)." % [points, rank_text], GOOD, "Start"))
+	return card
+
+
+func _card_text(text: String, color: Color, node_name: String) -> Label:
+	var label: Label = _label(text, 7, color, node_name)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	label.custom_minimum_size = Vector2(VILLAGER_CARD_SIZE.x - 12, 0)
+	return label
 
 
 ## Takes one orb; the others fade.
@@ -197,18 +321,61 @@ func leave() -> void:
 	_settle("You left %s behind." % _name(power_id))
 
 
+## Opens the villager cards for the waiting power (or, with `from_slot`, a kept power).
+func start_give(power_id: StringName, from_slot: bool) -> void:
+	_giving = power_id
+	_giving_kept = from_slot
+	_view = VIEW_VILLAGERS
+	refresh()
+
+
+## Gives the power being given to the villager at `villager_index`, for good. A kept
+## power given while an offer waits makes room: the new power takes its slot.
+func give(villager_index: int) -> bool:
+	var waiting: StringName = PowerOffer.waiting_power(hero)
+	var run_number: int = GameState.profile.run_count
+	var villager: VillagerState
+	if not _giving_kept:
+		villager = GiftSystem.give(village, villager_index, _giving, 1)
+	elif waiting != &"" and not PowerOffer.is_picking(hero):
+		villager = GiftSystem.give_kept_to_make_room(village, hero, _giving, waiting, villager_index, run_number)
+	else:
+		villager = GiftSystem.give_kept(village, hero, _giving, villager_index)
+	if villager == null:
+		return false
+	EventBus.power_given.emit(player_id, _giving, villager_index)
+	var data: VillagerData = _villager(villager.villager_id)
+	var who: String = data.title() if data != null else String(villager.villager_id)
+	var message: String = "%s now holds %s." % [who, _name(_giving)]
+	if _giving_kept and waiting != &"":
+		EventBus.power_kept.emit(player_id, waiting)
+		message += " %s takes its slot." % _name(waiting)
+	var combo: ComboData = ContentDB.get_item(&"combos", ComboData.id_for(villager.villager_id, _giving)) as ComboData
+	var line: String = "\"%s\"" % combo.gift_line if combo != null and not combo.gift_line.is_empty() else ""
+	_view = VIEW_OFFER
+	if _giving_kept and waiting == &"":
+		_finish(message, line)
+	else:
+		_settle(message, line)
+	return true
+
+
 func continue_on() -> void:
-	SceneRouter.go(TITLE_SCENE)
+	SceneRouter.go(VILLAGE_SCENE)
 
 
-func _settle(message: String) -> void:
+func _settle(message: String, note: String = "") -> void:
 	PowerOffer.clear(hero)
+	_finish(message, note)
+
+
+func _finish(message: String, note: String = "") -> void:
 	done = true
 	_save()
 	_headline.text = "The Choice is made"
 	_subline.text = message
-	_note.text = ""
 	refresh()
+	_note.text = note
 
 
 func _save() -> void:
@@ -221,6 +388,17 @@ func _on_action(action: StringName, button: Button, power_id: StringName) -> voi
 	match action:
 		&"continue":
 			continue_on()
+		BACK:
+			_view = VIEW_OFFER
+			refresh()
+		GIVE:
+			start_give(power_id, false)
+		GIVE_KEPT:
+			if power_id == &"":
+				_view = VIEW_KEPT
+				refresh()
+			else:
+				start_give(power_id, true)
 		PowerOffer.KEEP:
 			keep()
 		PowerOffer.MERGE:
@@ -234,11 +412,22 @@ func _on_action(action: StringName, button: Button, power_id: StringName) -> voi
 				replace(power_id)
 
 
+## First press on a villager card arms it, the second gives the power.
+func _on_villager_pressed(card: Button, villager_index: int) -> void:
+	if _armed == card:
+		give(villager_index)
+		return
+	_arm(card, "")
+	var data: VillagerData = _villager(village.villagers[villager_index].villager_id)
+	_note.text = "Press again to give %s to %s. It is theirs forever." % [_name(_giving), data.title() if data != null else "them"]
+
+
 func _arm(button: Button, question: String) -> void:
-	if _armed != null:
+	if _armed != null and _armed.has_meta(&"text"):
 		_armed.text = _armed.get_meta(&"text")
 	_armed = button
-	button.text = question
+	if not question.is_empty():
+		button.text = question
 
 
 func _add_action(text: String, action: StringName, node_name: String, power_id: StringName = &"") -> Button:
@@ -258,7 +447,7 @@ func _focus_first() -> void:
 		return
 	for row: HBoxContainer in [_cards, _actions]:
 		for child: Node in row.get_children():
-			if child is Button and not child.is_queued_for_deletion():
+			if child is Button and not child.is_queued_for_deletion() and not (child as Button).disabled:
 				(child as Button).grab_focus()
 				return
 
@@ -308,6 +497,15 @@ func _level_note(power: PowerData, level: int) -> String:
 	if level == PowerRules.UPGRADE_LEVELS[1]:
 		return "Level 5: %s" % power.level5_text
 	return "Level %d: +%d%% power damage." % [level, roundi(balance.power_damage_per_level * 100.0)]
+
+
+func _giving_level() -> int:
+	var kept: KeptPower = GiftSystem.find(hero, _giving) if _giving_kept else null
+	return kept.level if kept != null else 1
+
+
+func _villager(villager_id: StringName) -> VillagerData:
+	return ContentDB.get_item(&"villagers", villager_id) as VillagerData
 
 
 func _power(power_id: StringName) -> PowerData:

@@ -90,7 +90,7 @@ You are the only hero of Emberwick, a small village at the edge of a drained lan
    - **Merge:** if you already keep the same power, merging raises it +1 level (max 5).
 4. **Gift ceremony** (5 to 8 seconds, skippable after first time): the power flows from hero to villager, the villager's sprite, workplace and shop change on screen, and the villager says a unique line.
 
-**Until the village exists (M3 build):** the orbs stand in the boss room; the hero walks to one and takes it with Interact (the other fades). After the results screen the keep screen offers Keep, Merge, or (every slot full) let a kept power go, and Leave it behind. Letting go and leaving need a second press. A power let go is lost for now; in M4 it goes to the gift flow. The offer is saved, so quitting before choosing never loses it (the title shows "A power is waiting"). The two orbs are always different powers; a kept power already at level 5 is only offered when the pool has too few others.
+**Built so far (M4 PR 1):** the orbs stand in the boss room; the hero walks to one and takes it with Interact (the other fades). Results lead back to the village, where the Shrine glows and names the waiting power. At the Shrine: Keep, Merge, **Give to a villager** (a card per villager previews the Novice and Adept services; the Master Technique shows "???" until the Codex; a villager who holds a power is greyed out), or Leave it behind. With every slot full, **Give a kept power away** makes room: the kept power goes to a villager at its level and the new power takes its slot at level 1. Only when every villager already holds a power does "let a kept power go" (lost) come back. Giving, letting go and leaving need a second press. The offer is saved, so quitting before choosing never loses it. The two orbs are always different powers; a kept power already at level 5 is only offered when the pool has too few others. With no offer waiting, the Shrine still gives kept powers away (Section 3.2).
 
 ### 3.2 Rules
 - **Kept slots: 3.** Fixed for the whole game (Season 6 reduces it to 2).
@@ -174,7 +174,7 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 
 ### 5.1 Villagers
 - 8 jobs: **Smith, Farmer, Guard, Healer, Miller, Baker, Hunter, Scholar** (CONTENT.md).
-- Start with Smith, Farmer, Guard. Others arrive through Renown (5.5).
+- Start with Smith, Farmer, Guard. Others arrive through Renown (5.5). Until Renown exists (M5) the village counts as Renown 2, so the Healer lives there from the start.
 - Each villager has a **base service** without any power (so an unpowered village still works) and a workplace building.
 - A gifted power changes the service according to the villager+power combo.
 

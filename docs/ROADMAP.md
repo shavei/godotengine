@@ -91,15 +91,17 @@ Split into small PRs, each playable: (1) powers, abilities (level 1), statuses, 
 ---
 
 ## M4: Village and the Choice
-- [ ] Village scene: tilemap, 6 plots, Shrine, gate, notice board.
-- [ ] Villagers [P]: Smith, Farmer, Guard, Healer with base services.
-- [ ] `ComboData` for the 16 prototype combos (Novice and Adept services; Techniques stubbed).
+Split into small PRs, each playable: (1) villagers, combos, the village scene and the Give flow, so the loop Village > Run > Results > Shrine > Village works and saves, (2) services that change runs (`ModifierStack`: Farmer flasks, Healer revive tokens, Smith shop, Guard raid stub) and the Shrine's leveling and attribute points, (3) gift ceremony and the forced first gift tutorial.
+
+- [x] Village scene: tilemap, 6 plots, Shrine, gate, notice board. (PR 1: placeholder ground and houses until M7 tilesets; the notice board has no raids to show until M6.)
+- [x] Villagers [P]: Smith, Farmer, Guard, Healer with base services. (PR 1: data, houses, talking. Services change runs in PR 2. The Healer lives there from the start until Renown lands in M5.)
+- [x] `ComboData` for the 16 prototype combos (Novice and Adept services; Techniques stubbed). (Technique name and text only; `TechniqueData` in M5.)
 - [ ] `ModifierStack` gathering services into hero and run stats (unit tested).
-- [ ] Choice screen: Keep / Give / Merge, villager preview cards, slot-full flow.
-- [ ] `GiftSystem.give` with TP carry-over (unit tested).
-- [ ] Gift ceremony (simple version: particles, villager palette swap, line of dialogue).
+- [x] Choice screen: Keep / Give / Merge, villager preview cards, slot-full flow. (PR 1: Give with a second press, full slots give a kept power away to make room, and the Shrine gives kept powers away at any time.)
+- [x] `GiftSystem.give` with TP carry-over (unit tested).
+- [ ] Gift ceremony (simple version: particles, villager palette swap, line of dialogue). (PR 1 already shows the villager's line on the Choice screen, a glow in the power's color and a trimmed roof.)
 - [ ] Smith shop (weapon tiers, infusions), Farmer flasks, Healer revive tokens, Guard (raid stub).
-- [ ] Save/load of `ProfileState` with round-trip tests.
+- [x] Save/load of `ProfileState` with round-trip tests. (PR 1: the village joins the profile; old saves get the starting villagers.)
 - [ ] Forced first gift tutorial (GDD Section 16).
 
 **Done when:** the full loop Village > Run > Results > Choice > Village works and persists across restarts.

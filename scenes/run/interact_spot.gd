@@ -1,8 +1,9 @@
 class_name InteractSpot
 extends Area2D
-## Something in a run room the hero stands on and takes with Interact: a Rest room
-## comfort, a treasure chest, a Merchant's ware, an Event choice or a power orb. The
-## room decides what happens. A disabled spot (the hero cannot pay) reports `refused`.
+## Something the hero stands on and takes with Interact: a Rest room comfort, a treasure
+## chest, a Merchant's ware, an Event choice, a power orb, or in the village the Shrine,
+## the gate and each villager. The scene decides what happens. A disabled spot (the hero
+## cannot pay) reports `refused`.
 
 signal chosen(spot: InteractSpot, hero: Hero)
 signal refused(spot: InteractSpot, hero: Hero)
@@ -19,6 +20,9 @@ var color: Color = Color.WHITE
 var payload: Variant = null
 ## A PowerIcon shape drawn in the middle (power orbs), or &"" for none.
 var icon_shape: StringName = &""
+## False: draw nothing but the caption, and only while the hero stands here (a villager
+## draws its own body).
+var show_ring: bool = true
 var enabled: bool = true:
 	set(value):
 		enabled = value
@@ -71,12 +75,24 @@ func _unhandled_input(event: InputEvent) -> void:
 func _draw() -> void:
 	var tint: Color = color if enabled else Color(color.darkened(0.4), 0.7)
 	var glow: float = 0.5 + 0.5 * sin(_time * 3.0) if enabled else 0.0
-	draw_circle(Vector2.ZERO, RADIUS, Color(tint, 0.18 + 0.12 * glow))
-	draw_arc(Vector2.ZERO, RADIUS, 0.0, TAU, 32, tint, 2.0)
-	if icon_shape != &"":
-		PowerIcon.draw(self, icon_shape, Vector2(0, -2.0 * glow), RADIUS * 1.1, tint)
+	if not show_ring and _hero == null:
+		return
+	if show_ring:
+		_draw_ring(tint, glow)
 	var font: Font = ThemeDB.fallback_font
 	var text: String = caption + ("\n" + InputBindings.hint(&"interact") if _hero != null else "")
 	var at: Vector2 = Vector2(-TEXT_WIDTH * 0.5, RADIUS + 12.0)
 	draw_multiline_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_CENTER, TEXT_WIDTH, 8, -1, 3, Color(0.05, 0.03, 0.05))
 	draw_multiline_string(font, at, text, HORIZONTAL_ALIGNMENT_CENTER, TEXT_WIDTH, 8, -1, tint)
+
+
+## True while a hero stands on the spot.
+func is_occupied() -> bool:
+	return _hero != null
+
+
+func _draw_ring(tint: Color, glow: float) -> void:
+	draw_circle(Vector2.ZERO, RADIUS, Color(tint, 0.18 + 0.12 * glow))
+	draw_arc(Vector2.ZERO, RADIUS, 0.0, TAU, 32, tint, 2.0)
+	if icon_shape != &"":
+		PowerIcon.draw(self, icon_shape, Vector2(0, -2.0 * glow), RADIUS * 1.1, tint)

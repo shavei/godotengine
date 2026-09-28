@@ -60,15 +60,6 @@ horizontal_alignment = 1
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 
-[node name="ClaimButton" type="Button" parent="Center"]
-unique_name_in_owner = true
-visible = false
-custom_minimum_size = Vector2(140, 0)
-layout_mode = 2
-size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 10
-text = "A power is waiting"
-
 [node name="ContinueButton" type="Button" parent="Center"]
 unique_name_in_owner = true
 visible = false
@@ -78,13 +69,13 @@ size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 10
 text = "Continue run"
 
-[node name="RunButton" type="Button" parent="Center"]
+[node name="VillageButton" type="Button" parent="Center"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 10
-text = "Start a run"
+text = "Go to the village"
 
 [node name="PlayButton" type="Button" parent="Center"]
 unique_name_in_owner = true

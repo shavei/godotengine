@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="VillagerData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/villager_data.gd" id="1_villager"]
+[ext_resource type="Script" path="res://scripts/resources/service_data.gd" id="2_service"]
+
+[sub_resource type="Resource" id="Resource_base"]
+script = ExtResource("2_service")
+description = "Sells weapons (Iron to Mythic tiers)."
+
+[resource]
+script = ExtResource("1_villager")
+id = &"smith"
+display_name = "Brann"
+job_name = "Smith"
+workplace = "Forge"
+base_service = SubResource("Resource_base")
+color = Color(0.66, 0.38, 0.28, 1)
+arrives_at_renown = 1
+home_plot = 0
+greeting = "Every blade in Emberwick passed through my hands."
