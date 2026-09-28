@@ -2,8 +2,13 @@ extends State
 ## One step of the weapon combo: wind-up, active (hitbox on), recovery.
 ## A press during the swing queues the next step; a dodge or a power can cancel the recovery.
 ## The move input steers the hero during the whole swing (Balance attack_move_scale).
+## The hero keeps turning toward the aim during the swing; only the strike itself (hitbox
+## and slash) stays where it was aimed, and the weapon follows the aim again once it fades.
 ## Steering keeps the hero's momentum (no snap on the first frame); the lunge is added on top.
 ## A press during the finisher is not used up: it stays buffered and starts the next combo.
+
+## Seconds the slash stays visible after the hitbox turns off.
+const SLASH_LINGER: float = 0.08
 
 var _attack: AttackData
 var _step: int = 0
@@ -39,6 +44,7 @@ func exit() -> void:
 func physics_update(delta: float) -> void:
 	var hero: Hero = actor
 	_time += delta
+	hero.update_facing()
 	var is_last: bool = _step >= hero.weapon.combo.size() - 1
 	if not is_last and hero.consume(&"attack"):
 		_queued = true
@@ -53,11 +59,13 @@ func physics_update(delta: float) -> void:
 			_hit_started = true
 			hero.hitbox.activate(_attack)
 			var big: bool = _step == hero.weapon.combo.size() - 1
-			hero.swing.play(_attack.reach + _attack.radius * 0.4, 6.0 if big else 4.0, _attack.active + 0.08)
+			hero.swing.play(_attack.reach + _attack.radius * 0.4, 6.0 if big else 4.0, _attack.active + SLASH_LINGER)
 		hero.velocity = _move_velocity + _dir * _attack.lunge_speed * 0.5
 	else:
 		hero.hitbox.deactivate()
 		hero.velocity = _move_velocity
+		if _time >= hit_end + SLASH_LINGER:
+			hero.weapon_pivot.rotation = hero.facing.angle()
 		# Dodge or a power cancels recovery.
 		if hero.try_dodge() or hero.try_cast():
 			_end_combo_early()
