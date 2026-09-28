@@ -1,12 +1,14 @@
 extends Node2D
 ## Tuning room: a safe place to tune combat feel with a controller.
 ## Start (or Esc) opens the tuning menu, which pauses the game. The menu can spawn a
-## round of Mossy Hollow enemies or one of its bosses, save the results, or go back to
-## the title.
+## round of Mossy Hollow enemies or one of its bosses, turn powers on and off (up to the
+## 3 kept slots, like a real hero), save the results, or go back to the title.
 
 const TITLE_SCENE: String = "res://scenes/main/title.tscn"
 const RESPAWN_DELAY: float = 1.5
 const REGION: String = "res://data/regions/region_mossy_hollow.tres"
+## Powers the menu can try, in menu order.
+const TRY_POWERS: Array[StringName] = [&"fire", &"frost", &"stone", &"growth"]
 
 @onready var hero: Hero = $Actors/Hero
 @onready var hud: Hud = $Hud
@@ -17,12 +19,15 @@ const REGION: String = "res://data/regions/region_mossy_hollow.tres"
 
 ## The scene's own encounter (the test waves); the boss actions swap in the region's.
 var _test_waves: EncounterData
+## A stand-in hero for trying powers; slot rules come from GiftSystem.
+var _trial: HeroState = HeroState.new()
 
 
 func _ready() -> void:
 	hud.bind_hero(hero)
-	$Overlay/Help.text = "Tuning menu %s    Attack %s    Dodge %s    Flask %s    Aim right stick" % [
-		InputBindings.hint(&"pause"), InputBindings.hint(&"attack"), InputBindings.hint(&"dodge"), InputBindings.hint(&"flask")]
+	$Overlay/Help.text = "Tuning menu %s    Attack %s    Dodge %s    Powers %s, %s, %s" % [
+		InputBindings.hint(&"pause"), InputBindings.hint(&"attack"), InputBindings.hint(&"dodge"),
+		InputBindings.hint(&"power_1"), InputBindings.hint(&"power_2"), InputBindings.hint(&"power_3")]
 	var bounds: Rect2 = room.get_rect()
 	camera.limit_left = int(bounds.position.x)
 	camera.limit_top = int(bounds.position.y)
@@ -46,9 +51,24 @@ func open_menu() -> void:
 		["Spawn enemies", spawn_enemies],
 		["Fight Mother Toad", fight_boss.bind(false)],
 		["Fight Warden of Roots", fight_boss.bind(true)],
-		["Back to title", _go_to_title],
 	]
+	for power_id: StringName in TRY_POWERS:
+		var power: PowerData = ContentDB.get_item(&"powers", power_id) as PowerData
+		if power != null:
+			var state: String = "on" if GiftSystem.find(_trial, power_id) != null else "off"
+			actions.append(["%s (%s): %s" % [power.display_name, power.ability_name, state], toggle_power.bind(power_id)])
+	actions.append(["Back to title", _go_to_title])
 	TuningPanel.open(actions)
+
+
+## Puts a power in the next free slot, or takes it out if it is already there.
+func toggle_power(power_id: StringName) -> void:
+	if GiftSystem.find(_trial, power_id) != null:
+		GiftSystem.release(_trial, power_id)
+	elif GiftSystem.keep(_trial, power_id, hero.balance) == null:
+		TuningPanel.status_text = "All %d slots are full. Turn a power off first." % GiftSystem.slot_count(hero.balance)
+	hero.equip_powers(_trial.kept_powers)
+	open_menu()
 
 
 ## Starts the Mossy Hollow test waves, unless enemies are already out.

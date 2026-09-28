@@ -89,6 +89,38 @@ extends Resource
 @export var mastery_curve_exponent: float = 1.4
 @export var mastery_cap: int = 10
 
+@export_group("Powers")
+## Kept power slots (docs/GDD.md Section 3.2).
+@export var kept_power_slots: int = 3
+@export var power_level_cap: int = 5
+## Each power level above 1 adds this much power damage (0.2 = +20%).
+@export var power_damage_per_level: float = 0.2
+## Short wind-up before a power goes off (s), and the move speed multiplier meanwhile.
+@export var power_cast_time: float = 0.12
+@export var power_cast_move_scale: float = 0.5
+
+@export_group("Status effects")
+## Burn: damage per stack each tick, ticks every burn_interval seconds (docs/GDD.md Section 7.3).
+@export var burn_damage: int = 3
+@export var burn_interval: float = 1.0
+@export var burn_duration: float = 4.0
+@export var burn_max_stacks: int = 3
+## Chill: slows move and attack speed by this share; this many stacks freeze.
+@export var chill_slow: float = 0.3
+@export var chill_duration: float = 3.0
+@export var chill_freeze_stacks: int = 3
+@export var freeze_duration: float = 1.5
+@export var root_duration: float = 2.0
+## Stagger bar size; a full bar stuns for stagger_stun seconds.
+@export var stagger_bar: float = 60.0
+@export var boss_stagger_bar: float = 250.0
+@export var stagger_stun: float = 1.5
+## Bosses: status durations are multiplied by this; they cannot be Frozen or Rooted, so a
+## freeze or a root fills their stagger bar by these amounts instead.
+@export var boss_status_duration_scale: float = 0.5
+@export var boss_freeze_stagger: float = 40.0
+@export var boss_root_stagger: float = 30.0
+
 @export_group("Run end")
 ## Share of coins and materials a hero keeps when they fall (docs/GDD.md Section 6.4).
 @export var death_keep_fraction: float = 0.5

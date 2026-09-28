@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scenes/actors/training_dummy/training_dummy.gd" id="1_dummy"]
 [ext_resource type="Script" path="res://scripts/components/placeholder_shape.gd" id="2_shape"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scripts/components/hitbox_component.gd" id="5_hitbox"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="6_health"]
 [ext_resource type="Script" path="res://scripts/components/telegraph_ring.gd" id="7_telegraph"]
+[ext_resource type="Script" path="res://scripts/components/status_component.gd" id="8_status"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(12, 10)
@@ -43,11 +44,12 @@ shape = 1
 size = Vector2(12, 22)
 color = Color(0.72, 0.56, 0.36, 1)
 
-[node name="Hurtbox" type="Area2D" parent="." node_paths=PackedStringArray("health")]
+[node name="Hurtbox" type="Area2D" parent="." node_paths=PackedStringArray("health", "status")]
 collision_layer = 64
 collision_mask = 0
 script = ExtResource("4_hurtbox")
 health = NodePath("../Health")
+status = NodePath("../Status")
 
 [node name="Shape" type="CollisionShape2D" parent="Hurtbox"]
 shape = SubResource("CircleShape2D_hurt")
@@ -63,3 +65,7 @@ shape = SubResource("CircleShape2D_hit")
 [node name="Health" type="Node" parent="."]
 script = ExtResource("6_health")
 max_hp = 200
+
+[node name="Status" type="Node" parent="." node_paths=PackedStringArray("health")]
+script = ExtResource("8_status")
+health = NodePath("../Health")

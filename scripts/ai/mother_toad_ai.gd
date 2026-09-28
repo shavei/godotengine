@@ -134,6 +134,20 @@ func is_airborne() -> bool:
 	return phase == Phase.AIRBORNE
 
 
+## A stun can't pull her out of the air; it waits until she lands.
+func can_be_held() -> bool:
+	return phase != Phase.AIRBORNE
+
+
+## Stunned: drop the move, stand up straight, and start over after the usual pause.
+func interrupt() -> void:
+	super.interrupt()
+	enemy.visual.scale = Vector2.ONE
+	move = &""
+	cooldown = boss.attack_cooldown
+	_set_phase(Phase.IDLE)
+
+
 func _set_phase(next: Phase) -> void:
 	phase = next
 	_time = 0.0

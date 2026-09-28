@@ -16,6 +16,11 @@ func tick(_delta: float) -> void:
 	pass
 
 
-## A hit staggered the enemy: cancel whatever it was doing.
+## False while the enemy must not be stopped by a freeze or stun (a toad mid-leap).
+func can_be_held() -> bool:
+	return true
+
+
+## A hit, a freeze or a stun stopped the enemy: cancel whatever it was doing.
 func interrupt() -> void:
 	enemy.cancel_attack()

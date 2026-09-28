@@ -93,18 +93,21 @@ Rule: autoloads never reference scene nodes directly. Scenes subscribe to `Event
 
 ### 4.1 Content resources (static, authored)
 ```gdscript
-class_name PowerData extends Resource
+class_name PowerData extends Resource   # built in M3 PR 1
 @export var id: StringName            # &"fire"
-@export var display_name: String
+@export var display_name: String      # "Fire"
+@export var ability_name: String      # "Ember Bolt"
+@export var description: String
 @export var color: Color
-@export var icon: Texture2D
-@export var ability_scene: PackedScene
+@export var icon_shape: StringName    # placeholder icon drawn by PowerIcon until M7
+@export var ability_script: Script    # an Ability subclass (scripts/abilities/)
 @export var base_cooldown: float
-@export var base_damage: float
-@export var status: StringName        # &"burn"
+@export var attack: AttackData        # the hit: damage at level 1, radius, push, status, stagger
 @export var level3_text: String
 @export var level5_text: String
-@export var raid_spell_scene: PackedScene
+# Projectile group: projectile_count, spread_degrees, projectile_speed, projectile_range, projectile_size
+# Area group: area_radius, area_duration, area_interval, shield_amount, heal_per_second
+# Later: raid_spell_scene (M6)
 
 class_name VillagerData extends Resource
 @export var id: StringName            # &"smith"
@@ -203,7 +206,7 @@ var technique_taught: bool
 
 `RunState` (`scripts/state/run_state.gd`) holds only the current run: region, seed, floor, `FloorMap`, current room (-1 = the floor's corridor), path, rooms cleared, time played, and per-hero carry-over (hp, flasks, the run loot `Wallet`, XP earned, damage dealt per weapon; later trinkets, fusion meter) keyed by `player_id`. It is saved at room boundaries for crash safety but is not part of long-term progression.
 
-**Built so far (M2 PR 4):** `ProfileState` holds `run_count`, `runs_won` and `heroes` (player_id -> `HeroState`). `HeroState` holds level, XP toward the next level, unspent attribute points, attributes, weapon mastery XP and `bank` (a `Wallet` of banked coins, materials, Crystal and shards; the `coins`, `materials` and `shards` fields above are this one Wallet). Both have `to_dict()` / `from_dict()`. `RunState.to_dict()` / `from_dict(data, region)` is the mid-run save; the floor map is rebuilt from the seed, so only ids are stored.
+**Built so far (M2 PR 4):** `ProfileState` holds `run_count`, `runs_won` and `heroes` (player_id -> `HeroState`). `HeroState` holds level, XP toward the next level, unspent attribute points, attributes, weapon mastery XP and `bank` (a `Wallet` of banked coins, materials, Crystal and shards; the `coins`, `materials` and `shards` fields above are this one Wallet). Both have `to_dict()` / `from_dict()`. `RunState.to_dict()` / `from_dict(data, region)` is the mid-run save; the floor map is rebuilt from the seed, so only ids are stored. M3 PR 1: `HeroState.kept_powers` (`KeptPower`: power_id, level, last_leveled_run) in slot order, saved with the hero.
 
 ---
 
@@ -211,7 +214,10 @@ var technique_taught: bool
 
 | System | API sketch | Notes |
 |---|---|---|
-| `GiftSystem` | `can_keep(hero, power) -> bool`, `keep(hero, power)`, `give(village, hero, power, villager_idx)`, `merge(hero, power)` | Enforces slot cap, one power per villager, TP carry-over `level - 1`. Emits via returned result, callers emit `EventBus` signals. |
+| `GiftSystem` | `can_keep(hero, power) -> bool`, `keep(hero, power)`, `give(village, hero, power, villager_idx)`, `merge(hero, power)` | Enforces slot cap, one power per villager, TP carry-over `level - 1`. Emits via returned result, callers emit `EventBus` signals. Built (M3 PR 1): `slot_count`, `find`, `can_keep`/`keep`, `can_merge`/`merge` (+1 level up to the cap), `release` (frees a slot); `give` joins in M4. |
+| `PowerRules` | `level_multiplier`, `attack_at_level(power, level)`, `focus_damage_bonus`, `cooldown(power, focus)` | Power damage and cooldown math (GDD 4.1, 4.3). |
+| `PowerLoadout` | `set_powers`, `slot(i)`, `is_ready`, `start_cooldown`, `cooldown_fraction`, `tick` | A hero's power slots in a fight: power, level, cooldown. The hero ticks it, the HUD draws it. |
+| `StatusEffects` | `apply(id, count)`, `add_stagger`, `tick -> burn damage`, `move_scale`, `action_scale`, `is_held` | Burn, Chill/Freeze, Root, Stagger/Stun and the boss rules (GDD 7.3). `StatusComponent` wraps one per actor. |
 | `TrainingSystem` | `tick(village, balance) -> Array[RankUpEvent]` | +1 TP each powered villager, applies threshold reductions, returns rank-ups and techniques to teach. |
 | `FusionSystem` | `get_active_fusion(hero) -> FusionData` | Two highest-level distinct kept powers, both >= 3, tie-break by `last_leveled_run`. |
 | `NeighborSystem` | `get_active_bonuses(village) -> Array[ServiceData]` | Plot adjacency graph from the village map resource; Adept+ checks; Resonance. |
@@ -250,7 +256,7 @@ main.tscn (boot: ContentDB load, SaveManager load)
 
 ## 7. Actors and combat
 
-- **Hero** (`hero/hero.tscn`): `CharacterBody2D` + components. States (child nodes of `StateMachine`, one script each in `hero/states/`): Move (includes idle), Attack (one node, re-entered per combo step), Dodge, Drink, Hurt, Dead; Cast arrives with powers in M3. The hero calls `state_machine.physics_update()` from its own `_physics_process` so input buffering, stamina and i-frames update first. Input comes from an `InputSource` child (see 9); if none is present the hero adds a `LocalInputSource`. Tests drive the hero with the scripted base `InputSource`.
+- **Hero** (`hero/hero.tscn`): `CharacterBody2D` + components. States (child nodes of `StateMachine`, one script each in `hero/states/`): Move (includes idle), Attack (one node, re-entered per combo step), Dodge, Drink, Cast (a power's short wind-up), Hurt, Dead. The hero calls `state_machine.physics_update()` from its own `_physics_process` so input buffering, stamina and i-frames update first. Input comes from an `InputSource` child (see 9); if none is present the hero adds a `LocalInputSource`. Tests drive the hero with the scripted base `InputSource`.
 - **Attacks** are `AttackData` resources (damage, wind-up, active, recovery, reach, radius, lunge, knockback, hit-stop, shake). Weapons hold a combo of them; enemies will use the same resource. `CombatStats` carries the numbers `CombatMath` needs for each side.
 - **Damage flow:** an active `HitboxComponent` checks overlapping `HurtboxComponent`s each physics frame and hits each once per `activate()`. The hurtbox runs `CombatMath`, applies the result to its `HealthComponent` and emits `hurt(result, hitbox)`; the hitbox emits `hit_landed`. The victim spawns its own damage number and flash.
 - **Enemies:** one scene (`actors/enemy/enemy.tscn`, `Enemy`) + components + an `EnemyAI` script (`scripts/ai/`: `SwarmAI`, `ChargerAI`, `RangedAI`, `SummonerAI`) chosen by `EnemyData.ai_script`. The AI is a `RefCounted` phase machine that calls the enemy's verbs (move, face, telegraph, attack, shoot, drop a hazard, summon). Telegraphs use `TelegraphRing` (a ring for areas, a lane for charges and shots, a ring on the floor for a lobbed cloud) and emit `telegraph_started`. Splitting (`split_into`, `split_count`) and summoning both spawn children and emit `spawned`, so the `WaveDirector` counts them. `ChargerAI` chains `charge_chain` charges (Elder Boar). `WaveDirector.enemy_died` lets the room drop each enemy's loot before a clear.
@@ -271,7 +277,8 @@ main.tscn (boot: ContentDB load, SaveManager load)
 | 8 | Pickups |
 | 9 | Buildings (raids) |
 
-- **Abilities:** each power ability is a scene with an `Ability` script (`cast(caster, aim_dir, level)`), reading numbers from `PowerData` and the hero's `Stats`.
+- **Abilities:** `PowerData.ability_script` names an `Ability` (`scripts/abilities/`, a `RefCounted` with `cast(hero, power, level, aim)`), made fresh per cast by `Hero.cast_power`. It reads every number from the `PowerData`, scales damage with `PowerRules`, and spawns effect scenes from `scenes/abilities/`: `PowerProjectile` (bolts, shards), `PowerBurst` (a ring hit), `BramblePatch` (a lingering area), `StoneShield` (a shield on the hero using `HealthComponent.shield`). Power hitboxes use `Hero.power_stats` (crit and Focus, no weapon tier), so power damage never counts toward weapon mastery. Kept powers reach the hero through `Hero.apply_progress` -> `equip_powers(kept_powers)` -> `PowerLoadout`; the HUD shows one `PowerSlotView` per slot.
+- **Statuses:** a hit's `AttackData` can carry `status`, `status_stacks` and `stagger`; `HurtboxComponent.receive_hit` passes them to its linked `StatusComponent` (`receive_status` does it without damage, for areas). `StatusComponent` ticks a pure `StatusEffects`, deals burn damage to its `HealthComponent` and emits `burned` and `staggered`. `Enemy` scales its AI clock by `action_scale()` (chill), its own movement by `move_scale()` (chill, root), and holds the AI while frozen or stunned (`EnemyAI.interrupt()` once, `can_be_held()` lets Mother Toad finish a leap). `StatusBadge` draws pips and the stagger bar.
 - **Game feel:** hit-stop (`HitStop.request()`, an `Engine.time_scale` pulse; the newest request restores speed, and `HitStop.enabled` is the accessibility toggle), hit flash shader (`assets/shaders/hit_flash.gdshader`, material local to scene), screen shake (`GameCamera` listens to `EventBus.camera_shake_requested(trauma)`), damage numbers (`DamageNumber.spawn()`).
 
 ---

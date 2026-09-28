@@ -4,11 +4,11 @@ Persistent project memory. Read at the start of every session, update at the end
 
 ## Current status
 
-- **Phase:** M0 done. M1 (combat core) code done (3 PRs merged); only the owner's gamepad playtest item is still open. M2 (run structure): all 4 PRs of code done. PR 1 to 3 merged; PR 4 (XP, results screen, death rules, mid-run save) open for the owner to play.
+- **Phase:** M0 done. M1 (combat core) code done; only the owner's gamepad playtest item is still open. M2 (run structure): all 4 PRs merged (the owner's run-length and death-rule answers are still welcome). M3 (kept powers) started at the owner's request: PR 1 of 3 (powers, abilities at level 1, statuses, HUD slots, keep/merge rules) open for the owner to play in the Tuning room.
 - **Also:** Controls remapping menu (title > Controls) added at the owner's request, ahead of the M7 Settings menu.
-- **Next step:** Owner plays a full run start to finish (the results screen shows the time: target 12 to 15 min), tries Save and quit plus Continue run, and answers the M2 PR 4 questions in the session log. That closes M2; then M3 (kept powers). The M1 gamepad tuning can happen any time in the Tuning room (title screen).
-- **Also:** Combat feel pass (owner: movement and fighting "clunky", aim and hero "not predictable"): quick turns, swings keep momentum, stable facing, no swallowed finisher press. Open for the owner to play.
-- **Last updated:** 2026-09-28 (combat feel pass)
+- **Next step:** Owner tries the four powers in the Tuning room (menu: turn powers on, spawn enemies or a boss) and answers the M3 PR 1 questions in the session log. Then M3 PR 2 (level 3/5 upgrades, shard costs, leveling on results, Focus) and PR 3 (boss orbs and the keep screen).
+- **Also:** Combat feel pass (merged): quick turns, swings keep momentum, stable facing, no swallowed finisher press. Owner feedback on it still welcome.
+- **Last updated:** 2026-09-28 (M3 PR 1)
 
 ## The game in brief
 
@@ -102,6 +102,14 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-28 | Weapon mastery starts at 1; mastery n (2 to 10) needs `150 * n^1.4` total | GDD said "1 to 10" and "n requires 150 * n^1.4", which disagree at n = 1. Tallied on results; unlocks wait for M8 weapons. |
 | 2026-09-28 | Mid-run save: every room load writes `run_slot_0.json`; Esc is now Save and quit (replaces "Esc leaves to the title, no confirm") and the title shows Continue run | Room boundaries per ARCHITECTURE 10. A quit restarts the room, but HP and flasks are saved no higher than at the quit and the room's loot drops again, so quitting is never a free heal or loot farm. |
 | 2026-09-28 | Feel pass: turning against your motion brakes at acceleration + friction; swings ease from run speed instead of snapping; the move stick sets facing only past half tilt; a released right stick keeps its aim 0.25 s; a cursor within 6 px keeps the last aim; an attack press during the finisher stays buffered | Owner: movement and fighting "clunky", aiming "not the best", hero "not predictable". Causes found in code: a full reversal took 0.2 s (slidey), a swing cut run speed to 66 px/s on its first frame, letting go of the stick could turn the hero so the next swing went the wrong way, a flick-aim was forgotten the instant the stick was released, and a press during the finisher was used up and did nothing. Tests added for each; all fail on the old code. |
+| 2026-09-28 | M3 split into 3 PRs: (1) powers, level 1 abilities, statuses, HUD slots, keep/merge rules; (2) level 3/5 upgrades, shard costs and leveling, Focus; (3) boss orbs and the keep screen | Same one-feature-per-PR workflow; the owner can judge how each power feels before upgrades and costs are tuned around them. Until PR 3 powers are tried in the Tuning room only. |
+| 2026-09-28 | Abilities are `Ability` scripts picked by `PowerData.ability_script` (like `EnemyData.ai_script`), not ability scenes; effects are small reusable scenes (`PowerProjectile`, `PowerBurst`, `BramblePatch`) | A new power that fits an existing ability type is a `.tres` only. Per-cast state lives in the spawned effect, so an Ability needs none. ARCHITECTURE updated. |
+| 2026-09-28 | Status numbers the GDD left open: Chill lasts 3 s, stagger bar 60 (bosses 250), Stone's burst adds 60 (stuns a regular enemy in one burst), a freeze on a boss adds 40 stagger, a root adds 30 at most once per (halved) root duration | GDD 7.3 gave effects but not these. A Bramble patch pulses 4 times a second, so without the once-per-window rule it would stun a boss in 2 s. |
+| 2026-09-28 | Freeze and stun interrupt the enemy's current move (bosses too); a stun waits while Mother Toad is airborne | Pausing an AI mid-telegraph would let an attack land with no warning after the stun. Interrupting is the existing hit-stun path and always fair. |
+| 2026-09-28 | Bulwark bursts when the shield breaks or after 4 s; a fully soaked hit does not stagger the hero | CONTENT says "absorbs 30 for 4 s, then bursts" without saying what a break does. Bursting on break rewards blocking a big hit. A hit that does no HP damage should not interrupt the hero. |
+| 2026-09-28 | Bramble grows at the hero's feet (not at the aim point) | It heals the hero only while inside, so it is a zone to fight in. Casting it where the hero stands keeps it simple with a stick. |
+| 2026-09-28 | Casting has a 0.12 s wind-up at half speed; dodge or a hit cancels it without spending the cooldown; a power can cancel swing recovery | A small commitment makes casts readable without feeling sluggish; losing a cooldown to a hit would feel unfair. |
+| 2026-09-28 | Power hits use their own `CombatStats` (crit and Focus, no weapon tier or Might) | GDD 4.1 splits Might (weapon) from Focus (powers). Separate hitboxes also keep power damage out of weapon mastery. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 
 ## Rejected ideas (do not re-propose without new info)
@@ -131,6 +139,9 @@ Runner-up ideas still considered original (keep for later or a future project): 
 
 ## Open questions
 
+- Frost up close: all 3 shards hitting one enemy is an instant freeze. Intended as a risk-for-reward, but watch whether it makes Frost the obvious keep (pillar 1).
+- Power reward pool: Mossy Hollow's pool in CONTENT is Growth, Wind, Stone, but Fire and Frost only appear in later regions, which do not exist in the prototype. Proposal for M3 PR 3: the prototype Mossy Hollow offers all 4 [P] powers.
+
 - Save and quit restarts the current room with full enemies. It cannot heal or duplicate loot, but a hero about to lose a fight can quit and retry it at the same HP. Acceptable for now (Hades works the same); revisit if playtests abuse it.
 
 - Power Shard economy: with bosses a full run gives 10 to 11 shards (GDD 15.6) vs the 15.3 target of 4 to 6. Lower the per-source numbers or raise the target when shard costs exist (M3).
@@ -143,6 +154,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-28 (M3 PR 1):** Powers and statuses. `PowerData` + 4 powers (Fire Ember Bolt, Frost Shard, Stone Bulwark, Growth Bramble), `Ability` base and 4 ability scripts, effect scenes (`PowerProjectile`, `PowerBurst`, `BramblePatch`, `StoneShield`), hero Cast state, `PowerLoadout`, `PowerRules`, `GiftSystem` (keep, merge, release), `KeptPower` saved in `HeroState`, `StatusEffects` (burn, chill/freeze, root, stagger/stun, boss rules) wired through hurtboxes to enemies and dummies, `StatusBadge` pips and stagger bar, HUD power slots with cooldowns, Tuning room menu toggles powers (3 slot cap). `HealthComponent.shield`. 309 tests pass, no warnings, boot clean, checked with xvfb screenshots (slots cooling down, vine patch, frost fan, chill pip). Questions for the owner: does each power feel different in a fight? Is the 0.12 s cast wind-up noticeable or does it feel instant? Is the Frost point-blank freeze too strong? Does Bulwark's burst feel like a reward for blocking? Is Bramble useful, or too small (40 px)? Can you read the status pips and the stagger bar? Are the power slots (bottom left) clear, with the key under each?
 
 - **2026-09-28 (combat feel pass):** Owner feedback: speed fine, but movement and fighting feel clunky, aim is not the best, the hero is not predictable. Fixes: `Hero.steer` (reversals brake at acceleration + friction, 0.1 s instead of 0.2 s), attack keeps momentum and adds the lunge on top, facing from the move stick only past half tilt (`Hero.FACE_MIN_TILT`), right stick aim held 0.25 s after release and a mouse dead zone of 6 px (`LocalInputSource`), finisher no longer swallows an attack press. Checked that Godot keeps quick taps during hit-stop (probe), so input polling was left alone. 269 tests pass, no warnings, boot clean. Questions for the owner: do turns and swings feel smoother? Does the hero now attack where you expect with the controller? Does a flick of the right stick then attack go where you flicked? Anything still feel off (describe the moment: what you pressed, what you expected, what happened)?
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://scenes/actors/hero/hero.gd" id="1_hero"]
 [ext_resource type="Script" path="res://scripts/components/placeholder_shape.gd" id="2_shape"]
@@ -16,6 +16,7 @@
 [ext_resource type="Script" path="res://scenes/actors/hero/states/hero_drink.gd" id="14_drink"]
 [ext_resource type="Script" path="res://scenes/actors/hero/states/hero_hurt.gd" id="15_hurt"]
 [ext_resource type="Script" path="res://scenes/actors/hero/states/hero_dead.gd" id="16_dead"]
+[ext_resource type="Script" path="res://scenes/actors/hero/states/hero_cast.gd" id="17_cast"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 6.0
@@ -70,11 +71,12 @@ script = ExtResource("5_hitbox")
 position = Vector2(18, 0)
 shape = SubResource("CircleShape2D_hit")
 
-[node name="Hurtbox" type="Area2D" parent="." node_paths=PackedStringArray("health")]
+[node name="Hurtbox" type="Area2D" parent="." node_paths=PackedStringArray("health", "status")]
 collision_layer = 32
 collision_mask = 0
 script = ExtResource("6_hurtbox")
 health = NodePath("../Health")
+status = NodePath("../Status")
 
 [node name="Shape" type="CollisionShape2D" parent="Hurtbox"]
 shape = SubResource("CircleShape2D_hurt")
@@ -85,8 +87,9 @@ script = ExtResource("7_health")
 [node name="Knockback" type="Node" parent="."]
 script = ExtResource("8_knockback")
 
-[node name="Status" type="Node" parent="."]
+[node name="Status" type="Node" parent="." node_paths=PackedStringArray("health")]
 script = ExtResource("9_status")
+health = NodePath("../Health")
 
 [node name="StateMachine" type="Node" parent="." node_paths=PackedStringArray("initial_state")]
 script = ExtResource("10_sm")
@@ -103,6 +106,9 @@ script = ExtResource("13_dodge")
 
 [node name="Drink" type="Node" parent="StateMachine"]
 script = ExtResource("14_drink")
+
+[node name="Cast" type="Node" parent="StateMachine"]
+script = ExtResource("17_cast")
 
 [node name="Hurt" type="Node" parent="StateMachine"]
 script = ExtResource("15_hurt")

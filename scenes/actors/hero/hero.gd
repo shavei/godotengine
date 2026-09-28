@@ -2,10 +2,15 @@ class_name Hero
 extends CharacterBody2D
 ## The player character (docs/ARCHITECTURE.md Section 7).
 ## Reads commands from an InputSource child, so tests, AI or a network peer can drive it.
-## States live under StateMachine: Move, Attack, Dodge, Drink, Hurt, Dead.
+## States live under StateMachine: Move, Attack, Dodge, Drink, Cast, Hurt, Dead.
+## Kept powers sit in `powers` (a PowerLoadout), one per Power button.
 
 ## Dodge was pressed without enough stamina (the HUD flashes the bar).
 signal dodge_denied
+## A Power button was pressed for an empty slot or one still cooling down.
+signal power_denied(slot: int)
+## A power went off (its cooldown has started).
+signal power_cast(slot: int)
 
 const GROUP: StringName = &"heroes"
 ## Physics layer number of enemy bodies (docs/ARCHITECTURE.md Section 7).
@@ -15,6 +20,10 @@ const HURT_RUMBLE: Vector2 = Vector2(0.6, 0.18)
 ## With no aim input the hero faces where it moves, but only when the move stick is
 ## pushed at least this far. Letting go of a stick (and its spring-back) never turns it.
 const FACE_MIN_TILT: float = 0.5
+## Input actions of the power slots, in slot order.
+const POWER_ACTIONS: Array[StringName] = [&"power_1", &"power_2", &"power_3"]
+const BUFFERED_ACTIONS: Array[StringName] = [&"attack", &"dodge", &"flask", &"power_1", &"power_2", &"power_3"]
+const BLOCK_COLOR: Color = Color(0.8, 0.72, 0.6)
 
 @export var player_id: int = 0
 ## Left empty, these load from ContentDB (weapon_sword, balance_default).
@@ -25,6 +34,11 @@ var input: InputSource
 var stamina: StaminaPool
 var flasks: FlaskPouch
 var stats: CombatStats = CombatStats.new()
+## Offense numbers for power hits: base crit, Focus bonus, never the weapon tier.
+var power_stats: CombatStats = CombatStats.new()
+var powers: PowerLoadout
+## Focus points (power damage is in power_stats; cooldowns read this).
+var focus: int = 0
 ## Direction the hero faces and aims (unit vector).
 var facing: Vector2 = Vector2.RIGHT
 ## Index of the next swing in weapon.combo.
@@ -58,6 +72,7 @@ func _ready() -> void:
 	input = _find_input_source()
 	stamina = StaminaPool.new(balance.hero_max_stamina, balance.stamina_regen, balance.stamina_regen_delay)
 	flasks = FlaskPouch.new(balance.flask_charges, balance.flask_heal_fraction)
+	powers = PowerLoadout.new(GiftSystem.slot_count(balance))
 	health.set_max_hp(balance.hero_max_hp, true)
 	stats.weapon_tier = weapon.tier_multiplier if weapon != null else 1.0
 	apply_balance()
@@ -74,6 +89,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_read_input(delta)
 	stamina.tick(delta)
+	powers.tick(delta)
 	status.tick(delta)
 	knockback.tick(delta)
 	if combo_timer > 0.0:
@@ -132,14 +148,48 @@ func apply_balance() -> void:
 	stamina.regen_delay = balance.stamina_regen_delay
 	stats.crit_chance = balance.hero_crit_chance
 	stats.crit_multiplier = balance.hero_crit_multiplier
+	power_stats.crit_chance = balance.hero_crit_chance
+	power_stats.crit_multiplier = balance.hero_crit_multiplier
 
 
-## Applies the hero's long-term progress (level, Vigor, Might) and refills HP and stamina.
+## Applies the hero's long-term progress (level, Vigor, Might, Focus, kept powers) and
+## refills HP and stamina.
 func apply_progress(progress: HeroState) -> void:
 	health.set_max_hp(ProgressionSystem.max_hp(progress, balance), true)
 	stamina.maximum = ProgressionSystem.max_stamina(progress, balance)
 	stamina.current = stamina.maximum
 	stats.damage_bonus = ProgressionSystem.weapon_damage_bonus(progress, balance)
+	focus = progress.attribute(HeroState.FOCUS)
+	power_stats.damage_bonus = PowerRules.focus_damage_bonus(focus, balance)
+	equip_powers(progress.kept_powers)
+
+
+## Fills the power slots from kept powers (PowerData from ContentDB), in slot order.
+func equip_powers(kept: Array[KeptPower]) -> void:
+	var list: Array[PowerData] = []
+	var levels: Array[int] = []
+	for entry: KeptPower in kept:
+		var power: PowerData = ContentDB.get_item(&"powers", entry.power_id) as PowerData
+		if power == null:
+			push_warning("Hero: unknown kept power %s" % entry.power_id)
+			continue
+		list.append(power)
+		levels.append(entry.level)
+	powers.set_powers(list, levels)
+
+
+## Casts the power in `slot` toward the facing and starts its cooldown.
+func cast_power(slot: int) -> void:
+	var entry: PowerLoadout.Slot = powers.slot(slot)
+	if entry == null or entry.power.ability_script == null:
+		return
+	var ability: Ability = entry.power.ability_script.new() as Ability
+	if ability == null:
+		push_error("Power %s: ability_script is not an Ability" % entry.power.id)
+		return
+	ability.cast(self, entry.power, entry.level, facing)
+	powers.start_cooldown(slot, PowerRules.cooldown(entry.power, focus, balance))
+	power_cast.emit(slot)
 
 
 func rumble(strength: float, duration: float) -> void:
@@ -149,6 +199,8 @@ func rumble(strength: float, duration: float) -> void:
 ## Starts a dodge, attack or flask if one is buffered and allowed. Returns true if it did.
 func try_start_action() -> bool:
 	if try_dodge():
+		return true
+	if try_cast():
 		return true
 	if weapon != null and not weapon.combo.is_empty() and consume(&"attack"):
 		state_machine.transition_to(&"Attack")
@@ -168,6 +220,18 @@ func try_dodge() -> bool:
 	consume(&"dodge")
 	state_machine.transition_to(&"Dodge")
 	return true
+
+
+## Starts a buffered power cast if that slot is ready. Returns true if it did.
+func try_cast() -> bool:
+	for slot: int in POWER_ACTIONS.size():
+		if not consume(POWER_ACTIONS[slot]):
+			continue
+		if powers.is_ready(slot):
+			state_machine.transition_to(&"Cast", {"slot": slot})
+			return true
+		power_denied.emit(slot)
+	return false
 
 
 # --- Movement --------------------------------------------------------------
@@ -211,6 +275,11 @@ func _on_hurt(result: DamageResult, source: HitboxComponent) -> void:
 	var away: Vector2 = (global_position - source.global_position).normalized()
 	knockback.apply(away * source.attack.knockback)
 	grant_iframes(balance.hurt_iframes)
+	if health.last_absorbed >= result.amount:
+		# The shield took all of it: no stagger, just a thud.
+		DamageNumber.spawn(get_parent(), global_position, "Blocked", BLOCK_COLOR)
+		EventBus.camera_shake_requested.emit(0.2)
+		return
 	HitFlash.play(visual, 0.15)
 	DamageNumber.spawn(get_parent(), global_position, str(result.amount), DamageNumber.COLOR_HERO, result.is_crit)
 	EventBus.camera_shake_requested.emit(0.4)
@@ -242,7 +311,7 @@ func _read_input(delta: float) -> void:
 		_buffers[action] -= delta
 		if _buffers[action] <= 0.0:
 			_buffers.erase(action)
-	for action: StringName in [&"attack", &"dodge", &"flask"]:
+	for action: StringName in BUFFERED_ACTIONS:
 		if input.just_pressed(action):
 			_buffers[action] = balance.input_buffer
 			if action == &"dodge" and not stamina.can_spend(balance.dodge_stamina_cost):

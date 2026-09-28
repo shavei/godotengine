@@ -2,7 +2,9 @@ class_name Enemy
 extends CharacterBody2D
 ## Every enemy (docs/ARCHITECTURE.md Section 7): this scene plus an EnemyData resource.
 ## The data's ai_script decides behavior; this script gives the AI its verbs (move,
-## face, telegraph, attack, shoot) and handles getting hit, splitting and dying.
+## face, telegraph, attack, shoot) and handles getting hit, statuses, splitting and dying.
+## Statuses (StatusComponent): chill slows the AI's clock and movement, root stops
+## movement, and freeze or a full stagger bar holds the AI (interrupting its move).
 
 signal telegraph_started
 ## A new enemy appeared from this one (a Sproutling's seedlings). Emitted before died.
@@ -26,6 +28,7 @@ const DEATH_TIME: float = 0.35
 const SPLIT_SPREAD: float = 10.0
 ## Distance summoned minions appear at.
 const SUMMON_SPREAD: float = 22.0
+const BURN_COLOR: Color = Color(1.0, 0.6, 0.25)
 
 @export var data: EnemyData
 
@@ -36,6 +39,8 @@ var facing: Vector2 = Vector2.DOWN
 
 var _stun_time: float = 0.0
 var _dead: bool = false
+## True while frozen or stunned by a status (the AI was interrupted once on entry).
+var _held: bool = false
 ## Warnings besides the body telegraph: a spot on the floor (a Spore Witch's cloud, a
 ## toad's landing) or a fan of lanes (a Warden's volley).
 var _markers: Array[TelegraphRing] = []
@@ -84,6 +89,10 @@ func _ready() -> void:
 	hurtbox.stats = stats
 	hurtbox.hurt.connect(_on_hurt)
 	health.died.connect(_on_died)
+	status.setup(ContentDB.get_item(&"balance", &"default") as BalanceData, data is BossData)
+	status.burned.connect(_on_burned)
+	status.staggered.connect(_on_staggered)
+	StatusBadge.attach(self, status, visual, data.body_radius + 3.0)
 	if data.ai_script != null:
 		ai = data.ai_script.new() as EnemyAI
 	if ai == null:
@@ -97,13 +106,24 @@ func _physics_process(delta: float) -> void:
 		return
 	status.tick(delta)
 	knockback.tick(delta)
+	if _dead:
+		return
 	# Set before the AI runs so an AI can override it (a stunned boar wobbles).
 	visual.rotation = facing.angle()
+	if status.is_held() and ai.can_be_held():
+		if not _held:
+			_held = true
+			ai.interrupt()
+		velocity = Vector2.ZERO
+		apply_movement()
+		return
+	_held = false
 	if _stun_time > 0.0:
 		_stun_time -= delta
 		move_toward_direction(Vector2.ZERO, delta)
 	else:
-		ai.tick(delta)
+		# Chill slows everything the AI does.
+		ai.tick(delta * status.action_scale())
 
 
 func is_dead() -> bool:
@@ -142,10 +162,10 @@ func move_toward_direction(direction: Vector2, delta: float) -> void:
 	apply_movement()
 
 
-## Moves with the current velocity plus any knockback.
+## Moves with the current velocity (slowed by chill, stopped by root) plus any knockback.
 func apply_movement() -> void:
 	var own: Vector2 = velocity
-	velocity = own + knockback.velocity
+	velocity = own * status.move_scale() + knockback.velocity
 	move_and_slide()
 	velocity = own
 
@@ -329,8 +349,18 @@ func _on_hurt(result: DamageResult, source: HitboxComponent) -> void:
 		ai.interrupt()
 
 
+func _on_burned(amount: int) -> void:
+	DamageNumber.spawn(get_parent(), global_position, str(amount), BURN_COLOR)
+
+
+func _on_staggered() -> void:
+	EventBus.camera_shake_requested.emit(0.25)
+	DamageNumber.spawn(get_parent(), global_position + Vector2(0, -8), "Staggered!", DamageNumber.COLOR_CRIT)
+
+
 func _on_died() -> void:
 	_dead = true
+	status.clear()
 	cancel_attack()
 	remove_from_group(GROUP)
 	remove_from_group(AimAssist.GROUP)

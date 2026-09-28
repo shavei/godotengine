@@ -25,12 +25,17 @@ var _since_hit: float = 0.0
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/Shape
 @onready var visual: PlaceholderShape = $Visual
 @onready var telegraph: TelegraphRing = $Telegraph
+@onready var status: StatusComponent = $Status
 
 
 func _ready() -> void:
 	add_to_group(AimAssist.GROUP)
 	hurtbox.hurt.connect(_on_hurt)
 	health.died.connect(_on_died)
+	status.burned.connect(func(amount: int) -> void:
+		_since_hit = 0.0
+		DamageNumber.spawn(get_parent(), global_position, str(amount), Enemy.BURN_COLOR))
+	StatusBadge.attach(self, status, visual, 14.0)
 	if counterattack != null:
 		var shape: CircleShape2D = CircleShape2D.new()
 		shape.radius = counterattack.radius
@@ -39,6 +44,7 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	status.tick(delta)
 	_since_hit += delta
 	if _since_hit >= reset_delay and health.hp < health.max_hp:
 		health.reset()
@@ -93,5 +99,6 @@ func _on_hurt(result: DamageResult, source: HitboxComponent) -> void:
 
 
 func _on_died() -> void:
+	status.clear()
 	# Dummies pop back up shortly after (the reset in _physics_process does it).
 	_since_hit = reset_delay - REVIVE_DELAY

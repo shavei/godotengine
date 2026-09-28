@@ -42,11 +42,12 @@ script = ExtResource("5_hitbox")
 
 [node name="Shape" type="CollisionShape2D" parent="AttackPivot/Hitbox"]
 
-[node name="Hurtbox" type="Area2D" parent="." node_paths=PackedStringArray("health")]
+[node name="Hurtbox" type="Area2D" parent="." node_paths=PackedStringArray("health", "status")]
 collision_layer = 64
 collision_mask = 0
 script = ExtResource("6_hurtbox")
 health = NodePath("../Health")
+status = NodePath("../Status")
 
 [node name="Shape" type="CollisionShape2D" parent="Hurtbox"]
 
@@ -56,5 +57,6 @@ script = ExtResource("7_health")
 [node name="Knockback" type="Node" parent="."]
 script = ExtResource("8_knockback")
 
-[node name="Status" type="Node" parent="."]
+[node name="Status" type="Node" parent="." node_paths=PackedStringArray("health")]
 script = ExtResource("9_status")
+health = NodePath("../Health")
