@@ -100,6 +100,8 @@ extends Resource
 @export var power_cast_move_scale: float = 0.5
 ## Power Shards to raise a kept power to level 2, 3, 4 and 5 (docs/GDD.md Section 4.3).
 @export var power_level_costs: Array[int] = [3, 5, 8, 12]
+## Power orbs the region boss drops; the hero takes one (docs/GDD.md Section 3.1).
+@export var boss_orb_count: int = 2
 
 @export_group("Status effects")
 ## Burn: damage per stack each tick, ticks every burn_interval seconds (docs/GDD.md Section 7.3).

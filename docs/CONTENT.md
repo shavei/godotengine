@@ -197,7 +197,7 @@ One table, two uses. The **player Fusion** is the ultimate when both powers are 
 Enemy archetypes: Chaser, Charger, Ranged, Ambusher, Tank, Summoner, Swarm, Bomber.
 
 ### 6.1 Mossy Hollow (region 1) [P]
-- Palette: greens and browns, fireflies. Materials: Wood. Powers: Growth, Wind, Stone.
+- Palette: greens and browns, fireflies. Materials: Wood. Powers: Growth, Wind, Stone. (Prototype: the pool is Fire, Frost, Growth and Stone, the 4 [P] powers, until Wind and the other regions exist.)
 
 | Enemy | Archetype | Twist |
 |---|---|---|

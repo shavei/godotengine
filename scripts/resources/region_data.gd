@@ -1,8 +1,8 @@
 class_name RegionData
 extends Resource
 ## A run region (docs/GDD.md Section 6, docs/CONTENT.md Section 6): floor shape, how
-## often each room type appears, the encounters its fight rooms draw from, and its
-## loot and events.
+## often each room type appears, the encounters its fight rooms draw from, its loot
+## and events, and the powers its boss offers.
 
 @export var id: StringName
 @export var display_name: String
@@ -39,3 +39,7 @@ extends Resource
 @export var treasure_drops: DropTable
 ## Event rooms draw one of these.
 @export var events: Array[EventData] = []
+
+@export_group("Rewards")
+## Powers the region boss offers as orbs after a clear (docs/GDD.md Section 3.1).
+@export var power_pool: Array[PowerData] = []

@@ -2,7 +2,8 @@ class_name RunEnd
 extends RefCounted
 ## Closes a run (docs/GDD.md Section 2 and 6.4). Every hero in it keeps all XP and
 ## weapon mastery; loot is banked in full after a clear, or `death_keep_fraction` of it
-## after a fall. Returns one RunSummary per player_id for the results screen.
+## after a fall. A clear also rolls each hero's power orbs (PowerOffer). Returns one
+## RunSummary per player_id for the results screen.
 
 
 static func finish(run: RunState, profile: ProfileState, success: bool, balance: BalanceData) -> Dictionary[int, RunSummary]:
@@ -44,6 +45,10 @@ static func finish(run: RunState, profile: ProfileState, success: bool, balance:
 		for currency: StringName in run_wallet.amounts:
 			summary.found[currency] = run_wallet.amount(currency)
 		summary.kept = EconomySystem.bank_run_loot(run_wallet, hero.bank, keep_fraction)
+		# Power orbs: only a clear earns them.
+		if success:
+			hero.power_offer = PowerOffer.roll(run.region.power_pool, hero, balance, PowerOffer.rng_for(run.run_seed))
+			summary.power_offer = hero.power_offer.duplicate()
 		summaries[player_id] = summary
 	profile.run_count += 1
 	if success:

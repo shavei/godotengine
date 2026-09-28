@@ -152,6 +152,65 @@ func test_floor_exit_leads_down_and_the_boss_ends_the_run() -> void:
 	assert_true(SaveManager.has_save(GameState.slot), "the profile is saved")
 
 
+func _boss_room_cleared() -> RunRoom:
+	var run: RunState = RunState.start(region, 5)
+	for i: int in 2:
+		_walk_to_exit(run)
+		run.mark_cleared()
+		run.advance_floor()
+	_walk_to_exit(run)
+	var room: RunRoom = await _spawn_room(run)
+	room.director.room_cleared.emit()
+	await wait_physics_frames(1)
+	return room
+
+
+func _orbs(room: RunRoom) -> Array[InteractSpot]:
+	var result: Array[InteractSpot] = []
+	for spot: InteractSpot in room._offers():
+		if spot.kind == RunRoom.POWER_ORB and spot.enabled:
+			result.append(spot)
+	return result
+
+
+func test_the_region_boss_leaves_two_power_orbs() -> void:
+	var room: RunRoom = await _boss_room_cleared()
+	var state: HeroState = GameState.hero_state(0)
+	var orbs: Array[InteractSpot] = _orbs(room)
+	assert_eq(orbs.size(), 2)
+	assert_eq(orbs.map(func(orb: InteractSpot) -> StringName: return orb.payload), state.power_offer)
+	var power: PowerData = ContentDB.get_item(&"powers", orbs[0].payload)
+	assert_eq(orbs[0].color, power.color)
+	assert_eq(orbs[0].icon_shape, power.icon_shape)
+	assert_eq(orbs[0].caption, "%s\n%s\nNew power" % [power.display_name, power.ability_name])
+	var saved: ProfileState = ProfileState.from_dict(SaveManager.load_data(GameState.slot))
+	assert_eq(saved.hero(0).power_offer, state.power_offer, "the offer is saved with the clear")
+
+
+func test_taking_an_orb_fades_the_other() -> void:
+	var room: RunRoom = await _boss_room_cleared()
+	var state: HeroState = GameState.hero_state(0)
+	var orbs: Array[InteractSpot] = _orbs(room)
+	var taken: StringName = orbs[1].payload
+	orbs[1].chosen.emit(orbs[1], room.hero)
+	await wait_seconds(0.7)
+	assert_eq(state.power_offer, [taken] as Array[StringName])
+	assert_eq(room._offers().size(), 0, "both orbs are gone")
+	assert_true(room.banner.text.contains("The run is complete"))
+	var saved: ProfileState = ProfileState.from_dict(SaveManager.load_data(GameState.slot))
+	assert_eq(saved.hero(0).power_offer, [taken] as Array[StringName])
+
+
+func test_mini_bosses_leave_no_orbs() -> void:
+	var run: RunState = RunState.start(region, 5)
+	_walk_to_exit(run)
+	var room: RunRoom = await _spawn_room(run)
+	room.director.room_cleared.emit()
+	await wait_physics_frames(1)
+	assert_eq(_orbs(room).size(), 0)
+	assert_true(GameState.hero_state(0).power_offer.is_empty())
+
+
 func test_open_door_reports_the_hero_walking_in() -> void:
 	var world: Node2D = Node2D.new()
 	add_child_autofree(world)

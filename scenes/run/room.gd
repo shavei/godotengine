@@ -9,7 +9,8 @@ extends Node2D
 ## rooms a short choice. Playing this scene on its own (F6) starts a test run.
 ##
 ## Every room saves the run as it is entered (the mid-run save). Clearing a fight gives
-## XP; the run's end banks loot and XP (RunEnd) and opens the results screen.
+## XP; the run's end banks loot and XP (RunEnd) and opens the results screen. After a
+## clear the region boss leaves power orbs; the hero takes one first (PowerOffer).
 
 const ROOM_SCENE: String = "res://scenes/run/room.tscn"
 const TITLE_SCENE: String = "res://scenes/main/title.tscn"
@@ -26,6 +27,7 @@ const WARE_FLASK: StringName = &"ware_flask"
 const WARE_HEAL: StringName = &"ware_heal"
 const WARE_SHARD: StringName = &"ware_shard"
 const EVENT_CHOICE: StringName = &"event_choice"
+const POWER_ORB: StringName = &"power_orb"
 ## Where a room's offers stand (chest, wares, choices), and the gap between them.
 const OFFER_Y: float = 240.0
 const OFFER_GAP: float = 160.0
@@ -128,7 +130,11 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _summary != null:
-		if (event.is_action_pressed(&"pause") or event.is_action_pressed(&"interact")) and _summary.success:
+		# Esc always moves on (the Choice screen asks for an orb not taken yet); Interact
+		# waits until an orb is taken, since it is also how orbs are taken.
+		var moving_on: bool = event.is_action_pressed(&"pause") \
+				or (event.is_action_pressed(&"interact") and not PowerOffer.is_picking(_hero_state()))
+		if moving_on and _summary.success:
 			_show_results()
 	elif event.is_action_pressed(&"pause"):
 		save_and_quit()
@@ -464,8 +470,55 @@ func _on_hero_hit_landed(_hurtbox: HurtboxComponent, result: DamageResult) -> vo
 
 func _finish_run() -> void:
 	_end_run(true)
-	sign_label.text = ""
+	var orbs: Array[InteractSpot] = []
+	for power_id: StringName in _hero_state().power_offer:
+		var power: PowerData = ContentDB.get_item(&"powers", power_id) as PowerData
+		if power == null:
+			continue
+		var orb: InteractSpot = InteractSpot.create(POWER_ORB, _orb_caption(power), power.color, power_id)
+		orb.icon_shape = power.icon_shape
+		orb.chosen.connect(_on_orb_taken)
+		orbs.append(orb)
+	if orbs.size() > 1:
+		_place_offers(orbs)
+		sign_label.text = "Sparks break free. Take one; the %s." % ("other fades" if orbs.size() == 2 else "others fade")
+		_show_banner("%s cleared!" % run.region.display_name, BANNER_TIME)
+	else:
+		sign_label.text = ""
+		_show_run_complete()
+
+
+func _show_run_complete() -> void:
 	_show_banner("%s cleared!\nThe run is complete.\n%s to see how it went" % [run.region.display_name, InputBindings.hint(&"interact")], 0.0)
+
+
+## "Fire: Ember Bolt", then whether the hero keeps it already.
+func _orb_caption(power: PowerData) -> String:
+	var kept: KeptPower = GiftSystem.find(_hero_state(), power.id)
+	var note: String = "New power" if kept == null else "You keep it: level %d" % kept.level
+	return "%s\n%s\n%s" % [power.display_name, power.ability_name, note]
+
+
+func _on_orb_taken(spot: InteractSpot, who: Hero) -> void:
+	var state: HeroState = GameState.hero_state(who.player_id)
+	if not PowerOffer.take(state, spot.payload):
+		return
+	GameState.save_profile()
+	for orb: InteractSpot in _offers():
+		if orb.kind != POWER_ORB:
+			continue
+		if orb == spot:
+			orb.queue_free()
+		else:
+			var fade: Tween = orb.create_tween()
+			fade.tween_property(orb, "modulate:a", 0.0, 0.5)
+			fade.tween_callback(orb.queue_free)
+			orb.enabled = false
+	var power: PowerData = ContentDB.get_item(&"powers", spot.payload) as PowerData
+	var power_name: String = power.display_name if power != null else String(spot.payload).capitalize()
+	DamageNumber.spawn(actors, spot.global_position, power_name, spot.color)
+	sign_label.text = "%s is yours. Keep it or let it go after the results." % power_name
+	_show_run_complete()
 
 
 func _on_hero_died(_player_id: int) -> void:
@@ -533,6 +586,10 @@ func _start_test_run() -> RunState:
 	var test_run: RunState = RunState.start(region, randi())
 	GameState.run = test_run
 	return test_run
+
+
+func _hero_state() -> HeroState:
+	return GameState.hero_state(hero.player_id)
 
 
 func _restore_hero() -> void:

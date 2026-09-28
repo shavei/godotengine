@@ -18,6 +18,7 @@ const SCENES: Array[String] = [
 	"res://scenes/ui/run_map.tscn",
 	"res://scenes/ui/controls_menu.tscn",
 	"res://scenes/ui/results.tscn",
+	"res://scenes/ui/choice_screen.tscn",
 	"res://scenes/abilities/power_projectile.tscn",
 	"res://scenes/abilities/power_burst.tscn",
 	"res://scenes/abilities/power_patch.tscn",
