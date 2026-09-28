@@ -5,17 +5,17 @@ Report back by ID ("A1 ok, C2 bug: ..."), screenshots welcome.
 
 ## A. Title screen
 
-- [ ] **A1.** Title shows Level, XP, coins banked, Runs; buttons: Go to the village, New game, Controls (plus 3 test rooms).
-- [ ] **A2.** **Playtest log** toggles on/off and stays that way after restarting the game.
-- [ ] **A3.** **Open log folder** opens a folder.
-- [ ] **A4.** **Controls:** rebind one key and one gamepad button, back out, check the village hint bar shows them, then Reset to defaults.
+- [x] **A1.** Title shows Level, XP, coins banked, Runs; buttons: Go to the village, New game, Controls (plus 3 test rooms).
+- [x] **A2.** **Playtest log** toggles on/off and stays that way after restarting the game.
+- [x] **A3.** **Open log folder** opens a folder.
+- [x] **A4.** **Controls:** rebind one key and one gamepad button, back out, check the village hint bar shows them, then Reset to defaults.
 
 ## B. New game and the first gift
 
-- [ ] **B1.** **New game** starts over (Runs 0, Level 1).
-- [ ] **B2.** Village has Tilly (Farmer), Maren (Guard), Brann (Smith) and empty plots. Osk (Healer) is not there yet.
-- [ ] **B3.** Gate caption and villager hints are readable near the bottom; nothing hides under the sign.
-- [ ] **B4.** Talk to each villager: their line shows, then goes back to "Welcome home" when you walk away.
+- [x] **B1.** **New game** starts over (Runs 0, Level 1).
+- [x] **B2.** Village has Tilly (Farmer), Maren (Guard), Brann (Smith) and empty plots. Osk (Healer) is not there yet.
+- [x] **B3.** Gate caption and villager hints are readable near the bottom; nothing hides under the sign.
+- [x] **B4.** Talk to each villager: their line shows, then goes back to "Welcome home" when you walk away.
 - [ ] **B5.** Brann's forge opens and closes.
 - [ ] **B6.** Notice board shows Renown and who moves in next.
 - [ ] **B7.** Tab / Map opens the character sheet; it closes.
