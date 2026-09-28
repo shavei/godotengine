@@ -4,11 +4,11 @@ Persistent project memory. Read at the start of every session, update at the end
 
 ## Current status
 
-- **Phase:** M0 done. M1 (combat core) code done; only the owner's gamepad playtest item is still open. M2 (run structure): all 4 PRs merged (the owner's run-length and death-rule answers are still welcome). M3 (kept powers) started at the owner's request: PR 1 of 3 (powers, abilities at level 1, statuses, HUD slots, keep/merge rules) open for the owner to play in the Tuning room.
+- **Phase:** M0 done. M1 (combat core) code done; only the owner's gamepad playtest item is still open. M2 (run structure): all 4 PRs merged (the owner's run-length and death-rule answers are still welcome). M3 (kept powers): PR 1 (powers, level 1 abilities, statuses, HUD slots, keep/merge rules) merged; PR 2 (level 3 and 5 upgrades, shard costs, leveling on the results screen, Focus unlocked, shard drops cut) open for the owner to play in the Tuning room.
 - **Also:** Controls remapping menu (title > Controls) added at the owner's request, ahead of the M7 Settings menu.
-- **Next step:** Owner tries the four powers in the Tuning room (menu: turn powers on, spawn enemies or a boss) and answers the M3 PR 1 questions in the session log. Then M3 PR 2 (level 3/5 upgrades, shard costs, leveling on results, Focus) and PR 3 (boss orbs and the keep screen).
+- **Next step:** Owner tries each power at levels 3 and 5 in the Tuning room (menu: Power level) and answers the M3 PR 2 questions in the session log (the PR 1 questions still welcome). Then M3 PR 3 (boss orbs and the keep screen), which lets real runs earn powers.
 - **Also:** Combat feel pass (merged): quick turns, swings keep momentum, stable facing, no swallowed finisher press. Owner feedback on it still welcome.
-- **Last updated:** 2026-09-28 (M3 PR 1)
+- **Last updated:** 2026-09-28 (M3 PR 2)
 
 ## The game in brief
 
@@ -111,6 +111,12 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-28 | Bramble grows at the hero's feet (not at the aim point) | It heals the hero only while inside, so it is a zone to fight in. Casting it where the hero stands keeps it simple with a stick. |
 | 2026-09-28 | Casting has a 0.12 s wind-up at half speed; dodge or a hit cancels it without spending the cooldown; a power can cancel swing recovery | A small commitment makes casts readable without feeling sluggish; losing a cooldown to a hit would feel unfair. |
 | 2026-09-28 | Power hits use their own `CombatStats` (crit and Focus, no weapon tier or Might) | GDD 4.1 splits Might (weapon) from Focus (powers). Separate hitboxes also keep power damage out of weapon mastery. |
+| 2026-09-28 | Upgrade numbers live in `PowerData` (`level3_*`, `level5_*`: one extra `AttackData` each plus a few sizes and times); the behavior is in the power's Ability script; `BramblePatch` became the generic `PowerPatch` | A new upgrade of an existing kind is data only. Bramble and Fire's burning ground are both "a patch that pulses on enemies inside", so one scene serves both. |
+| 2026-09-28 | Upgrade readings the CONTENT table left open: Fire explodes on an enemy or a wall (not at the end of its range); Frost shatters a frozen enemy once per cast and it stays frozen; Stone reflects arrows and seeds within 20 px; Growth "roots spread" means the patch grows to 1.5 times its size over its life | Exploding in thin air would feel random. Keeping the freeze makes the shatter a pure bonus, so point-blank Frost stays the risk that pays. Arrows and seeds are the only enemy projectiles. A growing patch is visible (pillar 4) and one rule. |
+| 2026-09-28 | Upgrade hits scale with the power's level (+20% a level) | One rule for every power hit; a level 5 upgrade is 1.8 times its table number. |
+| 2026-09-28 | Power Shards are spent on the results screen (one press per level, like attribute points) until the Shrine (M4); Focus unlocked for everyone | The roadmap names "run end" as a place to level. Focus waited for powers, which now exist. |
+| 2026-09-28 | Shard drops cut: elites 1 (was 1 to 2), Mother Toad 1 (was 2), Warden 2 (was 3) | Owner's full run gave 11 shards vs the 4 to 6 target; with costs (28 to max one power) that would max a power in under 3 runs. Now about 6 to 7 per cleared run. Resolves the open question. GDD 4.3, 6.2, 15.6 and 15.8 synced. |
+| 2026-09-28 | Tuning room "Power level" entry sets every trial power 1 to 5 | Real runs cannot earn powers until PR 3, and the owner should feel levels 3 and 5 without farming shards. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 
 ## Rejected ideas (do not re-propose without new info)
@@ -145,7 +151,6 @@ Runner-up ideas still considered original (keep for later or a future project): 
 
 - Save and quit restarts the current room with full enemies. It cannot heal or duplicate loot, but a hero about to lose a fight can quit and retry it at the same HP. Acceptable for now (Hades works the same); revisit if playtests abuse it.
 
-- Power Shard economy: with bosses a full run gives 10 to 11 shards (GDD 15.6) vs the 15.3 target of 4 to 6. Lower the per-source numbers or raise the target when shard costs exist (M3).
 - Final title. Candidates: Pass It On, Hand-Me-Down Hero, Heirloom, The Giving Blade.
 - Art direction specifics (palette, reference games). Proposed: warm cozy village vs saturated dangerous dungeons.
 - Should failed runs still tick villager training? Current answer: yes (training counts runs attempted, not runs won). Revisit after playtest.
@@ -155,6 +160,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-28 (M3 PR 2):** Level 3 and 5 upgrades for all four powers (Fire explodes, then leaves burning ground; Frost pierces, then shatters frozen enemies; Stone throws a ring of spikes, then reflects arrows and seeds; Growth grows bigger and longer, then its roots hurt and spread). `PowerData` level 3/5 fields, `PowerRules` (`scaled_attack`, `has_upgrade`, `level_up_cost`, `total_cost`), `GiftSystem.level_up` (spends banked shards), `EventBus.power_leveled`, `BalanceData.power_level_costs` (3, 5, 8, 12). `BramblePatch` generalized into `PowerPatch`. `ThornArrow.reflect`. Results screen: Focus unlocked, a row of kept powers with a level-up button each (cost shown, next upgrade explained below), focus moves to what you can still spend. Tuning room: Power level entry (1 to 5). Shard drops cut (elite 1, Mother Toad 1, Warden 2). 332 tests pass, no warnings, boot clean, checked with xvfb screenshots (results before and after spending, Fire level 5 blast and burning ground, Bramble level 5). Questions for the owner: does each upgrade feel worth its shards? Is Fire's burning ground or Bramble's spread too strong at level 5? Does the Frost shatter read (freeze first, then the burst)? Can you see arrows bounce off a level 5 Bulwark? Is the results screen still clear with the power row? Do about 6 shards a run feel stingy or right?
 
 - **2026-09-28 (owner playtest data):** Owner shared the Results screen of a full Mossy Hollow clear: 8:41, 21 rooms, +625 XP (level 1 to 3), Sword mastery +455 XP (mastery 2), 283 coins, 54 Wood, 4 Crystal, 11 Power Shards. First real full-run data point. Run is about 4 minutes under the 12 to 15 minute target; shards are above the 4 to 6 target (see Open questions); two levels in the first run may be fast. No changes made; inputs for M3 PR 2 and later pacing tuning.
 

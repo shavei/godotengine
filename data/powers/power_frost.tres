@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="PowerData" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="PowerData" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/power_data.gd" id="1_power"]
 [ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="2_attack"]
@@ -12,6 +12,14 @@ radius = 4.0
 knockback = 30.0
 shake = 0.05
 status = &"chill"
+
+[sub_resource type="Resource" id="Resource_shatter"]
+script = ExtResource("2_attack")
+damage = 15.0
+reach = 0.0
+radius = 30.0
+knockback = 120.0
+shake = 0.2
 
 [resource]
 script = ExtResource("1_power")
@@ -31,3 +39,4 @@ spread_degrees = 30.0
 projectile_speed = 280.0
 projectile_range = 170.0
 projectile_size = Vector2(10, 3)
+level5_attack = SubResource("Resource_shatter")

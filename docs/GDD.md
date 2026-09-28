@@ -119,7 +119,7 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 - XP sources: combat room cleared 15, elite 60, mini-boss 100, region boss 200, raid won 150. Failed runs keep all XP earned.
 - Each level: **+4 max HP** and **1 attribute point**.
 - XP earned in a run is added to your level at the run's end (results screen). A cleared room gives its XP at once (a small "+15 XP" pops up).
-- Attribute points are spent on the results screen for now (one press per point); the Shrine and character sheet take over later. Focus stays locked until kept powers exist (M3), so no point is wasted on it.
+- Attribute points are spent on the results screen for now (one press per point); the Shrine and character sheet take over later. Focus is open since M3 (kept powers exist).
 
 | Attribute | Per point | Cap |
 |---|---|---|
@@ -141,7 +141,8 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 - Each kept power is an active ability on its own button (Power 1, 2, 3).
 - **Power level 1 to 5.** Raised with **Power Shards**: level 2 costs 3, level 3 costs 5, level 4 costs 8, level 5 costs 12 (28 total).
 - Each level: +20% power damage. Level 3 and level 5 add an upgrade effect (CONTENT.md).
-- Shards come from elites (1 to 2), mini-bosses (2), region bosses (3), treasure rooms (sometimes), and some village services.
+- Shards come from elites (1), mini-bosses (1), region bosses (2), treasure rooms (sometimes), events, the Merchant, and some village services. (Lowered in M3 from 1 to 2 / 2 / 3 once shards had costs: see Section 15.6.)
+- Banked shards are spent on the results screen for now (one press per level); the Shrine takes over in M4.
 - Levels persist between runs while the power is kept.
 - Base cooldowns 4 to 8 seconds (per power). No mana.
 
@@ -244,7 +245,7 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 | Room | Frequency | Content |
 |---|---|---|
 | Combat | 50% | 2 to 3 waves of enemies |
-| Elite | 12% | One elite plus adds; 1 to 2 Power Shards, Crystal |
+| Elite | 12% | One elite plus adds; 1 Power Shard, Crystal |
 | Treasure | 10% | Coins, materials, sometimes a shard |
 | Rest | 8% | Heal 30% or refill 1 flask |
 | Merchant | 7% | Buy flasks, run-only trinkets, shards |
@@ -602,13 +603,13 @@ Live values: `data/regions/region_mossy_hollow.tres` and `data/balance/balance_d
 | Seedling | 50%: 1 | | | |
 | Tusk Boar | 3 to 5 | 40%: 1 to 2 | | |
 | Thorn Archer | 2 to 4 | 40%: 1 | | |
-| Elder Boar, Spore Witch | 15 to 25 | 3 to 5 | 1 | 1 to 2 |
-| Mother Toad | 20 to 30 | 3 to 5 | 50%: 1 | 2 |
-| Warden of Roots | 35 to 50 | 5 to 8 | 1 | 3 |
+| Elder Boar, Spore Witch | 15 to 25 | 3 to 5 | 1 | 1 |
+| Mother Toad | 20 to 30 | 3 to 5 | 50%: 1 | 1 |
+| Warden of Roots | 35 to 50 | 5 to 8 | 1 | 2 |
 | Treasure chest | 20 to 35 | 3 to 6 | 10%: 1 | 25%: 1 |
 
 - Rough run estimate before bosses (about 9 fights, 2 elites, 2 treasure rooms): about 300 to 350 coins, 35 to 40 Wood, 2 Crystal, 3 to 4 shards, less what the Merchant takes.
-- With the bosses (2 Mother Toads and the Warden) a full run comes to about 390 to 460 coins, 46 to 58 Wood, 4 Crystal and 10 to 11 shards. Shards follow the per-source rule in Section 4.3 (mini-boss 2, region boss 3) and so land well above the Section 15.3 target of 4 to 6; coins and Wood run a little high too. Rebalance in M3, when shards have a use (open question in MEMORY.md).
+- With the bosses (2 Mother Toads and the Warden) a full run comes to about 390 to 460 coins, 46 to 58 Wood, 4 Crystal and 6 to 7 shards (was 10 to 11 before the M3 cut to elite 1, mini-boss 1, region boss 2; Section 15.8). Coins and Wood run a little high.
 
 ### 15.8 Powers (M3)
 Live values: `data/powers/power_*.tres` and `data/balance/balance_default.tres` (Powers and Status effects groups).
@@ -626,7 +627,22 @@ Live values: `data/powers/power_*.tres` and `data/balance/balance_default.tres` 
 - Power damage: `base * (1 + 0.2 * (level - 1)) * (1 + Focus bonus) * crit`. Powers use the hero's crit chance but not the weapon tier or Might.
 - Kept slots: 3. Power level cap: 5.
 - Try the powers in the Tuning room (title screen): the menu turns each one on or off, up to the 3 slots.
-- Level 3 and 5 upgrades, shard costs and boss power orbs come in the next M3 PRs.
+- Try the powers in the Tuning room at any level: the menu's "Power level" entry sets every trial power from 1 to 5.
+- Boss power orbs come in the next M3 PR.
+
+| Power | Level 3 upgrade | Level 5 upgrade |
+|---|---|---|
+| Fire | Explodes where it hits an enemy or a wall: 8 damage, 24 px radius, Burn | The explosion leaves burning ground: 24 px radius, 3 s, 1 Burn stack a second to enemies in it |
+| Frost | Shards pierce (each shard hits each enemy once) | A shard that hits a frozen enemy shatters the ice: 15 damage, 30 px radius, once per enemy per cast; the enemy stays frozen |
+| Stone | The burst also throws 8 spikes in a ring: 8 damage each, 220 px/s, 80 px range | While the shield is up, enemy arrows and seeds within 20 px turn back and hit enemies (their own damage, your crit and Focus) |
+| Growth | Patch 1.4 times the size (56 px) and 1.5 times as long (6 s) | Roots deal 3 damage a second to enemies inside, and the patch spreads to 1.5 times its size over its life |
+
+- Upgrade hits scale with the power's level like the main hit (+20% a level), so level 5 numbers are 1.8 times the table.
+- Level 5 includes level 3 (a level 5 Fire bolt explodes and leaves burning ground).
+
+**Power levels (Power Shards).** Level 2 costs 3, level 3 costs 5, level 4 costs 8, level 5 costs 12 (28 in all). Spend banked shards on the results screen (the Shrine in M4). Live values: `power_level_costs` in `balance_default.tres`.
+
+**Shard sources (lowered in M3).** Elites 1, Mother Toad 1, Warden of Roots 2, a treasure chest 25%, the Mossy Shrine event 1, the Merchant 1 for 60 coins. A full cleared run comes to about 5 to 7 shards with the chest, 6 to 8 with the event or the Merchant, near the Section 15.3 target of 4 to 6 (was 10 to 11). One run then buys about one or two levels; a power from level 1 to 5 takes about 4 to 5 runs of shards.
 
 ### 15.7 Progression (M2)
 Live values: `data/balance/balance_default.tres` (Progression and Run end groups).
@@ -637,7 +653,7 @@ Live values: `data/balance/balance_default.tres` (Progression and Run end groups
 | Level cap | 30 |
 | Per level | +4 max HP, 1 attribute point |
 | XP per room cleared | Fight 15, Elite 60, Mother Toad 100, Warden of Roots 200 |
-| Might / Vigor / Focus per point | +3% weapon damage / +10 max HP and +5 stamina / +3% power damage and -1.5% cooldowns (Focus locked until M3) |
+| Might / Vigor / Focus per point | +3% weapon damage / +10 max HP and +5 stamina / +3% power damage and -1.5% cooldowns |
 | Attribute cap | 20 each |
 | Mastery | 1 XP per 10 damage; mastery n needs `round(150 * n^1.4)` total |
 | Kept on a fall | 50% of each run currency, rounded down |

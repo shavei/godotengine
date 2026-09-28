@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="PowerData" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="PowerData" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/power_data.gd" id="1_power"]
 [ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="2_attack"]
@@ -12,6 +12,14 @@ radius = 40.0
 knockback = 160.0
 shake = 0.3
 stagger = 60.0
+
+[sub_resource type="Resource" id="Resource_spike"]
+script = ExtResource("2_attack")
+damage = 8.0
+reach = 0.0
+radius = 4.0
+knockback = 60.0
+shake = 0.05
 
 [resource]
 script = ExtResource("1_power")
@@ -28,3 +36,8 @@ level3_text = "The burst throws spikes in a ring."
 level5_text = "The shield reflects projectiles."
 area_duration = 4.0
 shield_amount = 30
+projectile_speed = 220.0
+projectile_range = 80.0
+projectile_size = Vector2(8, 3)
+level3_attack = SubResource("Resource_spike")
+level3_count = 8

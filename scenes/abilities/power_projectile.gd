@@ -3,10 +3,10 @@ extends Area2D
 ## A power's bolt or shard (Ember Bolt, Frost Shard). Flies straight from the hero, hits
 ## the first enemy it touches, and stops at walls or its range.
 
-## Hit an enemy (later levels explode or pierce from here).
+## Hit an enemy (Fire explodes, Frost shatters from here).
 signal hit(hurtbox: HurtboxComponent, result: DamageResult)
-## Stopped at a wall or its range, at this world position.
-signal landed(at: Vector2)
+## Stopped at this world position: at a wall (`hit_wall`) or the end of its range.
+signal landed(at: Vector2, hit_wall: bool)
 
 const SCENE_PATH: String = "res://scenes/abilities/power_projectile.tscn"
 
@@ -59,11 +59,11 @@ func _physics_process(delta: float) -> void:
 	position += direction * step
 	_traveled += step
 	if _traveled >= power.projectile_range:
-		_finish(global_position)
+		_finish(global_position, false)
 
 
 func _on_body_entered(_body: Node2D) -> void:
-	_finish(global_position - direction * 4.0)
+	_finish(global_position - direction * 4.0, true)
 
 
 func _on_hit_landed(hurtbox: HurtboxComponent, result: DamageResult) -> void:
@@ -75,10 +75,10 @@ func _on_hit_landed(hurtbox: HurtboxComponent, result: DamageResult) -> void:
 		queue_free()
 
 
-func _finish(at: Vector2) -> void:
+func _finish(at: Vector2, hit_wall: bool) -> void:
 	if _done:
 		return
 	_done = true
 	hitbox.deactivate()
-	landed.emit(at)
+	landed.emit(at, hit_wall)
 	queue_free()

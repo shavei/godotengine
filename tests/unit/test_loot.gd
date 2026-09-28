@@ -108,7 +108,7 @@ func test_every_enemy_drops_something_and_elites_drop_shards_and_crystal() -> vo
 		var data: EnemyData = res as EnemyData
 		assert_not_null(data.drops, "%s has drops" % data.id)
 		if data.is_elite and data.drops != null:
-			# docs/GDD.md Section 6.2: elites give 1 to 2 Power Shards and Crystal.
+			# docs/GDD.md Section 6.2: elites give 1 Power Shard (cut from 1 to 2 in M3) and Crystal.
 			var gains: Dictionary[StringName, int] = LootRoller.roll(data.drops, _rng(9))
 			assert_between(gains.get(Wallet.SHARDS, 0), 1, 2, "%s shards" % data.id)
 			assert_gt(gains.get(Wallet.CRYSTAL, 0), 0, "%s crystal" % data.id)

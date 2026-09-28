@@ -1,8 +1,9 @@
 class_name GiftSystem
 extends RefCounted
 ## The Choice rules (docs/GDD.md Section 3): keep a power in one of the 3 slots, or merge
-## it into the same kept power for +1 level. Giving to villagers joins in M4.
-## Callers emit the EventBus signals (power_kept, power_merged).
+## it into the same kept power for +1 level. Kept powers also level up with banked Power
+## Shards (GDD 4.3). Giving to villagers joins in M4.
+## Callers emit the EventBus signals (power_kept, power_merged, power_leveled).
 
 
 static func slot_count(balance: BalanceData) -> int:
@@ -46,6 +47,30 @@ static func merge(hero: HeroState, power_id: StringName, balance: BalanceData, r
 	if not can_merge(hero, power_id, balance):
 		return 0
 	var kept: KeptPower = find(hero, power_id)
+	kept.level += 1
+	kept.last_leveled_run = run_number
+	return kept.level
+
+
+## Shards the next level of a kept power costs; 0 if it is not kept or at the cap.
+static func level_up_cost(hero: HeroState, power_id: StringName, balance: BalanceData) -> int:
+	var kept: KeptPower = find(hero, power_id)
+	return PowerRules.level_up_cost(kept.level, balance) if kept != null else 0
+
+
+## A kept power below the cap whose next level the bank can pay for.
+static func can_level_up(hero: HeroState, power_id: StringName, balance: BalanceData) -> bool:
+	var kept: KeptPower = find(hero, power_id)
+	return kept != null and kept.level < balance.power_level_cap \
+			and hero.bank.can_afford(Wallet.SHARDS, PowerRules.level_up_cost(kept.level, balance))
+
+
+## Spends banked shards for +1 level. Returns the new level, or 0 if it cannot.
+static func level_up(hero: HeroState, power_id: StringName, balance: BalanceData, run_number: int = 0) -> int:
+	if not can_level_up(hero, power_id, balance):
+		return 0
+	var kept: KeptPower = find(hero, power_id)
+	hero.bank.spend(Wallet.SHARDS, PowerRules.level_up_cost(kept.level, balance))
 	kept.level += 1
 	kept.last_leveled_run = run_number
 	return kept.level

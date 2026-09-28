@@ -39,3 +39,24 @@ extends Resource
 @export var shield_amount: int = 0
 ## Growth: HP per second healed while standing in the patch.
 @export var heal_per_second: float = 0.0
+
+@export_group("Level 3")
+## The level 3 upgrade's extra hit (Fire's explosion, Stone's spikes). Scaled by level.
+@export var level3_attack: AttackData
+## Stone: spikes thrown in the ring.
+@export var level3_count: int = 0
+## Growth: the patch's radius and duration are multiplied by these.
+@export var level3_area_scale: float = 1.0
+@export var level3_duration_scale: float = 1.0
+
+@export_group("Level 5")
+## The level 5 upgrade's extra hit (Fire's burning ground, Frost's shatter, Growth's
+## root damage). Scaled by level.
+@export var level5_attack: AttackData
+## Fire: the burning ground's radius (px) and how long it burns (s).
+@export var level5_radius: float = 0.0
+@export var level5_duration: float = 0.0
+## Seconds between the level 5 attack's pulses (burning ground, root damage).
+@export var level5_interval: float = 1.0
+## Growth: the patch spreads to this many times its radius over its life.
+@export var level5_spread: float = 1.0

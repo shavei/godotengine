@@ -79,7 +79,7 @@ extends Resource
 ## Vigor: max HP and max stamina per point.
 @export var vigor_max_hp: int = 10
 @export var vigor_max_stamina: float = 5.0
-## Focus: power damage and cooldown per point (powers arrive in M3).
+## Focus: power damage and cooldown per point.
 @export var focus_power_damage: float = 0.03
 @export var focus_cooldown: float = 0.015
 ## Weapon mastery: 1 mastery XP per this much damage dealt; level n (2 to cap) needs
@@ -98,6 +98,8 @@ extends Resource
 ## Short wind-up before a power goes off (s), and the move speed multiplier meanwhile.
 @export var power_cast_time: float = 0.12
 @export var power_cast_move_scale: float = 0.5
+## Power Shards to raise a kept power to level 2, 3, 4 and 5 (docs/GDD.md Section 4.3).
+@export var power_level_costs: Array[int] = [3, 5, 8, 12]
 
 @export_group("Status effects")
 ## Burn: damage per stack each tick, ticks every burn_interval seconds (docs/GDD.md Section 7.3).
