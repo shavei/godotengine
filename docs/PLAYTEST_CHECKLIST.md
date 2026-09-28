@@ -33,10 +33,10 @@ Report back by ID ("A1 ok, C2 bug: ..."), screenshots welcome.
 
 ## D. Run structure
 
-- [ ] **D1.** Doors show the next room's type letter; Tab shows the map.
-- [ ] **D2.** Rooms seen: Fight, Elite (Elder Boar or Spore Witch), Merchant, Event, Rest, Treasure.
+- [x] **D1.** Doors show the next room's type letter; Tab shows the map.
+- [x] **D2.** Rooms seen: Fight, Elite (Elder Boar or Spore Witch), Merchant, Event, Rest, Treasure.
 - [ ] **D3.** Loot pops out, drifts to you, flies to you after a room clears.
-- [ ] **D4.** Merchant: flask, heal, Power Shard; wares you cannot use are greyed out.
+- [x] **D4.** Merchant: flask, heal, Power Shard; wares you cannot use are greyed out.
 - [ ] **D5.** Events (Mossy Shrine, Wishing Well): HP costs never kill; the last choice is always free.
 - [ ] **D6.** Mini-boss **Mother Toad:** tongue pulls you in, belly flop lands where you stood, enrages at half HP.
 - [ ] **D7.** Region boss **Warden of Roots:** seed volleys, root walls, slam if you stand next to it.
@@ -45,8 +45,8 @@ Report back by ID ("A1 ok, C2 bug: ..."), screenshots welcome.
 
 ## E. Results and death
 
-- [ ] **E1.** Results show XP, coins, materials, mastery and the training tick preview.
-- [ ] **E2.** Spend attribute points and Power Shards on the results screen.
+- [x] **E1.** Results show XP, coins, materials, mastery and the training tick preview.
+- [x] **E2.** Spend attribute points and Power Shards on the results screen.
 - [ ] **E3.** Die on purpose: "You fell", half the loot kept, the run still counts.
 
 ## F. Powers
