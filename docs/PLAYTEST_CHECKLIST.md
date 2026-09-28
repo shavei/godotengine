@@ -17,7 +17,7 @@ Report back by ID ("A1 ok, C2 bug: ..."), screenshots welcome.
 - [x] **B3.** Gate caption and villager hints are readable near the bottom; nothing hides under the sign.
 - [x] **B4.** Talk to each villager: their line shows, then goes back to "Welcome home" when you walk away.
 - [x] **B5.** Brann's forge opens and closes.
-- [ ] **B6.** Notice board shows Renown and who moves in next.
+- [x] **B6.** Notice board shows Renown and who moves in next.
 - [x] **B7.** Tab / Map opens the character sheet; it closes.
 - [x] **B8.** In the village, dodging never runs out and there is no stamina bar.
 
