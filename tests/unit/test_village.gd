@@ -12,7 +12,10 @@ var _original_context: Dictionary
 func before_each() -> void:
 	_original_profile = GameState.profile
 	_original_context = SceneRouter.context
+	SceneRouter.context = {}
 	GameState.new_profile()
+	# Past the forced first gift (its tests set this back).
+	GameState.profile.first_gift_done = true
 
 
 func after_each() -> void:
@@ -279,3 +282,103 @@ func test_the_shrine_says_when_there_is_something_to_spend() -> void:
 	GameState.hero_state(0).attribute_points = 1
 	var scene: Village = await _open()
 	assert_eq(scene.shrine.caption, "Shrine: grow stronger")
+
+
+# --- The gift ceremony and the first gift (M4 PR 3) ----------------------------------
+
+func _open_after_gift(villager_id: StringName, power_id: StringName, first_gift: bool = false) -> Village:
+	var village: VillageState = GameState.profile.village
+	GiftSystem.give(village, village.index_of(villager_id), power_id)
+	SceneRouter.context = {"player_id": 0, "from": "shrine",
+			"ceremony": {"villager_id": villager_id, "power_id": power_id, "first_gift": first_gift}}
+	var scene: Village = VILLAGE_SCENE.instantiate()
+	scene.save_on_change = false
+	add_child_autofree(scene)
+	await wait_physics_frames(2)
+	return scene
+
+
+func test_leaving_the_shrine_puts_the_hero_below_it() -> void:
+	SceneRouter.context = {"from": "shrine"}
+	var scene: Village = await _open()
+	assert_eq(scene.hero.position, scene.get_node("Spots/Shrine").position + Village.SHRINE_STEP)
+	assert_null(scene.ceremony, "no gift, no ceremony")
+
+
+func test_a_gift_plays_its_ceremony() -> void:
+	watch_signals(EventBus)
+	var scene: Village = await _open_after_gift(&"smith", &"fire")
+	var ceremony: GiftCeremony = scene.ceremony
+	assert_not_null(ceremony)
+	var smith: Villager = scene.villager_node(&"smith")
+	var plot: VillagePlot = scene.plots.get_child(GameState.profile.village.find(&"smith").plot) as VillagePlot
+	assert_eq(smith.gift_blend, 0.0, "the villager still wears their old colors")
+	assert_eq(plot.trim_blend, 0.0)
+	assert_eq(scene.camera.target, ceremony.focus, "the camera follows the Spark")
+	assert_false(scene.hero.is_physics_processing(), "the hero stands still")
+	assert_false(scene.get_node("Overlay").visible, "the sign waits under the bars")
+	assert_eq((ceremony.find_child("Title", true, false) as Label).text, "Fire for Brann the Smith")
+	assert_true((ceremony.find_child("Line", true, false) as Label).text.begins_with("\""))
+	assert_eq((ceremony.find_child("Service", true, false) as Label).text,
+			"New service: Sells a Fire infusion: weapon hits Burn 15% of the time. Buy it once at the Forge for 100 coins.")
+	scene.use_spot(scene.gate, scene.hero)
+	assert_null(GameState.run, "the gate waits until the ceremony ends")
+	var start: Vector2 = ceremony.spark_position()
+	ceremony.step(CeremonyTimeline.FLY_AT + 0.5)
+	assert_ne(ceremony.spark_position(), start, "the Spark flies")
+	assert_false(ceremony.find_child("Dialogue", true, false).visible, "the line comes after the burst")
+	ceremony.step(CeremonyTimeline.BURST_AT + CeremonyTimeline.SWAP_TIME)
+	assert_eq(smith.gift_blend, 1.0, "the palette swap is done")
+	assert_eq(plot.trim_blend, 1.0, "the roof is trimmed")
+	assert_true(ceremony.find_child("Dialogue", true, false).visible)
+	ceremony.step(CeremonyTimeline.DURATION)
+	assert_null(scene.ceremony, "it ends on its own")
+	assert_eq(GameState.profile.ceremonies_seen, 1)
+	assert_signal_emitted_with_parameters(EventBus, "gift_ceremony_finished", [GameState.profile.village.index_of(&"smith")])
+	assert_eq(scene.camera.target, scene.hero)
+	assert_true(scene.get_node("Overlay").visible)
+	assert_eq(scene.sign_label.text, "Brann the Smith holds Fire now.")
+	await wait_physics_frames(1)
+	assert_true(scene.hero.is_physics_processing(), "the hero walks again")
+
+
+func test_the_first_ceremony_cannot_be_skipped_until_the_line_is_read() -> void:
+	var scene: Village = await _open_after_gift(&"farmer", &"growth", true)
+	var ceremony: GiftCeremony = scene.ceremony
+	assert_false(ceremony.skip())
+	ceremony.step(CeremonyTimeline.LINE_AT)
+	assert_false(ceremony.skip(), "the line has only just appeared")
+	ceremony.step(CeremonyTimeline.FIRST_READ_TIME)
+	assert_true(ceremony.skip())
+	assert_null(scene.ceremony)
+	assert_eq(scene.villager_node(&"farmer").gift_blend, 1.0, "skipping still leaves the new colors")
+	assert_true(scene.sign_label.text.begins_with("The Elder: \"Well done."), scene.sign_label.text)
+
+
+func test_later_ceremonies_skip_at_once() -> void:
+	GameState.profile.ceremonies_seen = 1
+	var scene: Village = await _open_after_gift(&"healer", &"frost")
+	var press: InputEventAction = InputEventAction.new()
+	press.action = &"interact"
+	press.pressed = true
+	scene.ceremony._unhandled_input(press)
+	assert_null(scene.ceremony)
+	assert_eq(GameState.profile.ceremonies_seen, 2)
+
+
+func test_the_elder_points_to_the_shrine_before_the_first_gift() -> void:
+	GameState.profile.first_gift_done = false
+	GameState.hero_state(0).power_offer = [&"growth"] as Array[StringName]
+	var scene: Village = await _open()
+	assert_eq(scene.shrine.caption, "Shrine: your first Spark waits")
+	assert_eq(scene.sign_label.text, "The Elder: \"Your first Spark! Bring it to the Shrine. Tilly could use it.\"")
+
+
+func test_a_gifted_villager_wears_the_power_color() -> void:
+	var village: VillageState = GameState.profile.village
+	GiftSystem.give(village, village.index_of(&"guard"), &"frost")
+	var scene: Village = await _open()
+	var guard: Villager = scene.villager_node(&"guard")
+	var frost: PowerData = ContentDB.get_item(&"powers", &"frost") as PowerData
+	assert_eq(guard.body_color(), guard.data.color.lerp(frost.color, Villager.PALETTE_SHIFT))
+	assert_eq(scene.villager_node(&"smith").body_color(), scene.villager_node(&"smith").data.color, "no gift, no swap")

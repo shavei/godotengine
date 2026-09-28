@@ -9,6 +9,9 @@ extends Control
 ## Villager cards preview the Novice and Adept services; the Technique shows as "???"
 ## until the Codex exists. Giving, letting go and leaving ask for a second press.
 ## "Grow stronger" opens the Shrine's GrowthPanel: attribute points, power levels, respec.
+## The first power ever earned must be given, to the villager FirstGift names (the Elder
+## asks for it): only that card is open and Keep, Merge and Leave are not offered. After a
+## gift the screen goes back to the village, where the gift ceremony plays.
 ## Reads SceneRouter.context["player_id"] (the local hero by default).
 
 const VILLAGE_SCENE: String = "res://scenes/village/village.tscn"
@@ -40,6 +43,10 @@ var balance: BalanceData
 var save_on_change: bool = true
 ## True once the offer is settled; the screen then only offers Continue.
 var done: bool = false
+## Go back to the village for the ceremony as soon as a gift is given (tests turn it off).
+var leave_after_gift: bool = true
+## The gift the village's ceremony plays ({villager_id, power_id, first_gift}), or empty.
+var ceremony: Dictionary = {}
 
 var _headline: Label
 var _subline: Label
@@ -129,6 +136,8 @@ func refresh() -> void:
 		_show_kept_to_give()
 	elif PowerOffer.is_picking(hero):
 		_show_pick()
+	elif PowerOffer.waiting_power(hero) != &"" and _first_gift_active():
+		_show_first_gift(PowerOffer.waiting_power(hero))
 	elif PowerOffer.waiting_power(hero) != &"":
 		_show_decision(PowerOffer.waiting_power(hero))
 	else:
@@ -196,6 +205,23 @@ func _show_decision(power_id: StringName) -> void:
 		_add_action("Give to a villager", GIVE, "GiveButton", power_id)
 	_add_action("Leave it behind", LEAVE, "LeaveButton")
 	_add_grow_action()
+
+
+## The first power must be given: the Elder asks for it to go to one villager.
+func _show_first_gift(power_id: StringName) -> void:
+	var power: PowerData = _power(power_id)
+	var who: VillagerData = _villager(village.villagers[_forced_villager()].villager_id)
+	_headline.text = "Your first Spark: %s" % _name(power_id)
+	_subline.text = "The Elder: \"A Spark grows when it is shared. Give this one to %s.\"" % who.title()
+	var card: PanelContainer = PanelContainer.new()
+	card.name = "%sCard" % String(power_id).capitalize()
+	card.custom_minimum_size = CARD_SIZE
+	card.add_theme_stylebox_override("panel", _box(PANEL, power.color if power != null else INK))
+	_fill_card(card, power_id)
+	_cards.add_child(card)
+	_add_action("Give to %s" % who.title(), GIVE, "GiveButton", power_id)
+	_add_grow_action()
+	_note.text = "Your first power is always a gift. The villager trains it, and it comes back to you one day as a Technique. From the next power on, the Choice is yours: keep it, give it, or merge it."
 
 
 ## No offer waits: the Shrine still lets the hero give a kept power away.
@@ -276,6 +302,8 @@ func _show_villagers() -> void:
 	_headline.text = "Give %s to a villager" % _name(_giving)
 	_subline.text = "Gifts are forever. They train it, and it comes back to you as a Technique."
 	_note.text = "Pick a villager, then press again to give."
+	if _first_gift_active():
+		_subline.text = "The Elder asks for this one to go to %s." % _villager(village.villagers[_forced_villager()].villager_id).title()
 	var order: Array[VillagerState] = village.villagers.duplicate()
 	order.sort_custom(func(a: VillagerState, b: VillagerState) -> bool: return a.plot < b.plot)
 	for villager: VillagerState in order:
@@ -290,7 +318,8 @@ func _villager_card(villager: VillagerState, level: int) -> Button:
 	var card: Button = Button.new()
 	card.name = "%sCard" % String(villager.villager_id).capitalize()
 	card.custom_minimum_size = VILLAGER_CARD_SIZE
-	card.disabled = villager.has_power()
+	var index: int = village.villagers.find(villager)
+	card.disabled = villager.has_power() or not FirstGift.allows(GameState.profile, balance, index)
 	card.add_theme_stylebox_override("normal", _box(PANEL, tint.darkened(0.45)))
 	card.add_theme_stylebox_override("hover", _box(PANEL.lightened(0.05), tint))
 	card.add_theme_stylebox_override("pressed", _box(PANEL.lightened(0.1), tint))
@@ -298,7 +327,6 @@ func _villager_card(villager: VillagerState, level: int) -> Button:
 	var focus: StyleBoxFlat = _box(Color.TRANSPARENT, tint.lightened(0.3))
 	focus.set_border_width_all(2)
 	card.add_theme_stylebox_override("focus", focus)
-	var index: int = village.villagers.find(villager)
 	card.pressed.connect(func() -> void: _on_villager_pressed(card, index))
 	var column: VBoxContainer = VBoxContainer.new()
 	column.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 6)
@@ -311,6 +339,9 @@ func _villager_card(villager: VillagerState, level: int) -> Button:
 		var rank: int = TrainingSystem.rank(villager, balance)
 		column.add_child(_card_text("Holds %s (%s)." % [_name(villager.power_id), TrainingSystem.rank_name(rank)], INK, "Holds"))
 		column.add_child(_card_text("One power each, for good.", DIM, "Rule"))
+		return card
+	if card.disabled:
+		column.add_child(_card_text("The Elder asks for someone else this time.", DIM, "Rule"))
 		return card
 	if combo == null:
 		column.add_child(_card_text("No service for %s yet." % _name(_giving), DIM, "Novice"))
@@ -346,6 +377,8 @@ func take(power_id: StringName) -> void:
 
 ## Keeps the waiting power in the next free slot.
 func keep() -> bool:
+	if _first_gift_active():
+		return false
 	var power_id: StringName = PowerOffer.waiting_power(hero)
 	var kept: KeptPower = GiftSystem.keep(hero, power_id, balance, GameState.profile.run_count)
 	if kept == null:
@@ -357,6 +390,8 @@ func keep() -> bool:
 
 ## Merges the waiting power into the same kept power (+1 level).
 func merge() -> bool:
+	if _first_gift_active():
+		return false
 	var power_id: StringName = PowerOffer.waiting_power(hero)
 	var new_level: int = GiftSystem.merge(hero, power_id, balance, GameState.profile.run_count)
 	if new_level == 0:
@@ -368,6 +403,8 @@ func merge() -> bool:
 
 ## Lets `old_id` go; the waiting power takes its slot at level 1.
 func replace(old_id: StringName) -> bool:
+	if _first_gift_active():
+		return false
 	var power_id: StringName = PowerOffer.waiting_power(hero)
 	if PowerOffer.choice_for(hero, power_id, balance) != PowerOffer.REPLACE:
 		return false
@@ -381,6 +418,8 @@ func replace(old_id: StringName) -> bool:
 
 ## Leaves the waiting power behind.
 func leave() -> void:
+	if _first_gift_active():
+		return
 	var power_id: StringName = PowerOffer.waiting_power(hero)
 	_settle("You left %s behind." % _name(power_id))
 
@@ -396,6 +435,9 @@ func start_give(power_id: StringName, from_slot: bool) -> void:
 ## Gives the power being given to the villager at `villager_index`, for good. A kept
 ## power given while an offer waits makes room: the new power takes its slot.
 func give(villager_index: int) -> bool:
+	if not FirstGift.allows(GameState.profile, balance, villager_index):
+		return false
+	var first_gift: bool = _first_gift_active()
 	var waiting: StringName = PowerOffer.waiting_power(hero)
 	var run_number: int = GameState.profile.run_count
 	var villager: VillagerState
@@ -407,6 +449,8 @@ func give(villager_index: int) -> bool:
 		villager = GiftSystem.give_kept(village, hero, _giving, villager_index)
 	if villager == null:
 		return false
+	FirstGift.complete(GameState.profile)
+	ceremony = {"villager_id": villager.villager_id, "power_id": _giving, "first_gift": first_gift}
 	EventBus.power_given.emit(player_id, _giving, villager_index)
 	var data: VillagerData = _villager(villager.villager_id)
 	var who: String = data.title() if data != null else String(villager.villager_id)
@@ -421,11 +465,17 @@ func give(villager_index: int) -> bool:
 		_finish(message, line)
 	else:
 		_settle(message, line)
+	if leave_after_gift:
+		continue_on()
 	return true
 
 
+## Back to the village, beside the Shrine; a gift just given plays its ceremony there.
 func continue_on() -> void:
-	SceneRouter.go(VILLAGE_SCENE)
+	var context: Dictionary = {"player_id": player_id, "from": "shrine"}
+	if not ceremony.is_empty():
+		context["ceremony"] = ceremony
+	SceneRouter.go(VILLAGE_SCENE, context)
 
 
 func _settle(message: String, note: String = "") -> void:
@@ -563,6 +613,14 @@ func _level_note(power: PowerData, level: int) -> String:
 	if level == PowerRules.UPGRADE_LEVELS[1]:
 		return "Level 5: %s" % power.level5_text
 	return "Level %d: +%d%% power damage." % [level, roundi(balance.power_damage_per_level * 100.0)]
+
+
+func _first_gift_active() -> bool:
+	return FirstGift.is_active(GameState.profile, balance)
+
+
+func _forced_villager() -> int:
+	return FirstGift.villager_index(GameState.profile, balance)
 
 
 func _giving_level() -> int:

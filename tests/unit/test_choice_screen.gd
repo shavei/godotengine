@@ -14,6 +14,8 @@ func before_each() -> void:
 	_original_profile = GameState.profile
 	_original_context = SceneRouter.context
 	GameState.new_profile()
+	# Past the forced first gift (its tests set this back).
+	GameState.profile.first_gift_done = true
 	hero = GameState.hero_state(GameState.LOCAL_PLAYER_ID)
 
 
@@ -26,6 +28,7 @@ func _open() -> ChoiceScreen:
 	SceneRouter.context = {"player_id": GameState.LOCAL_PLAYER_ID}
 	var screen: ChoiceScreen = CHOICE_SCENE.instantiate()
 	screen.save_on_change = false
+	screen.leave_after_gift = false
 	add_child_autofree(screen)
 	await wait_process_frames(1)
 	return screen
@@ -331,3 +334,62 @@ func test_grow_stronger_is_there_while_deciding_and_after() -> void:
 	_button(screen, "BackButton").pressed.emit()
 	assert_eq(screen.find_child("Headline", true, false).text, "The Choice is made")
 	assert_eq(screen.find_child("Subline", true, false).text, "Fire is kept in slot 1.")
+
+
+# --- The forced first gift and the ceremony handoff (M4 PR 3) ------------------------
+
+func test_the_first_power_must_go_to_the_farmer() -> void:
+	GameState.profile.first_gift_done = false
+	hero.power_offer = [&"fire"] as Array[StringName]
+	var screen: ChoiceScreen = await _open()
+	assert_eq(_text(screen, "Headline"), "Your first Spark: Fire")
+	assert_eq(_text(screen, "Subline"), "The Elder: \"A Spark grows when it is shared. Give this one to Tilly the Farmer.\"")
+	assert_null(_button(screen, "KeepButton"), "no keeping the first power")
+	assert_null(_button(screen, "LeaveButton"), "no leaving it either")
+	assert_not_null(_button(screen, "GrowButton"))
+	assert_eq(_button(screen, "GiveButton").text, "Give to Tilly the Farmer")
+	assert_false(screen.keep())
+	screen.leave()
+	assert_eq(hero.power_offer, [&"fire"] as Array[StringName], "keep and leave do nothing")
+	_button(screen, "GiveButton").pressed.emit()
+	await wait_process_frames(1)
+	var smith: Button = _button(screen, "SmithCard")
+	assert_true(smith.disabled, "only the Farmer can take the first gift")
+	assert_eq((smith.find_child("Rule", true, false) as Label).text, "The Elder asks for someone else this time.")
+	assert_eq(screen.get_viewport().gui_get_focus_owner(), _button(screen, "FarmerCard"))
+	assert_false(screen.give(_village().index_of(&"smith")))
+	var farmer: Button = _button(screen, "FarmerCard")
+	farmer.pressed.emit()
+	farmer.pressed.emit()
+	await wait_process_frames(1)
+	assert_eq(_village().find(&"farmer").power_id, &"fire")
+	assert_true(GameState.profile.first_gift_done)
+	assert_eq(screen.ceremony, {"villager_id": &"farmer", "power_id": &"fire", "first_gift": true})
+
+
+func test_the_first_offer_still_lets_the_hero_pick_an_orb() -> void:
+	GameState.profile.first_gift_done = false
+	hero.power_offer = [&"fire", &"growth"] as Array[StringName]
+	var screen: ChoiceScreen = await _open()
+	assert_eq(_text(screen, "Headline"), "2 Sparks broke free")
+	_button(screen, "GrowthCard").pressed.emit()
+	await wait_process_frames(1)
+	assert_eq(_text(screen, "Headline"), "Your first Spark: Growth")
+
+
+func test_later_choices_are_free_after_the_first_gift() -> void:
+	GameState.profile.first_gift_done = false
+	GiftSystem.give(_village(), _village().index_of(&"farmer"), &"growth")
+	hero.power_offer = [&"fire"] as Array[StringName]
+	var screen: ChoiceScreen = await _open()
+	assert_eq(_text(screen, "Headline"), "A new power: Fire", "the Farmer is taken, so nothing is forced")
+	assert_not_null(_button(screen, "KeepButton"))
+
+
+func test_a_gift_sets_up_the_ceremony() -> void:
+	hero.power_offer = [&"stone"] as Array[StringName]
+	var screen: ChoiceScreen = await _open()
+	assert_true(screen.ceremony.is_empty())
+	screen.start_give(&"stone", false)
+	assert_true(screen.give(_village().index_of(&"guard")))
+	assert_eq(screen.ceremony, {"villager_id": &"guard", "power_id": &"stone", "first_gift": false})

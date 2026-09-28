@@ -1,8 +1,10 @@
 extends Control
-## Placeholder title screen. Real menu (Continue, New Game, Seasons, ...) comes later.
+## Placeholder title screen. The full menu (Seasons, Settings, Codex, ...) comes later.
 ## For now it goes to the village (runs start at its gate), continues a saved run, or
 ## opens the M1 combat test room, wave room or tuning room. A saved run (quit or crash
 ## mid-run) shows Continue run; the profile line says when a power waits at the Shrine.
+## New game (second press to confirm) starts a fresh profile, first gift tutorial included.
+## Controls stay (they are per machine).
 
 const RUN_ROOM_SCENE: String = "res://scenes/run/room.tscn"
 const VILLAGE_SCENE: String = "res://scenes/village/village.tscn"
@@ -10,6 +12,11 @@ const TEST_ROOM_SCENE: String = "res://scenes/run/test_room.tscn"
 const WAVE_ROOM_SCENE: String = "res://scenes/run/wave_room.tscn"
 const TUNING_ROOM_SCENE: String = "res://scenes/run/tuning_room.tscn"
 const CONTROLS_SCENE: String = "res://scenes/ui/controls_menu.tscn"
+const NEW_GAME_TEXT: String = "New game"
+const NEW_GAME_CONFIRM: String = "Sure? Your progress is lost"
+
+## The New game button asked "Sure?" and waits for a second press.
+var _new_game_armed: bool = false
 
 
 func _ready() -> void:
@@ -19,6 +26,8 @@ func _ready() -> void:
 	]
 	%ContinueButton.pressed.connect(_on_continue_pressed)
 	%VillageButton.pressed.connect(_on_village_pressed)
+	%NewGameButton.pressed.connect(_on_new_game_pressed)
+	%NewGameButton.focus_exited.connect(_disarm_new_game)
 	%PlayButton.pressed.connect(_on_play_pressed)
 	%WaveButton.pressed.connect(_on_wave_pressed)
 	%TuningButton.pressed.connect(_on_tuning_pressed)
@@ -47,7 +56,32 @@ func _on_continue_pressed() -> void:
 		SceneRouter.go(RUN_ROOM_SCENE)
 	else:
 		%ContinueButton.hide()
-		%RunButton.grab_focus()
+		%VillageButton.grab_focus()
+
+
+## First press asks, the second wipes the profile and any saved run.
+func _on_new_game_pressed() -> void:
+	if not _new_game_armed:
+		_new_game_armed = true
+		%NewGameButton.text = NEW_GAME_CONFIRM
+		return
+	start_new_game()
+	_disarm_new_game()
+
+
+## A fresh profile: level 1, no powers, the starting villagers, the first gift ahead.
+func start_new_game() -> void:
+	GameState.end_run()
+	GameState.new_profile()
+	GameState.save_profile()
+	%ContinueButton.hide()
+	%VillageButton.grab_focus()
+	refresh_profile()
+
+
+func _disarm_new_game() -> void:
+	_new_game_armed = false
+	%NewGameButton.text = NEW_GAME_TEXT
 
 
 func _on_village_pressed() -> void:
