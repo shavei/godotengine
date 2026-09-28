@@ -4,10 +4,10 @@ Persistent project memory. Read at the start of every session, update at the end
 
 ## Current status
 
-- **Phase:** M0 done. M1 (combat core) code done (3 PRs merged); only the owner's gamepad playtest item is still open. M2 (run structure) in progress, split into 4 PRs. PR 1 (floor maps, room flow) and PR 2 (drops, room types, elites) merged. PR 3 (Mother Toad and the Warden of Roots) open for the owner to play.
+- **Phase:** M0 done. M1 (combat core) code done (3 PRs merged); only the owner's gamepad playtest item is still open. M2 (run structure): all 4 PRs of code done. PR 1 to 3 merged; PR 4 (XP, results screen, death rules, mid-run save) open for the owner to play.
 - **Also:** Controls remapping menu (title > Controls) added at the owner's request, ahead of the M7 Settings menu.
-- **Next step:** Owner fights both bosses (Tuning room menu or a full run) and answers the M2 PR 3 questions in the session log. Then M2 PR 4 (XP, results screen, death rules, mid-run save). The M1 gamepad tuning can happen any time in the Tuning room (title screen).
-- **Last updated:** 2026-09-27 (M2 PR 3)
+- **Next step:** Owner plays a full run start to finish (the results screen shows the time: target 12 to 15 min), tries Save and quit plus Continue run, and answers the M2 PR 4 questions in the session log. That closes M2; then M3 (kept powers). The M1 gamepad tuning can happen any time in the Tuning room (title screen).
+- **Last updated:** 2026-09-28 (M2 PR 4)
 
 ## The game in brief
 
@@ -93,6 +93,13 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-27 | Warden of Roots phase 1 never walks: seed volleys, root walls on either side of you, a root slam if you stand next to it; walls block seeds too | CONTENT 6.1 "root walls and seed bullets". Walls make a lane the next volley comes down, but also shelter you from the outer seeds: one rule, two uses. The slam stops hugging it from being free. |
 | 2026-09-27 | Boss drops follow GDD 4.3 per-source shards (mini-boss 2, region boss 3), even though a full run then gives 10 to 11 shards vs the 15.3 target of 4 to 6 | Shards have no use until M3, so there is nothing to tune against yet. Flagged in Open questions. |
 | 2026-09-27 | Thorn Archer arrows no longer `monitorable = false` | Found while testing root walls: a non-monitorable Area2D never reports static bodies, so arrows flew through walls and pillars to full range. Regression test added. |
+| 2026-09-28 | Profile save now exists: `ProfileState` (run count, heroes by player_id) and `HeroState` (level, XP, attribute points, attributes, weapon mastery, `bank` Wallet) saved to slot 0; the village joins in M4 | XP and banked loot mean nothing unless they last. The roadmap had ProfileState save/load in M4; only the hero part is pulled forward. The bank reuses `Wallet` so run loot and banked loot share one currency list. |
+| 2026-09-28 | A run is banked the moment it ends (boss dies or hero falls), before the results screen; the run save is deleted then | Quitting during the "You fell" pause or on the results screen cannot undo a fall or lose a clear. |
+| 2026-09-28 | The 50% death rule applies to every run currency (coins, Wood, Crystal, shards), rounded down | GDD 6.4 names coins and materials only; one rule for all is simpler to explain. Shards have no use yet, revisit in M3 if keeping half feels harsh. |
+| 2026-09-28 | Run XP is added to the level at the run's end; cleared fights show "+N XP" at once | Matches the core loop (Results tallies XP). Level-ups mid-run would change max HP between rooms, which is harder to read. |
+| 2026-09-28 | Attribute points are spent on the results screen; Focus is locked until kept powers exist | The design names no place to spend points before the Shrine (M4). Focus does nothing without powers, so a point spent there now would be wasted. |
+| 2026-09-28 | Weapon mastery starts at 1; mastery n (2 to 10) needs `150 * n^1.4` total | GDD said "1 to 10" and "n requires 150 * n^1.4", which disagree at n = 1. Tallied on results; unlocks wait for M8 weapons. |
+| 2026-09-28 | Mid-run save: every room load writes `run_slot_0.json`; Esc is now Save and quit (replaces "Esc leaves to the title, no confirm") and the title shows Continue run | Room boundaries per ARCHITECTURE 10. A quit restarts the room, but HP and flasks are saved no higher than at the quit and the room's loot drops again, so quitting is never a free heal or loot farm. |
 | 2026-09-27 | Prototype uses 4 powers (Fire, Frost, Growth, Stone) and 4 villagers (Smith, Farmer, Guard, Healer) | 16 combos is enough to test the Choice without heavy content cost. |
 
 ## Rejected ideas (do not re-propose without new info)
@@ -122,6 +129,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 
 ## Open questions
 
+- Save and quit restarts the current room with full enemies. It cannot heal or duplicate loot, but a hero about to lose a fight can quit and retry it at the same HP. Acceptable for now (Hades works the same); revisit if playtests abuse it.
+
 - Power Shard economy: with bosses a full run gives 10 to 11 shards (GDD 15.6) vs the 15.3 target of 4 to 6. Lower the per-source numbers or raise the target when shard costs exist (M3).
 - Final title. Candidates: Pass It On, Hand-Me-Down Hero, Heirloom, The Giving Blade.
 - Art direction specifics (palette, reference games). Proposed: warm cozy village vs saturated dangerous dungeons.
@@ -132,6 +141,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-28 (M2 PR 4):** XP, results screen, death rules and mid-run save. `ProgressionSystem` (XP curve, levels, attribute points, Might/Vigor stats, mastery curve), `HeroState` and `ProfileState` saved to slot 0 (loaded at boot), `EconomySystem` (keep 50% on a fall), `RunEnd` + `RunSummary`, `results.tscn` (XP bar, level-up, mastery, loot found vs kept, spend points on Might or Vigor), mid-run save on every room load, Esc is Save and quit, title shows Continue run and a level line. `Hero.apply_progress` applies level and attributes. 263 tests pass, no warnings, boot clean, checked with xvfb screenshots (results after a fall and after a clear, title with Continue run) and a real-router run (clear gives +15 XP, a fall banks 23 coins as 11 and lands on Results). Questions for the owner: does a full run land in 12 to 15 minutes? Does keeping half on a fall feel fair or too harsh? Is the results screen clear at a glance? Is Might vs Vigor a real choice? Does Save and quit plus Continue run work on your machine?
 
 - **2026-09-27 (M2 PR 3):** Mother Toad and the Warden of Roots (phase 1). `BossData`, pure `BossPattern` (move order, enrage), `BossAI`, `MotherToadAI` (tongue pull, belly flop leap), `WardenAI` (seed volley fan, root walls, root slam), `RootWall` scene, boss bar on the HUD, "Mini-boss: / Boss:" banners, open boss arenas. Stand-in encounters removed. Tuning room menu can start either boss. Fixed arrows flying through walls (non-monitorable areas miss static bodies). 229 tests pass, no warnings, boot clean, checked with xvfb screenshots (tongue lane, flop ring, volley fan, root wall lane). Questions for the owner: is the tongue pull fair or does it feel like a cheap grab? Is the toad's landing pause long enough to punish? Is the Warden too easy to stand next to, or the slam too punishing? Are root walls readable before they burst? Does a boss take about the right time (target: under a minute or so each)?
 

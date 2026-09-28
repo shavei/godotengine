@@ -7,12 +7,17 @@ extends Node2D
 ## Fights use a WaveDirector encounter; enemies drop loot as pickups. Rest rooms offer a
 ## heal or a flask, Treasure rooms a chest, Merchant rooms wares for coins, and Event
 ## rooms a short choice. Playing this scene on its own (F6) starts a test run.
+##
+## Every room saves the run as it is entered (the mid-run save). Clearing a fight gives
+## XP; the run's end banks loot and XP (RunEnd) and opens the results screen.
 
 const ROOM_SCENE: String = "res://scenes/run/room.tscn"
 const TITLE_SCENE: String = "res://scenes/main/title.tscn"
+const RESULTS_SCENE: String = "res://scenes/ui/results.tscn"
 const DEFAULT_REGION: StringName = &"mossy_hollow"
 const HERO_START: Vector2 = Vector2(384, 400)
 const RUN_OVER_DELAY: float = 2.5
+const XP_COLOR: Color = Color(0.6, 0.95, 0.55)
 const BANNER_TIME: float = 1.4
 const REST_HEAL: StringName = &"heal"
 const REST_FLASK: StringName = &"flask"
@@ -50,6 +55,10 @@ var wallet: Wallet
 var room_event: EventData
 
 var _leaving: bool = false
+## The run as saved when this room was entered (Save and quit rewrites it).
+var _entry_save: Dictionary = {}
+## The local hero's results, set when the run ends.
+var _summary: RunSummary
 ## Loot amounts are seeded per room so co-op peers agree (docs/ARCHITECTURE.md Section 9).
 var _loot_rng: RandomNumberGenerator
 
@@ -75,12 +84,13 @@ func _ready() -> void:
 	map_room = run.current_room()
 	hero.global_position = HERO_START
 	hero.reset_physics_interpolation()
+	hero.apply_progress(GameState.hero_state(hero.player_id))
 	_restore_hero()
 	wallet = run.wallet(hero.player_id)
 	_loot_rng = LootRoller.rng_for(run.run_seed, run.floor_index, run.current_room_id, &"loot")
 	hud.bind_hero(hero)
 	hud.bind_wallet(wallet, [Wallet.COINS, run.region.material, Wallet.CRYSTAL, Wallet.SHARDS])
-	$Overlay/Help.text = InputBindings.combat_help([["Use", &"interact"], ["Map", &"map"], ["Leave run", &"pause"]])
+	$Overlay/Help.text = InputBindings.combat_help([["Use", &"interact"], ["Map", &"map"], ["Save and quit", &"pause"]])
 	room.floor_a = run.region.floor_color
 	room.floor_b = run.region.floor_color.darkened(0.08)
 	_fit_camera()
@@ -89,8 +99,10 @@ func _ready() -> void:
 	director.room_cleared.connect(_on_room_cleared)
 	director.enemy_died.connect(_on_enemy_died)
 	director.enemy_spawned.connect(_on_enemy_spawned)
+	hero.hitbox.hit_landed.connect(_on_hero_hit_landed)
 	room_label.text = _room_title()
 	run_map.show_run(run, run.is_in_corridor())
+	_save_on_entry()
 	if run.is_in_corridor():
 		_setup_corridor()
 	elif map_room.is_fight():
@@ -109,11 +121,17 @@ func _ready() -> void:
 				_setup_quiet_room("")
 
 
+func _process(delta: float) -> void:
+	if _summary == null:
+		run.elapsed += delta
+
+
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed(&"pause"):
-		_leave_run()
-	elif event.is_action_pressed(&"interact") and run.is_run_won() and not _leaving:
-		_leave_run()
+	if _summary != null:
+		if (event.is_action_pressed(&"pause") or event.is_action_pressed(&"interact")) and _summary.success:
+			_show_results()
+	elif event.is_action_pressed(&"pause"):
+		save_and_quit()
 
 
 # --- Room setups ------------------------------------------------------------
@@ -326,6 +344,7 @@ func _on_enemy_died(enemy: Enemy) -> void:
 func _on_room_cleared() -> void:
 	wave_label.text = "Room clear"
 	run.mark_cleared()
+	_award_room_xp()
 	for pickup: Pickup in _pickups():
 		pickup.attract()
 	if not run.is_run_won():
@@ -428,27 +447,83 @@ func _on_pickup_collected(pickup: Pickup, who: Hero) -> void:
 	DamageNumber.spawn(actors, pickup.global_position, "+%d" % pickup.amount, Wallet.currency_color(pickup.currency))
 
 
+# --- Run end and saving -------------------------------------------------------
+
+func _award_room_xp() -> void:
+	var amount: int = ProgressionSystem.room_xp(map_room.type, hero.balance) if map_room != null else 0
+	if amount <= 0:
+		return
+	run.add_xp(hero.player_id, amount)
+	DamageNumber.spawn(actors, hero.global_position + Vector2(0, -20), "+%d XP" % amount, XP_COLOR)
+
+
+func _on_hero_hit_landed(_hurtbox: HurtboxComponent, result: DamageResult) -> void:
+	if hero.weapon != null:
+		run.add_weapon_damage(hero.player_id, hero.weapon.id, result.amount)
+
+
 func _finish_run() -> void:
-	EventBus.run_ended.emit(true)
+	_end_run(true)
 	sign_label.text = ""
-	_show_banner("%s cleared!\nThe run is complete.\n%s to return" % [run.region.display_name, InputBindings.hint(&"interact")], 0.0)
+	_show_banner("%s cleared!\nThe run is complete.\n%s to see how it went" % [run.region.display_name, InputBindings.hint(&"interact")], 0.0)
 
 
 func _on_hero_died(_player_id: int) -> void:
+	if _leaving or _summary != null:
+		return
+	_leaving = true
+	_end_run(false)
+	%FellLabel.show()
+	# A signal connection (not await) so nothing runs if the room is left first.
+	get_tree().create_timer(RUN_OVER_DELAY).timeout.connect(_show_results)
+
+
+## Banks XP and loot at once (so quitting now cannot undo a fall) and deletes the run save.
+func _end_run(success: bool) -> void:
+	scoop_loot(hero)
+	var summaries: Dictionary[int, RunSummary] = RunEnd.finish(run, GameState.profile, success, hero.balance)
+	_summary = summaries.get(hero.player_id)
+	GameState.end_run()
+	GameState.save_profile()
+	EventBus.run_ended.emit(success)
+
+
+func _show_results() -> void:
+	SceneRouter.go(RESULTS_SCENE, {"summary": _summary})
+
+
+## Saves the run as this room is entered: quitting or a crash comes back here.
+func _save_on_entry() -> void:
+	_entry_save = run.to_dict()
+	GameState.save_run()
+
+
+## Esc: back to the title, the run kept for Continue. The room starts over when the run
+## is continued, but HP and flasks never come back higher than they are now, and loot
+## picked up in this room is not kept (it drops again).
+func save_and_quit() -> void:
 	if _leaving:
 		return
 	_leaving = true
-	EventBus.run_ended.emit(false)
-	GameState.run = null
-	%FellLabel.show()
-	# A signal connection (not await) so nothing runs if the room is left first.
-	get_tree().create_timer(RUN_OVER_DELAY).timeout.connect(SceneRouter.go.bind(TITLE_SCENE))
-
-
-func _leave_run() -> void:
-	_leaving = true
+	write_quit_save()
 	GameState.run = null
 	SceneRouter.go(TITLE_SCENE)
+
+
+## The entry save, with HP and flasks lowered to what the hero has now.
+func write_quit_save() -> void:
+	var heroes: Dictionary = _entry_save.get("heroes", {})
+	var entry: Dictionary = heroes.get(str(hero.player_id), {})
+	var carry: Dictionary = entry.get("carry", {})
+	entry["carry"] = {
+		"hp": mini(int(carry.get("hp", hero.health.hp)), hero.health.hp),
+		"max_hp": hero.health.max_hp,
+		"flasks": mini(int(carry.get("flasks", hero.flasks.charges)), hero.flasks.charges),
+	}
+	heroes[str(hero.player_id)] = entry
+	_entry_save["heroes"] = heroes
+	_entry_save["elapsed"] = run.elapsed
+	SaveManager.save_run(GameState.slot, _entry_save)
 
 
 # --- Helpers ----------------------------------------------------------------

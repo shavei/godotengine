@@ -76,3 +76,20 @@ func test_title_has_tuning_room_button() -> void:
 	var button: Button = title.get_node("%TuningButton")
 	assert_eq(button.text, "Tuning room")
 	assert_true(button.pressed.is_connected(title._on_tuning_pressed))
+
+
+func test_continue_run_shows_only_with_a_saved_run() -> void:
+	var original_dir: String = SaveManager.save_dir
+	SaveManager.save_dir = "user://test_saves_title"
+	var region: RegionData = load("res://data/regions/region_mossy_hollow.tres")
+	SaveManager.save_run(GameState.slot, RunState.start(region, 4).to_dict())
+	var with_run: Control = TITLE_SCENE.instantiate()
+	viewport.add_child(with_run)
+	await wait_process_frames(2)
+	var continue_button: Button = with_run.get_node("%ContinueButton")
+	assert_true(continue_button.visible)
+	assert_true(continue_button.has_focus(), "Continue is the first choice")
+	assert_eq(with_run.get_node("%RunButton").text, "Start a new run")
+	assert_true(with_run.get_node("%Profile").text.begins_with("Level "))
+	SaveManager.delete_slot(GameState.slot)
+	SaveManager.save_dir = original_dir

@@ -118,6 +118,8 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 - Level cap **30**. XP needed to go from level n-1 to level n: `round(50 * n^1.5)` (level 2 = 141, level 10 = 1581, level 30 = 8216). Cumulative to level 25 is about 62,000 XP, roughly 100 runs, which matches the 25-hour arc.
 - XP sources: combat room cleared 15, elite 60, mini-boss 100, region boss 200, raid won 150. Failed runs keep all XP earned.
 - Each level: **+4 max HP** and **1 attribute point**.
+- XP earned in a run is added to your level at the run's end (results screen). A cleared room gives its XP at once (a small "+15 XP" pops up).
+- Attribute points are spent on the results screen for now (one press per point); the Shrine and character sheet take over later. Focus stays locked until kept powers exist (M3), so no point is wasted on it.
 
 | Attribute | Per point | Cap |
 |---|---|---|
@@ -130,7 +132,7 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 
 ### 4.2 Weapons and mastery
 - 4 weapon types: **Sword, Spear, Bow, Hammer** (details in CONTENT.md). You carry one weapon per run, chosen in the village.
-- **Mastery** 1 to 10 per weapon type. Mastery XP = 1 per 10 damage dealt with that weapon. Mastery n requires `150 * n^1.4` total XP.
+- **Mastery** 1 to 10 per weapon type. Mastery XP = 1 per 10 damage dealt with that weapon. Mastery n requires `150 * n^1.4` total XP (every weapon starts at mastery 1, so mastery 2 needs 396). Tallied on the results screen; the unlocks below arrive with the other weapons (M8).
 - Unlocks by mastery: 2 dash attack, 4 charged attack, 6 special move, 8 finisher (on staggered enemies), 10 signature move.
 - **Weapon tiers** (bought from the Smith): Iron x1.0, Steel x1.3, Runed x1.7, Mythic x2.2 base damage. Steel needs Forge level 2, Runed Forge level 3, Mythic Forge level 3 plus a Master Smith.
 - **Infusions:** a Smith holding a power sells an infusion of that element (see CONTENT.md Smith combos).
@@ -254,9 +256,14 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 - **Flasks:** base 3 charges, heal 35% max HP. Farmer and Baker affect them.
 
 ### 6.4 Death
-- Death ends the run. Keep XP, mastery, 50% of coins and materials (Storehouse increases this).
+- Death ends the run. Keep XP, mastery, 50% of coins and materials (Storehouse increases this). The 50% applies to every run currency (coins, Wood, Crystal, Power Shards), rounded down per currency.
 - No power awarded. Training still ticks.
 - Healer services give **revive tokens** (revive at 30% HP, more with upgrades).
+
+### 6.5 Results and saving mid-run
+- Every run ends at the **results screen**: time, rooms cleared, XP and level-ups, weapon mastery, and loot found vs kept. Continue goes to the title until the village exists (M4).
+- The run is saved each time you enter a room. **Save and quit** (Esc / Start) goes to the title, which then offers **Continue run**. The room you were in starts over, with HP and flasks no higher than when you quit; loot picked up in that room drops again.
+- Starting a new run replaces a saved one.
 
 ---
 
@@ -597,6 +604,22 @@ Live values: `data/regions/region_mossy_hollow.tres` and `data/balance/balance_d
 
 - Rough run estimate before bosses (about 9 fights, 2 elites, 2 treasure rooms): about 300 to 350 coins, 35 to 40 Wood, 2 Crystal, 3 to 4 shards, less what the Merchant takes.
 - With the bosses (2 Mother Toads and the Warden) a full run comes to about 390 to 460 coins, 46 to 58 Wood, 4 Crystal and 10 to 11 shards. Shards follow the per-source rule in Section 4.3 (mini-boss 2, region boss 3) and so land well above the Section 15.3 target of 4 to 6; coins and Wood run a little high too. Rebalance in M3, when shards have a use (open question in MEMORY.md).
+
+### 15.7 Progression (M2)
+Live values: `data/balance/balance_default.tres` (Progression and Run end groups).
+
+| Number | Value |
+|---|---|
+| XP to reach level n | `round(50 * n^1.5)`: level 2 = 141, 3 = 260, 5 = 559, 10 = 1581 |
+| Level cap | 30 |
+| Per level | +4 max HP, 1 attribute point |
+| XP per room cleared | Fight 15, Elite 60, Mother Toad 100, Warden of Roots 200 |
+| Might / Vigor / Focus per point | +3% weapon damage / +10 max HP and +5 stamina / +3% power damage and -1.5% cooldowns (Focus locked until M3) |
+| Attribute cap | 20 each |
+| Mastery | 1 XP per 10 damage; mastery n needs `round(150 * n^1.4)` total |
+| Kept on a fall | 50% of each run currency, rounded down |
+
+- A full cleared run (about 9 fights, 2 elites, 2 Mother Toads, the Warden) gives about 135 + 120 + 200 + 200 = 655 XP, just above the Section 15.3 target (450 to 650). The first cleared run takes a new hero to level 3.
 
 All numbers here are starting points for tuning. Update this section when they change.
 

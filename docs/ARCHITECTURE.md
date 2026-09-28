@@ -43,7 +43,7 @@ res://
     resources/     power_data.gd, villager_data.gd, combo_data.gd, fusion_data.gd, technique_data.gd,
                    weapon_data.gd, enemy_data.gd, encounter_data.gd, wave_data.gd, region_data.gd, building_data.gd, trinket_data.gd, balance_data.gd
     systems/       gift_system.gd, training_system.gd, fusion_system.gd, neighbor_system.gd,
-                   renown_system.gd, progression_system.gd, economy_system.gd, run_generator.gd, floor_map.gd, map_room.gd,
+                   renown_system.gd, progression_system.gd, economy_system.gd, run_end.gd, run_summary.gd, run_generator.gd, floor_map.gd, map_room.gd,
                    combat_math.gd, modifier_stack.gd, raid_director.gd
     state/         profile_state.gd, hero_state.gd, village_state.gd, villager_state.gd, run_state.gd
     components/    health_component.gd, hitbox_component.gd, hurtbox_component.gd, status_component.gd,
@@ -78,7 +78,7 @@ res://
 |---|---|---|
 | `EventBus` | Global signals only (`power_given`, `villager_ranked_up`, `technique_learned`, `run_ended`, `raid_started` ...) | No |
 | `ContentDB` | Loads every `.tres` under `data/` at boot, indexes by id, validates references | No |
-| `GameState` | Owns the current `ProfileState` (village + heroes by `player_id`) and the `RunState` in progress (`GameState.run`, null outside runs) | Via `ProfileState` and `RunState.heroes`, keyed by id |
+| `GameState` | Owns the current `ProfileState` (heroes by `player_id`; the village joins in M4) and the `RunState` in progress (`GameState.run`, null outside runs). Loads the profile at boot, saves it after a run, and writes, loads and deletes the mid-run save | Via `ProfileState.heroes` and `RunState`, keyed by id |
 | `SaveManager` | Serialize/deserialize `ProfileState` to JSON, versioned, with migrations and backup slot | No |
 | `SceneRouter` | Scene transitions (fade), passes a context dictionary to the next scene | No |
 | `AudioManager` | Music layers (village layering by powered villagers), SFX pools, buses | No |
@@ -201,7 +201,9 @@ var rank: int                  # 0 none, 1 Novice, 2 Adept, 3 Master
 var technique_taught: bool
 ```
 
-`RunState` (`scripts/state/run_state.gd`) holds only the current run: region, seed, floor, `FloorMap`, current room (-1 = the floor's corridor), path, and per-hero carry-over (hp, flasks, the run loot `Wallet`; later trinkets, fusion meter) keyed by `player_id`. It is saved at room boundaries for crash safety but is not part of long-term progression.
+`RunState` (`scripts/state/run_state.gd`) holds only the current run: region, seed, floor, `FloorMap`, current room (-1 = the floor's corridor), path, rooms cleared, time played, and per-hero carry-over (hp, flasks, the run loot `Wallet`, XP earned, damage dealt per weapon; later trinkets, fusion meter) keyed by `player_id`. It is saved at room boundaries for crash safety but is not part of long-term progression.
+
+**Built so far (M2 PR 4):** `ProfileState` holds `run_count`, `runs_won` and `heroes` (player_id -> `HeroState`). `HeroState` holds level, XP toward the next level, unspent attribute points, attributes, weapon mastery XP and `bank` (a `Wallet` of banked coins, materials, Crystal and shards; the `coins`, `materials` and `shards` fields above are this one Wallet). Both have `to_dict()` / `from_dict()`. `RunState.to_dict()` / `from_dict(data, region)` is the mid-run save; the floor map is rebuilt from the seed, so only ids are stored.
 
 ---
 
@@ -214,10 +216,11 @@ var technique_taught: bool
 | `FusionSystem` | `get_active_fusion(hero) -> FusionData` | Two highest-level distinct kept powers, both >= 3, tie-break by `last_leveled_run`. |
 | `NeighborSystem` | `get_active_bonuses(village) -> Array[ServiceData]` | Plot adjacency graph from the village map resource; Adept+ checks; Resonance. |
 | `RenownSystem` | `add(village, reason)`, `level_for(points)`, `new_unlocks(before, after)` | Drives villager arrivals and region unlocks. |
-| `ProgressionSystem` | XP curve, level-ups, attribute points, mastery curve | Formulas from `BalanceData`. |
+| `ProgressionSystem` | `xp_for_level`, `add_xp(hero, xp, balance) -> levels`, `room_xp(type)`, `spend_point`, `max_hp`, `max_stamina`, `weapon_damage_bonus`, `mastery_level` | Formulas from `BalanceData`. `Hero.apply_progress(HeroState)` applies level, Vigor and Might at the start of every room. |
 | `ModifierStack` | `collect(hero, village, run) -> Stats` | Gathers modifiers from techniques, services, neighbor bonuses, meals, trinkets; computes final stats. One place for all stat math. |
 | `CombatMath` | `damage(attacker_stats, defender_stats, hit) -> DamageResult` | Crit, armor, statuses. Deterministic given an RNG seed. |
-| `EconomySystem` | Costs, drops, death penalty | M2 PR 2 has the run side: `Wallet` (a hero's run loot: add, spend, spend_all, to_dict; one per `player_id` in `RunState.wallets`) and `LootRoller` (`roll(DropTable, rng)`, `split_piles`, `rng_for(run_seed, floor, room, salt)`). Banking into the profile and the death rule come in M2 PR 4. |
+| `EconomySystem` | Costs, drops, death penalty | M2 PR 2 has the run side: `Wallet` (a hero's run loot: add, spend, spend_all, to_dict; one per `player_id` in `RunState.wallets`) and `LootRoller` (`roll(DropTable, rng)`, `split_piles`, `rng_for(run_seed, floor, room, salt)`). M2 PR 4: `kept_amount(amount, fraction)` and `bank_run_loot(run_wallet, bank, fraction)`. |
+| `RunEnd` | `finish(run, profile, success, balance) -> {player_id: RunSummary}` | Closes a run for every hero in it: adds XP (level-ups), weapon mastery, banks loot (all on a clear, `death_keep_fraction` on a fall), counts the run. `RunSummary` is what the results screen shows. |
 | `EventResolver` | `can_choose(choice, wallet)`, `resolve(choice, wallet, hp, max_hp, rng) -> EventOutcome` | Event rooms: pay the cost first (an HP cost never kills), then roll success and the reward. Rewards are returned so the room drops them as pickups. |
 | `RunGenerator` | `generate_floor(region, floor_idx, seed) -> FloorMap`, `pick_encounter(region, map, room, seed)`, `pick_event(region, map, room, seed)` | Seeded RNG so co-op peers and daily runs can reproduce maps. A `FloorMap` holds rows of `MapRoom`s (type, lane, links to the next row) and one exit room. Rules in GDD 6.1. |
 | `RaidDirector` | Wave composition from run count and faction | |
@@ -241,7 +244,7 @@ main.tscn (boot: ContentDB load, SaveManager load)
 
 `SceneRouter.go(scene_path, context: Dictionary)` handles fades and passes context (region id, seed, results).
 
-**Runs (M2):** starting a run puts a `RunState` in `GameState.run`. `room.tscn` (`RunRoom`) reads it and builds the current room: the floor's safe corridor, a fight (`WaveDirector` with the encounter from `RunGenerator.pick_encounter`, a seeded pillar layout), a Rest room, or a signpost for room types not built yet. When the room is done, doors in the top wall open, one per next room, left to right in map lane order, each signed with its room type. Walking into a door saves the hero's HP and flasks to the `RunState`, moves it, and reloads `room.tscn`. The floor exit opens stairs to the next floor's corridor. `RunMap` (`scenes/ui/run_map.tscn`) draws the floor map; the Map action toggles it. Playing `room.tscn` alone (F6) starts a test run.
+**Runs (M2):** starting a run puts a `RunState` in `GameState.run`. `room.tscn` (`RunRoom`) reads it and builds the current room: the floor's safe corridor, a fight (`WaveDirector` with the encounter from `RunGenerator.pick_encounter`, a seeded pillar layout), a Rest room, or a signpost for room types not built yet. When the room is done, doors in the top wall open, one per next room, left to right in map lane order, each signed with its room type. Walking into a door saves the hero's HP and flasks to the `RunState`, moves it, and reloads `room.tscn`. The floor exit opens stairs to the next floor's corridor. Every room saves the run as it loads (mid-run save). A cleared fight adds XP to the run; hero hits add weapon damage. When the region boss falls, or the hero does, `RunEnd.finish` banks the run at once, the profile is saved, the run save is deleted, and `results.tscn` (`ResultsScreen`) opens with the `RunSummary` in the router context. Esc is Save and quit: the title then shows Continue run. `RunMap` (`scenes/ui/run_map.tscn`) draws the floor map; the Map action toggles it. Playing `room.tscn` alone (F6) starts a test run.
 
 ---
 
@@ -301,6 +304,7 @@ Transport decision (ENet vs Steam networking) is deferred to M10 (see MEMORY.md 
 - Location: `user://saves/slot_N.json`, plus `slot_N.bak` written before each save.
 - Format: JSON with `version`. `SaveManager` runs migrations `v1 -> v2 -> ...` on load.
 - Save points: after the Choice, after the training tick, after raids, on quit. Mid-run: `run_slot_N.json` at room boundaries.
+- Built so far (M2 PR 4): `main.gd` loads slot 0 into `GameState.profile` at boot (a fresh profile if none). The profile is saved when a run ends and when attribute points are spent on the results screen. Each run room writes `run_slot_0.json` as it loads. Save and quit rewrites that entry save with HP and flasks lowered to what the hero has at that moment (never raised), so quitting cannot heal the hero or keep loot from a room that starts over. A cleared or fallen run deletes the run save before the results screen, so a fall cannot be undone by quitting. A run save that no longer fits the content (unknown region, missing room) is deleted instead of blocking the title.
 - Round-trip unit test for every state class.
 
 ---

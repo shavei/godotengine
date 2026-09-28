@@ -17,6 +17,7 @@ const SCENES: Array[String] = [
 	"res://scenes/run/room.tscn",
 	"res://scenes/ui/run_map.tscn",
 	"res://scenes/ui/controls_menu.tscn",
+	"res://scenes/ui/results.tscn",
 ]
 
 
@@ -38,7 +39,8 @@ func test_main_scene_setting_points_to_boot_scene() -> void:
 func test_game_state_new_profile_is_keyed_by_player_id() -> void:
 	GameState.new_profile()
 	assert_true(GameState.has_profile())
-	assert_true(GameState.profile["heroes"].has(str(GameState.LOCAL_PLAYER_ID)))
+	assert_true(GameState.profile.heroes.has(GameState.LOCAL_PLAYER_ID))
+	assert_eq(GameState.hero_state(GameState.LOCAL_PLAYER_ID).level, 1)
 
 
 func test_test_room_runs_without_errors() -> void:
