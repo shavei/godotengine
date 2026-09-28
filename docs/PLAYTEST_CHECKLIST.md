@@ -29,7 +29,7 @@ Report back by ID ("A1 ok, C2 bug: ..."), screenshots welcome.
 - [x] **C4.** Flask heals; a hit while drinking cancels it and keeps the charge.
 - [x] **C5.** Aiming with mouse and with right stick; aim assist helps with the stick.
 - [x] **C6.** Enemies: Tusk Boar (charges, stunned by walls), Seedling / Sproutling (split), Thorn Archer (arrows leave thorns when they miss).
-- [ ] **C7.** Hit-stop and screen shake feel good, not too much.
+- [x] **C7.** Hit-stop and screen shake feel good, not too much.
 
 ## D. Run structure
 
