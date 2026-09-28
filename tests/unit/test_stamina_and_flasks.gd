@@ -11,6 +11,14 @@ func test_spend_needs_enough_stamina() -> void:
 	assert_eq(pool.current, 0.0, "a failed spend takes nothing")
 
 
+func test_unlimited_stamina_never_runs_out() -> void:
+	var pool: StaminaPool = StaminaPool.new(100.0, 40.0, 0.5)
+	pool.unlimited = true
+	for i: int in 10:
+		assert_true(pool.try_spend(25.0))
+	assert_eq(pool.current, 100.0, "nothing is taken")
+
+
 func test_regen_waits_for_delay_then_refills() -> void:
 	var pool: StaminaPool = StaminaPool.new(100.0, 40.0, 0.5)
 	pool.try_spend(50.0)

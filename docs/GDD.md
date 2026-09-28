@@ -459,7 +459,7 @@ See `docs/ARCHITECTURE.md` Section 9. Summary: no per-player state in autoloads,
 | Screen | Contents |
 |---|---|
 | Title | Continue, New Game, Seasons, Settings, Codex, Quit |
-| Village (diegetic) | Walk around; interact with villagers (shop, info), Shrine, gate, notice board (raid warning) |
+| Village (diegetic) | Walk around; interact with villagers (shop, info), Shrine, gate, notice board (raid warning). No combat HUD: dodging is free (unlimited stamina) |
 | Village map | Plots, villagers, powers, ranks, TP progress bars, active neighbor bonuses |
 | Choice screen | New power card (stats, level), 3 kept slots, villager portraits with preview, Keep / Give / Merge |
 | Gift ceremony | Full-screen moment, skippable |
