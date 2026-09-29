@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="EncounterData" load_steps=10 format=3]
+[gd_resource type="Resource" script_class="EncounterData" load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/encounter_data.gd" id="1_encounter"]
 [ext_resource type="Script" path="res://scripts/resources/wave_data.gd" id="2_wave"]
@@ -19,9 +19,13 @@ enemies = Array[ExtResource("3_enemy")]([ExtResource("5_boar"), ExtResource("4_s
 script = ExtResource("2_wave")
 enemies = Array[ExtResource("3_enemy")]([ExtResource("6_archer"), ExtResource("6_archer"), ExtResource("5_boar"), ExtResource("4_sproutling")])
 
+[sub_resource type="Resource" id="Resource_wave4"]
+script = ExtResource("2_wave")
+enemies = Array[ExtResource("3_enemy")]([ExtResource("5_boar"), ExtResource("6_archer"), ExtResource("4_sproutling"), ExtResource("4_sproutling")])
+
 [resource]
 script = ExtResource("1_encounter")
 id = &"mossy_test"
 display_name = "Mossy Hollow test room"
-waves = Array[ExtResource("2_wave")]([SubResource("Resource_wave1"), SubResource("Resource_wave2"), SubResource("Resource_wave3")])
+waves = Array[ExtResource("2_wave")]([SubResource("Resource_wave1"), SubResource("Resource_wave2"), SubResource("Resource_wave3"), SubResource("Resource_wave4")])
 wave_delay = 1.2
