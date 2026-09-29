@@ -49,11 +49,11 @@ Report back by ID ("A1 ok, C2 bug: ..."), screenshots welcome.
 
 - [x] **E1.** Results show XP, coins, materials, mastery and the training tick preview.
 - [x] **E2.** Spend attribute points and Power Shards on the results screen.
-- [ ] **E3.** Die on purpose: "You fell", half the loot kept, the run still counts.
+- [x] **E3.** Die on purpose: "You fell", half the loot kept, the run still counts.
 
 ## F. Powers
 
-- [ ] **F1.** The boss drops power orbs; you pick one and it waits at the Shrine.
+- [x] **F1.** The boss drops power orbs; you pick one and it waits at the Shrine.
 - [ ] **F2.** Try each power: Fire (projectile), Frost (shards), Growth (healing patch), Stone (shield that bursts).
 - [ ] **F3.** Q / E / R (or LB / RB / Y) cast; the HUD shows cooldowns.
 - [ ] **F4.** Level 3 and level 5 upgrades feel different (Tuning room "Power level" to check fast).
