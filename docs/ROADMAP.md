@@ -83,7 +83,7 @@ Split into small PRs, each playable: (1) powers, abilities (level 1), statuses, 
 - [x] 3 power slots on the HUD with cooldowns.
 - [x] Power Shards spending UI (level up at the Shrine or run end). (Results screen in PR 2; the Shrine joins in M4.)
 - [x] Boss reward: 2 power orbs, pick 1. (PR 3: orbs in the boss room, then the keep screen after the results: Keep, Merge, let a kept power go, or Leave. Give joins in M4.)
-- [ ] Owner plays full runs, earns powers and checks the done criteria below.
+- [x] Owner plays full runs, earns powers and checks the done criteria below. (2026-09-29, `docs/PLAYTEST_CHECKLIST.md` sections D, E and F1 to F3: full runs cleared, orbs earned, shards spent, the 4 powers tried. F4, whether levels 3 and 5 feel different, is still open.)
 - [x] `GiftSystem.keep` and `merge` with unit tests (slot cap, merge level-up).
 
 **Done when:** you can earn powers from bosses, keep up to 3, level them with shards, and they feel distinct in combat.
@@ -103,7 +103,7 @@ Split into small PRs, each playable: (1) villagers, combos, the village scene an
 - [x] Smith shop (weapon tiers, infusions), Farmer flasks, Healer revive tokens, Guard (raid stub). (PR 2: all 16 combos' Novice and Adept services work in runs except the Guard's, which are collected as `raid.*` modifiers for M6. The Forge counts as level 2 until buildings. The Shrine's Grow stronger took over attribute points and shard leveling, with respec.)
 - [x] Save/load of `ProfileState` with round-trip tests. (PR 1: the village joins the profile; old saves get the starting villagers.)
 - [x] Forced first gift tutorial (GDD Section 16). (PR 3: the first power must go to the Farmer; the Elder's words are text only. The title's New game replays it. The tutorial floor and the Elder character wait for M7 onboarding.)
-- [ ] Owner plays the loop (a New game through the first gift, then a free Choice) and checks the done criteria below.
+- [x] Owner plays the loop (a New game through the first gift, then a free Choice) and checks the done criteria below. (2026-09-29, checklist sections B, E, G and H: the loop works and saves. But the owner found the Choice itself confusing; see the M5 owner playtest below.)
 
 **Done when:** the full loop Village > Run > Results > Choice > Village works and persists across restarts.
 
@@ -120,6 +120,13 @@ Split into small PRs, each playable: (1) the training tick, rank-ups shown in th
 - [x] Local metrics logging (GDD Section 17). (PR 3: `Metrics` autoload, opt-in with Playtest log on the title; one JSON file per session with every Choice and its time, run, rank-up, Technique and Renown level; `tools/metrics_report.gd` prints the gate numbers.)
 - [x] Debug console commands (ARCHITECTURE Section 11). (PR 3: ` or F2 in debug builds: give_power, set_tp, add_renown, skip_room, god_mode, help.)
 - [x] Build for playtesters (Windows and Linux). (PR 3: `export_presets.cfg` and the Playtest builds workflow, which exports, boots the Linux build and zips both with `docs/PLAYTEST.md`; release builds hide the test rooms and debug tools.)
+
+**Owner playtest before the gate** (`docs/PLAYTEST_CHECKLIST.md`, 64 items; 49 ticked on 2026-09-29):
+- [x] Checklist and a debug-only **Test shortcuts** screen on the title (fight Mother Toad or the Warden, a power at the Shrine, kept slots at level 1 or 5, runs of training, Renown, god mode).
+- [x] Fixes from the owner's play: gate and villager hints no longer hidden by the sign, gamepad paddle names, the sign resets when you walk away, free dodging in the village, B backs out of every menu, a readable sword combo (sweeping slashes, gold finisher), stronger rumble with a Test rumble button, more screen shake, loot no longer circles the hero, Mother Toad's tongue no longer grabs from behind (hitboxes wait one physics step), run HUD hints follow the device in use, a training point without a rank-up now shows on the villager.
+- [x] Longer runs: fight rooms have 3 to 4 waves (the owner's run took 8 minutes against the 12 to 15 minute target).
+- [ ] **Choice clarity pass** (top priority): the owner found the Shrine confusing on every count (what keeping gives, what the villager gets, the long-term payoff, what the buttons do). Proposed: plain-language power cards, villager cards with a Now > Adept > Master timeline, a one-line consequence on each button, and a first-time "how the Choice works" card. Waiting for the owner's go-ahead.
+- [ ] Owner finishes the checklist: F4 (level 3 and 5 upgrades), K2 to K4 (Windows build and `PLAYTEST.md`), a new full-run time, then the feel questions again after the clarity pass.
 
 **Prototype gate (must pass before M6):**
 - [ ] 5+ external playtesters, 2+ hours each.
