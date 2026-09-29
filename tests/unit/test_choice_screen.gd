@@ -18,6 +18,8 @@ func before_each() -> void:
 	GameState.admit_villagers(2)
 	# Past the forced first gift (its tests set this back).
 	GameState.profile.first_gift_done = true
+	# The one-time "How the Choice works" card has its own tests.
+	GameState.profile.choice_help_seen = true
 	hero = GameState.hero_state(GameState.LOCAL_PLAYER_ID)
 
 
@@ -43,6 +45,13 @@ func _button(screen: ChoiceScreen, node_name: String) -> Button:
 
 func _text(screen: ChoiceScreen, node_name: String) -> String:
 	return (screen.find_child(node_name, true, false) as Label).text
+
+
+func _panel_text(screen: ChoiceScreen, node_name: String) -> String:
+	var lines: PackedStringArray = []
+	for label: Node in screen.find_child(node_name, true, false).find_children("*", "Label", true, false):
+		lines.append((label as Label).text)
+	return "\n".join(lines)
 
 
 func _village() -> VillageState:
@@ -97,7 +106,7 @@ func test_merge_raises_the_kept_power() -> void:
 	assert_null(_button(screen, "KeepButton"))
 	var merge: Button = _button(screen, "MergeButton")
 	assert_eq(merge.text, "Merge: level 2 > 3")
-	assert_true(_text(screen, "Note").begins_with("Level 3:"), "shows the upgrade it unlocks")
+	assert_true(_panel_text(screen, "KeepPanel").contains("Level 3:"), "shows the upgrade it unlocks")
 	merge.pressed.emit()
 	await wait_process_frames(1)
 	assert_eq(hero.kept_powers[0].level, 3)
@@ -192,8 +201,11 @@ func test_give_shows_villager_cards_with_previews() -> void:
 	for id: String in ["FarmerCard", "GuardCard", "HealerCard"]:
 		assert_not_null(_button(screen, id), id)
 	var novice: Label = smith.find_child("Novice", true, false) as Label
-	assert_true(novice.text.begins_with("Novice: Sells a Fire infusion"), novice.text)
-	assert_eq((smith.find_child("Master", true, false) as Label).text, "Master: ???", "Techniques stay hidden until the Codex")
+	assert_true(novice.text.begins_with("Now: Sells a Fire infusion"), novice.text)
+	assert_true((smith.find_child("Adept", true, false) as Label).text.begins_with("In 3 runs, Adept: "))
+	assert_eq((smith.find_child("Master", true, false) as Label).text,
+			"In 7 runs, Master: teaches you Ember Step. Your dodge leaves a trail of fire that Burns enemies.",
+			"the Technique is shown: it is the reason to give (owner playtest)")
 	assert_null(smith.find_child("Start", true, false), "a level 1 gift starts at 0 TP")
 	assert_false(screen.find_child("Slots", true, false).visible, "cards cover the slot row")
 	assert_eq(screen.get_viewport().gui_get_focus_owner(), smith, "the first card has focus")
@@ -466,3 +478,61 @@ func test_giving_a_kept_power_to_make_room_reports_both_powers() -> void:
 	assert_eq(made[0]["level"], 3)
 	assert_eq(made[0]["kept"], "growth")
 	assert_eq(made[0]["villager"], "guard")
+
+
+# --- Clarity pass (owner playtest: the Choice was confusing) ----------------------------
+
+func test_a_new_power_says_what_keeping_and_giving_do() -> void:
+	hero.power_offer = [&"fire"] as Array[StringName]
+	var screen: ChoiceScreen = await _open()
+	var cards: Node = screen.find_child("Cards", true, false)
+	assert_eq(cards.get_child(0).name, &"KeepPanel", "keep on the left")
+	assert_eq(cards.get_child(1).name, &"FireCard", "the power in the middle")
+	assert_eq(cards.get_child(2).name, &"GivePanel", "give on the right")
+	var keep: String = _panel_text(screen, "KeepPanel")
+	assert_string_contains(keep, "If you keep it")
+	assert_string_contains(keep, "Power button 1 (Q)")
+	var give: String = _panel_text(screen, "GivePanel")
+	assert_string_contains(give, "holds it forever")
+	assert_string_contains(give, "In 7 runs they are a Master and teach you a Technique")
+
+
+func test_each_button_says_what_it_does() -> void:
+	hero.power_offer = [&"fire"] as Array[StringName]
+	var screen: ChoiceScreen = await _open()
+	var keep: Button = _button(screen, "KeepButton")
+	assert_eq(screen.get_viewport().gui_get_focus_owner(), keep)
+	assert_true(_text(screen, "Note").begins_with("Keep: Fire goes on Power button 1"), _text(screen, "Note"))
+	_button(screen, "LeaveButton").grab_focus()
+	assert_eq(_text(screen, "Note"), "Leave Fire behind: it is gone. Nothing else changes.")
+	_button(screen, "GiveButton").grab_focus()
+	assert_true(_text(screen, "Note").begins_with("Give: pick a villager next."))
+
+
+func test_the_how_it_works_card_opens_once_by_itself() -> void:
+	GameState.profile.choice_help_seen = false
+	hero.power_offer = [&"frost"] as Array[StringName]
+	var screen: ChoiceScreen = await _open()
+	await wait_process_frames(1)
+	assert_not_null(screen.help_card, "the first Choice explains itself")
+	assert_true(GameState.profile.choice_help_seen)
+	assert_eq(screen.get_viewport().gui_get_focus_owner().name, &"GotItButton")
+	var press: InputEventAction = InputEventAction.new()
+	press.action = &"ui_cancel"
+	press.pressed = true
+	screen._unhandled_input(press)
+	assert_null(screen.help_card, "Esc / B closes the card, not the screen")
+	screen.refresh()
+	await wait_process_frames(1)
+	assert_null(screen.help_card, "only once")
+	_button(screen, "HowButton").pressed.emit()
+	assert_not_null(screen.help_card, "How it works opens it again")
+	(screen.help_card.find_child("GotItButton", true, false) as Button).pressed.emit()
+	assert_null(screen.help_card)
+
+
+func test_the_help_flag_survives_a_save() -> void:
+	GameState.profile.choice_help_seen = true
+	var loaded: ProfileState = ProfileState.from_dict(GameState.profile.to_dict())
+	assert_true(loaded.choice_help_seen)
+	assert_false(ProfileState.from_dict({}).choice_help_seen, "old saves see the card once")

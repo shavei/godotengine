@@ -461,7 +461,7 @@ See `docs/ARCHITECTURE.md` Section 9. Summary: no per-player state in autoloads,
 | Title | Continue, New Game, Seasons, Settings, Codex, Quit |
 | Village (diegetic) | Walk around; interact with villagers (shop, info), Shrine, gate, notice board (raid warning). No combat HUD: dodging is free (unlimited stamina) |
 | Village map | Plots, villagers, powers, ranks, TP progress bars, active neighbor bonuses |
-| Choice screen | New power card (stats, level), 3 kept slots, villager portraits with preview, Keep / Give / Merge |
+| Choice screen | "If you keep it" panel, the new power card, "If you give it" panel; 3 kept slots; Keep / Give / Merge / Leave, each with a one-line consequence under the row; villager cards with the gift's timeline (Now, Adept in N runs, Master in N runs and the Technique they teach, shown by name); a "How the Choice works" card the first time and on How it works |
 | Gift ceremony | Full-screen moment, skippable |
 | Character sheet | Level, attributes, weapon mastery, kept powers and levels, Fusion, Techniques |
 | Run map | Branching node map for the current floor |
