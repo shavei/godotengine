@@ -32,10 +32,10 @@ func test_sproutling_splits_into_two_seedlings() -> void:
 	assert_eq(sproutling.split_count, 2)
 
 
-func test_test_encounter_has_three_waves_of_known_enemies() -> void:
+func test_test_encounter_has_four_waves_of_known_enemies() -> void:
 	var encounter: EncounterData = ContentDB.get_item(&"encounters", &"mossy_test")
 	assert_not_null(encounter)
-	assert_eq(encounter.waves.size(), 3)
+	assert_eq(encounter.waves.size(), 4)
 	for wave: WaveData in encounter.waves:
 		assert_gt(wave.enemies.size(), 0)
 		for enemy: EnemyData in wave.enemies:
@@ -66,3 +66,9 @@ func test_follow_up_telegraphs_are_long_enough() -> void:
 		if data.summon != null:
 			assert_between(data.summon_windup, 0.4, 0.8, "%s summon telegraph" % data.id)
 			assert_gt(data.summon_max_alive, 0)
+
+
+func test_fight_rooms_have_3_to_4_waves() -> void:
+	var region: RegionData = ContentDB.get_item(&"regions", &"mossy_hollow") as RegionData
+	for encounter: EncounterData in region.combat_encounters:
+		assert_between(encounter.waves.size(), 3, 4, "%s (GDD 6.2, runs of 12 to 15 minutes)" % encounter.id)

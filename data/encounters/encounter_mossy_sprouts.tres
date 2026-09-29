@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="EncounterData" load_steps=9 format=3]
+[gd_resource type="Resource" script_class="EncounterData" load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/encounter_data.gd" id="1_encounter"]
 [ext_resource type="Script" path="res://scripts/resources/wave_data.gd" id="2_wave"]
@@ -15,9 +15,13 @@ enemies = Array[ExtResource("3_enemy")]([ExtResource("4_sproutling"), ExtResourc
 script = ExtResource("2_wave")
 enemies = Array[ExtResource("3_enemy")]([ExtResource("4_sproutling"), ExtResource("4_sproutling"), ExtResource("6_archer")])
 
+[sub_resource type="Resource" id="Resource_wave3"]
+script = ExtResource("2_wave")
+enemies = Array[ExtResource("3_enemy")]([ExtResource("4_sproutling"), ExtResource("4_sproutling"), ExtResource("5_boar"), ExtResource("4_sproutling")])
+
 [resource]
 script = ExtResource("1_encounter")
 id = &"mossy_sprouts"
 display_name = "Sprout patch"
-waves = Array[ExtResource("2_wave")]([SubResource("Resource_wave1"), SubResource("Resource_wave2")])
+waves = Array[ExtResource("2_wave")]([SubResource("Resource_wave1"), SubResource("Resource_wave2"), SubResource("Resource_wave3")])
 wave_delay = 1.2

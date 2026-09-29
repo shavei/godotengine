@@ -256,7 +256,7 @@ Target: across playtests, **40% to 60% of earned powers are given away**, and me
 ### 6.2 Room types
 | Room | Frequency | Content |
 |---|---|---|
-| Combat | 50% | 2 to 3 waves of enemies |
+| Combat | 50% | 3 to 4 waves of enemies |
 | Elite | 12% | One elite plus adds; 1 Power Shard, Crystal |
 | Treasure | 10% | Coins, materials, sometimes a shard |
 | Rest | 8% | Heal 30% or refill 1 flask |
@@ -595,7 +595,7 @@ Live values: `data/regions/region_mossy_hollow.tres` and `data/balance/balance_d
 | Rest room | Heal 30% max HP, or +1 flask charge |
 | Merchant prices | Flask 30, heal 25% 25, Power Shard 60 coins |
 
-- Mossy Hollow fight rooms draw from 4 encounters (2 to 3 waves). Floors 1 and 2 end in Mother Toad, floor 3 in the Warden of Roots (Section 15.5), each fought alone.
+- Mossy Hollow fight rooms draw from 4 encounters (3 to 4 waves; were 2 to 3 until the owner's 8 minute run on 2026-09-29). Floors 1 and 2 end in Mother Toad, floor 3 in the Warden of Roots (Section 15.5), each fought alone.
 - **Elite rooms:** one elite plus adds, one wave. Elder Boar with 2 Sproutlings and a Thorn Archer, or Spore Witch with a Tusk Boar. Elites have a gold outline and their name on the room banner.
 - **Treasure room:** one chest (Interact to open): 20 to 35 coins, 3 to 6 Wood, 25% a Power Shard, 10% a Crystal.
 - **Merchant (basic):** each ware sells once per visit. +1 flask 30 coins, heal 25% for 25 coins, a Power Shard for 60 coins. Wares the hero cannot pay for (or has no use for: full flasks, full HP) are greyed out. Run-only trinkets join the stock with the trinket list (M8).

@@ -173,6 +173,7 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-29 | A hitbox waits one physics step after `activate()` before it hits; Mother Toad's tongue starts at the front of her body (`reach` 18) | Owner (checklist D6): the tongue pulled the hero even from behind her. `get_overlapping_areas()` still held the last shape (the 44 px belly flop circle around her), so the first frame of any attack that moves or resizes its hitbox hit with the old shape. Affects every attack; costs one frame (16 ms). Regression test. |
 | 2026-09-29 | Test shortcuts screen on the title (debug builds only): fight Mother Toad or the Warden, a power at the Shrine, kept slots at level 1 or 5, runs of training, Renown, god mode | Owner asked for an easier way to test; picked a title menu over more console commands (no typing). Boss runs start at the floor's exit room, so beating the Warden wins the run and drops the orbs as usual. |
 | 2026-09-29 | Run HUD hints name only the device in use (`InputBindings.active_kind`, set by `LocalInputSource`, `EventBus.input_device_changed`): power slots show LB/RB/Y or Q/E/R, the room help line (`CombatHelp`) switches live | Owner: power slots showed only Q/E/R with a gamepad, and the help line listing both devices ran off both edges of the screen. Village and menu hints still name both (they are short). |
+| 2026-09-29 | Mossy Hollow fight rooms have 3 to 4 waves (was 2 to 3): one more wave in each of the 4 encounters | Owner's full run took 8 min 2 s against the 12 to 15 minute target (pillar 5); owner picked more waves over more rooms or tougher enemies. GDD 6.2 and 15 synced. Re-check with testers' run times. |
 
 ## Rejected ideas (do not re-propose without new info)
 
@@ -201,6 +202,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 
 ## Open questions
 
+- **The Choice is confusing (owner playtest, 2026-09-29, top priority before external testers):** at the Shrine the owner could not tell what keeping gives, what the villager gets, the long-term payoff (Adept, Master, Technique), or what the buttons do (Merge, Let go, Leave it, the villager picker). Giving a power, and a gift to Maren, felt the same way: unclear, not a loss or an investment. "One more run": sort of. Pillar 1 fails if the Choice is not understood. Fix proposed to the owner: a Choice clarity pass on the Shrine screen.
+
 - Until raids exist (M6), a gift to the Guard does nothing in runs until the Guard reaches Master (their Techniques do work: Rally Flame, Hold the Line, Stoneguard, Thornmail). 7 runs of nothing may still make the Guard a weak pick (pillar 1). Options if the prototype gate hits this: move raids earlier, or give Guard Novice combos a small run effect until then.
 - The base Farmer flask applies to every run (4 flasks), and the Healer's revive from Renown 2 (M5 PR 1). Watch run deaths in playtests.
 
@@ -219,6 +222,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-29 (owner feel answers):** G7 / H3 / L2: "I got confused, it's very hard to understand what is going on, what it means, what the repercussions are, and what I will gain and what I will lose"; all four parts confusing (keep value, villager service, long-term payoff, buttons). L1: sort of wanted another run. L3: has not seen a Master lesson in play yet. D9: more waves per fight (done: 3 to 4 waves).
 
 - **2026-09-29 (scripted checklist pass):** Owner asked Claude to test what it can and send screenshots. A throwaway scenario runner (xvfb) covered G1 to G6, H1 to H3, I1 to I7, J1 to J5, K1 and F4 (visual only). Found and fixed: a training tick without a rank-up was applied but not shown or saved (`Village.grow` returned early), so a villager read "Novice 0/3" after a run; regression test added. Noticed: after leaving the Shrine the hero stands on the Shrine's caption.
 

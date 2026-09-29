@@ -66,7 +66,7 @@ func test_wave_room_starts_the_first_wave() -> void:
 	await wait_physics_frames(10)
 	var director: WaveDirector = room.get_node("WaveDirector")
 	assert_eq(director.tracker.current_wave, 0)
-	assert_eq(room.get_node("%WaveLabel").text, "Wave 1 / 3")
+	assert_eq(room.get_node("%WaveLabel").text, "Wave 1 / 4")
 	await wait_seconds(1.0)
 	assert_eq(get_tree().get_nodes_in_group(Enemy.GROUP).size(), 3, "three Sproutlings")
 
