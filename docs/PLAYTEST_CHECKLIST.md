@@ -76,7 +76,7 @@ Report back by ID ("A1 ok, C2 bug: ..."), screenshots welcome.
 
 ## I. Training and Renown
 
-- [ ] **I1.** After each run, "Novice 1/3, 2/3..." goes up.
+- [x] **I1.** After each run, "Novice 1/3, 2/3..." goes up.
 - [X] **I2.** After 3 runs: Adept moment (camera, star, pennant on the roof).
 - [X] **I3.** Renown (top right) rises with gifts; at Renown 2, Osk moves in with a moment.
 - [X] **I4.** After 7 runs: Master moment (gold crown, second pennant), then the lesson teaches you a Technique.
