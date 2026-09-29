@@ -194,6 +194,16 @@ func test_the_village_trains_on_return_and_plays_a_rank_up() -> void:
 	assert_true(scene.hero.is_physics_processing(), "the hero walks again")
 
 
+
+func test_a_tick_without_a_rank_up_still_shows_on_the_villager() -> void:
+	var farmer: VillagerState = _give(&"farmer", &"growth")
+	GameState.profile.training_due = 1
+	var scene: Village = await _open()
+	assert_eq(farmer.training_points, 1)
+	assert_null(scene.moment, "1 TP is no rank-up")
+	assert_eq(scene.villager_node(&"farmer").progress, "Novice 1/3", "the name shows the new point at once")
+
+
 func test_no_training_while_a_power_waits_at_the_shrine() -> void:
 	var farmer: VillagerState = _give(&"farmer", &"growth")
 	GameState.profile.training_due = 1

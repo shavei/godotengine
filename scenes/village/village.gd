@@ -271,6 +271,7 @@ func _on_ceremony_finished(villager: Villager, first_gift: bool) -> void:
 func grow() -> Array[RankUp]:
 	if _offer_waits():
 		return []
+	var trained: bool = GameState.profile.training_due > 0
 	var rank_ups: Array[RankUp] = TrainingSystem.train_due(GameState.profile, balance)
 	for event: RankUp in rank_ups:
 		EventBus.villager_ranked_up.emit(village.index_of(event.villager_id), event.rank_after)
@@ -286,7 +287,8 @@ func grow() -> Array[RankUp]:
 		village.renown_seen = renown_level
 		EventBus.renown_changed.emit(RenownSystem.points(village, balance), renown_level)
 	var lessons: Array[ComboData] = teach()
-	if rank_ups.is_empty() and levels.is_empty() and lessons.is_empty():
+	# A tick without a rank-up still changes "Novice 1/3" on the villager and must be saved.
+	if not trained and rank_ups.is_empty() and levels.is_empty() and lessons.is_empty():
 		return rank_ups
 	if save_on_change:
 		GameState.save_profile()
