@@ -6,8 +6,12 @@ extends Control
 ## (+1 level), Give it to a villager forever, or leave it behind. With every slot full a
 ## kept power can be given away to make room (or, when every villager holds a power
 ## already, let go). With no offer waiting, a kept power can be given away at any time.
-## Villager cards preview the Novice and Adept services; the Technique shows as "???"
-## unless the hero already knows it (until the Codex exists). Giving, letting go and leaving ask for a second press.
+## Plain words (ChoiceText, after the owner found the Choice confusing): beside the power
+## sit "If you keep it" and "If you give it" panels; villager cards show the gift's
+## timeline (now, Adept in N runs, Master in N runs and the Technique they will teach);
+## each button says under the row what pressing it does; a "How the Choice works" card
+## opens by itself the first time (ProfileState.choice_help_seen) and from How it works.
+## Giving, letting go and leaving ask for a second press.
 ## "Grow stronger" opens the Shrine's GrowthPanel: attribute points, power levels, respec.
 ## The first power ever earned must be given, to the villager FirstGift names (the Elder
 ## asks for it): only that card is open and Keep, Merge and Leave are not offered. After a
@@ -29,6 +33,7 @@ const GIVE: StringName = &"give"
 const GIVE_KEPT: StringName = &"give_kept"
 const BACK: StringName = &"back"
 const GROW: StringName = &"grow"
+const HOW: StringName = &"how"
 ## Screen views beside the offer itself: pick a villager, or pick a kept power to give.
 const VIEW_OFFER: StringName = &"offer"
 const VIEW_VILLAGERS: StringName = &"villagers"
@@ -65,6 +70,8 @@ var _giving_kept: bool = false
 var _done_message: String = ""
 ## The Grow stronger view's panel, while it shows.
 var growth: GrowthPanel
+## The "How the Choice works" card, while it shows.
+var help_card: PanelContainer
 ## When the screen opened, and when the waiting power first showed (-1 before), in
 ## msec: how long a Choice took (metrics, EventBus.choice_made).
 var _opened_msec: int = 0
@@ -87,7 +94,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Leaving early is safe: an unsettled offer waits in the save (the Shrine keeps glowing).
 	if event.is_action_pressed(&"ui_cancel") or event.is_action_pressed(&"pause"):
 		get_viewport().set_input_as_handled()
-		continue_on()
+		if help_card != null:
+			close_help()
+		else:
+			continue_on()
 
 
 func _build() -> void:
@@ -135,7 +145,7 @@ func refresh() -> void:
 	if done:
 		_headline.text = "The Choice is made"
 		_subline.text = _done_message
-		_add_action("Continue", &"continue", "ContinueButton")
+		_add_action("Continue", &"continue", "ContinueButton", &"", ChoiceText.DONE_HINT)
 		_add_grow_action()
 	elif _view == VIEW_VILLAGERS:
 		_show_villagers()
@@ -145,8 +155,10 @@ func refresh() -> void:
 		_show_pick()
 	elif PowerOffer.waiting_power(hero) != &"" and _first_gift_active():
 		_show_first_gift(PowerOffer.waiting_power(hero))
+		_help_once()
 	elif PowerOffer.waiting_power(hero) != &"":
 		_show_decision(PowerOffer.waiting_power(hero))
+		_help_once()
 	else:
 		_show_shrine()
 	_focus_first()
@@ -184,34 +196,50 @@ func _show_decision(power_id: StringName) -> void:
 	_cards.add_child(card)
 	var kept: KeptPower = GiftSystem.find(hero, power_id)
 	var can_give: bool = not GiftSystem.open_villagers(village).is_empty()
+	var slot: int = hero.kept_powers.size() + 1
+	var button_name: String = InputBindings.hint_for(StringName("power_%d" % slot), InputBindings.active_kind)
+	_note.text = ""
 	match PowerOffer.choice_for(hero, power_id, balance):
 		PowerOffer.KEEP:
 			_subline.text = "Keep it in a free slot, or give it to a villager forever." if can_give \
 					else "Keep it in a free slot, or leave it behind."
-			_add_action("Keep it (slot %d)" % (hero.kept_powers.size() + 1), PowerOffer.KEEP, "KeepButton")
-			_note.text = "Kept powers go on the Power buttons in your next run. A villager trains a gift and serves the village with it."
+			_cards.add_child(_info_panel("If you keep it", ChoiceText.keep_lines(slot, button_name,
+					PowerRules.cooldown(power, hero.attribute(HeroState.FOCUS), balance)), GOLD, "KeepPanel"))
+			_add_action("Keep it (slot %d)" % slot, PowerOffer.KEEP, "KeepButton", &"",
+					ChoiceText.keep_hint(_name(power_id), slot, button_name))
 		PowerOffer.MERGE:
 			_subline.text = "You keep %s already. Merge them for a level." % _name(power_id)
-			_add_action("Merge: level %d > %d" % [kept.level, kept.level + 1], PowerOffer.MERGE, "MergeButton")
-			_note.text = _level_note(power, kept.level + 1)
+			_cards.add_child(_info_panel("If you merge it", ChoiceText.merge_lines(_name(power_id), kept.level + 1,
+					_level_note(power, kept.level + 1)), GOLD, "KeepPanel"))
+			_add_action("Merge: level %d > %d" % [kept.level, kept.level + 1], PowerOffer.MERGE, "MergeButton", &"",
+					ChoiceText.merge_hint(_name(power_id), kept.level + 1))
 		PowerOffer.MAXED:
 			_subline.text = "Your %s is at its highest level already." % _name(power_id)
-			_note.text = "There is nothing to merge. A villager can still use it." if can_give else "There is nothing to merge."
+			_cards.add_child(_info_panel("If you keep it", ["Your %s is at level %d already: merging adds nothing." % [
+					_name(power_id), kept.level]] as PackedStringArray, GOLD, "KeepPanel"))
 		PowerOffer.REPLACE:
+			_cards.add_child(_info_panel("If you keep it", ["Every slot is full.",
+					"Give a kept power away (it keeps its level) or let one go, and this one takes its slot."] as PackedStringArray,
+					GOLD, "KeepPanel"))
 			if can_give:
 				_subline.text = "Every slot is full. Give one power away to make room, or leave this one."
-				_add_action("Give a kept power away", GIVE_KEPT, "GiveKeptButton")
-				_note.text = "A kept power you give away keeps its level: the villager starts training ahead. %s takes its slot." % _name(power_id)
+				_add_action("Give a kept power away", GIVE_KEPT, "GiveKeptButton", &"", ChoiceText.give_kept_hint(_name(power_id)))
 			else:
 				_subline.text = "Every slot is full. Let a kept power go to make room, or leave this one."
 				for other: KeptPower in hero.kept_powers:
 					_add_action("Let %s go (lv %d)" % [_name(other.power_id), other.level], PowerOffer.REPLACE,
-							"Let%sGoButton" % String(other.power_id).capitalize(), other.power_id)
-				_note.text = "Every villager holds a power already. A power you let go is gone, with the shards spent on it."
+							"Let%sGoButton" % String(other.power_id).capitalize(), other.power_id,
+							ChoiceText.let_go_hint(_name(other.power_id), _name(power_id)))
+	_cards.move_child(card, _cards.get_child_count() - 1)
 	if can_give:
-		_add_action("Give to a villager", GIVE, "GiveButton", power_id)
-	_add_action("Leave it behind", LEAVE, "LeaveButton")
+		_cards.add_child(_info_panel("If you give it", ChoiceText.give_lines(balance), GOOD, "GivePanel"))
+		_add_action("Give to a villager", GIVE, "GiveButton", power_id, ChoiceText.give_hint(_name(power_id)))
+	else:
+		_cards.add_child(_info_panel("If you give it", ["Every villager holds a power already.",
+				"More villagers move in as your Renown grows."] as PackedStringArray, DIM, "GivePanel"))
+	_add_action("Leave it behind", LEAVE, "LeaveButton", &"", ChoiceText.leave_hint(_name(power_id)))
 	_add_grow_action()
+	_add_how_action()
 
 
 ## The first power must be given: the Elder asks for it to go to one villager.
@@ -224,11 +252,16 @@ func _show_first_gift(power_id: StringName) -> void:
 	card.name = "%sCard" % String(power_id).capitalize()
 	card.custom_minimum_size = CARD_SIZE
 	card.add_theme_stylebox_override("panel", _box(PANEL, power.color if power != null else INK))
+	_cards.add_child(_info_panel("If you keep it", ["Not this time: your first Spark is always a gift.",
+			"From the next power on, you choose: keep it, give it or merge it."] as PackedStringArray, GOLD, "KeepPanel"))
 	_fill_card(card, power_id)
 	_cards.add_child(card)
-	_add_action("Give to %s" % who.title(), GIVE, "GiveButton", power_id)
+	_cards.add_child(_info_panel("If you give it", ChoiceText.give_lines(balance), GOOD, "GivePanel"))
+	_note.text = ""
+	_add_action("Give to %s" % who.title(), GIVE, "GiveButton", power_id,
+			"Give: see what %s would do with it, then give it. It is theirs forever." % who.title())
 	_add_grow_action()
-	_note.text = "Your first power is always a gift. The villager trains it, and it comes back to you one day as a Technique. From the next power on, the Choice is yours: keep it, give it, or merge it."
+	_add_how_action()
 
 
 ## No offer waits: the Shrine still lets the hero give a kept power away.
@@ -242,13 +275,13 @@ func _show_shrine() -> void:
 		_subline.text = "You can give a kept power to a villager here, at any time."
 		_note.text = "A kept power you give away keeps its level: the villager starts training ahead."
 		_add_kept_gift_actions()
-	_add_action("Continue", &"continue", "ContinueButton")
+	_add_action("Continue", &"continue", "ContinueButton", &"", ChoiceText.DONE_HINT)
 	_add_grow_action()
 
 
 ## "Grow stronger" (it glows in gold while something waits to be spent).
 func _add_grow_action() -> void:
-	var button: Button = _add_action("Grow stronger", GROW, "GrowButton")
+	var button: Button = _add_action("Grow stronger", GROW, "GrowButton", &"", ChoiceText.GROW_HINT)
 	if GrowthPanel.has_anything_to_spend(hero, balance):
 		button.add_theme_color_override("font_color", GOLD)
 		button.add_theme_color_override("font_focus_color", GOLD)
@@ -266,7 +299,7 @@ func _show_growth() -> void:
 	growth.position = Vector2(20, 60)
 	growth.size = Vector2(600, 180)
 	add_child(growth)
-	_add_action("Back", BACK, "BackButton")
+	_add_action("Back", BACK, "BackButton", &"", ChoiceText.BACK_HINT)
 	var first: Button = growth.default_focus()
 	if first != null and get_viewport() != null:
 		first.grab_focus()
@@ -294,7 +327,7 @@ func _show_kept_to_give() -> void:
 	_subline.text = "%s takes its slot at level 1." % _name(waiting) if waiting != &"" else "Pick the power to give."
 	_note.text = "It keeps its level: the villager starts with that many Training Points, less one."
 	_add_kept_gift_actions()
-	_add_action("Back", BACK, "BackButton")
+	_add_action("Back", BACK, "BackButton", &"", ChoiceText.BACK_HINT)
 
 
 func _add_kept_gift_actions() -> void:
@@ -315,7 +348,7 @@ func _show_villagers() -> void:
 	order.sort_custom(func(a: VillagerState, b: VillagerState) -> bool: return a.plot < b.plot)
 	for villager: VillagerState in order:
 		_cards.add_child(_villager_card(villager, level))
-	_add_action("Back", BACK, "BackButton")
+	_add_action("Back", BACK, "BackButton", &"", ChoiceText.BACK_HINT)
 
 
 func _villager_card(villager: VillagerState, level: int) -> Button:
@@ -353,15 +386,16 @@ func _villager_card(villager: VillagerState, level: int) -> Button:
 	if combo == null:
 		column.add_child(_card_text("No service for %s yet." % _name(_giving), DIM, "Novice"))
 		return card
-	column.add_child(_card_text("Novice: %s" % combo.novice.description, INK, "Novice"))
-	column.add_child(_card_text("Adept: %s" % combo.adept.description, DIM, "Adept"))
-	var known: bool = combo.technique != null and TechniqueSystem.knows(hero, combo.technique.id)
-	column.add_child(_card_text("Master: %s" % (combo.technique.display_name if known else "???"), DIM, "Master"))
+	var points: int = GiftSystem.starting_tp(level)
+	var steps: PackedStringArray = ChoiceText.timeline(combo, points, balance)
+	var step_names: Array[String] = ["Novice", "Adept", "Master"]
+	var step_colors: Array[Color] = [INK, DIM, GOLD]
+	for i: int in steps.size():
+		column.add_child(_card_text(steps[i], step_colors[i], step_names[i]))
 	if combo.novice.price > 0:
 		column.add_child(_card_text("Bought once at the %s: %d coins." % [data.workplace if data != null else "shop", combo.novice.price], GOLD, "Price"))
 	elif combo.novice.only_in_raids():
 		column.add_child(_card_text("Works in raids, which have not started yet.", GOLD, "Raids"))
-	var points: int = GiftSystem.starting_tp(level)
 	if points > 0:
 		var rank_text: String = TrainingSystem.rank_name(TrainingSystem.rank_for_points(points, balance))
 		column.add_child(_card_text("Starts at %d TP (%s)." % [points, rank_text], GOOD, "Start"))
@@ -534,6 +568,8 @@ func _on_action(action: StringName, button: Button, power_id: StringName) -> voi
 		GROW:
 			_view = VIEW_GROW
 			refresh()
+		HOW:
+			show_help()
 		GIVE:
 			start_give(power_id, false)
 		GIVE_KEPT:
@@ -573,11 +609,17 @@ func _arm(button: Button, question: String) -> void:
 		button.text = question
 
 
-func _add_action(text: String, action: StringName, node_name: String, power_id: StringName = &"") -> Button:
+func _add_action(text: String, action: StringName, node_name: String, power_id: StringName = &"",
+		hint: String = "") -> Button:
 	var button: Button = Button.new()
 	button.name = node_name
 	button.text = text
 	button.set_meta(&"text", text)
+	if not hint.is_empty():
+		# What pressing it does, under the row while it has focus (or the mouse is on it).
+		button.set_meta(&"hint", hint)
+		button.focus_entered.connect(func() -> void: _note.text = hint)
+		button.mouse_entered.connect(func() -> void: _note.text = hint)
 	button.custom_minimum_size = Vector2(0, 26)
 	button.add_theme_font_size_override("font_size", 9)
 	button.pressed.connect(func() -> void: _on_action(action, button, power_id))
@@ -620,6 +662,78 @@ func _fill_card(card: Control, power_id: StringName) -> void:
 	column.add_child(about)
 	var kept: KeptPower = GiftSystem.find(hero, power_id)
 	column.add_child(_label("New power" if kept == null else "You keep it: level %d" % kept.level, 8, GOOD if kept == null else GOLD, "Kept"))
+
+
+## A card-sized panel beside the power: a heading and a few plain lines.
+func _info_panel(title: String, lines: PackedStringArray, color: Color, node_name: String) -> PanelContainer:
+	var panel: PanelContainer = PanelContainer.new()
+	panel.name = node_name
+	panel.custom_minimum_size = CARD_SIZE
+	panel.add_theme_stylebox_override("panel", _box(PANEL.darkened(0.2), color.darkened(0.35)))
+	var column: VBoxContainer = VBoxContainer.new()
+	column.add_theme_constant_override("separation", 3)
+	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(column)
+	column.add_child(_label(title, 10, color, "Title"))
+	for line: String in lines:
+		var label: Label = _label(line, 8, INK, "Line")
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD
+		label.custom_minimum_size = Vector2(CARD_SIZE.x - 12, 0)
+		column.add_child(label)
+	return panel
+
+
+## The first real Choice opens the "How the Choice works" card by itself, once.
+func _help_once() -> void:
+	if not GameState.profile.choice_help_seen:
+		show_help.call_deferred()
+
+
+func _add_how_action() -> void:
+	_add_action("How it works", HOW, "HowButton", &"", ChoiceText.HOW_HINT)
+
+
+## The "How the Choice works" card over the screen; Got it closes it.
+func show_help() -> void:
+	if help_card != null:
+		return
+	GameState.profile.choice_help_seen = true
+	_save()
+	help_card = PanelContainer.new()
+	help_card.name = "HelpCard"
+	help_card.add_theme_stylebox_override("panel", _box(PANEL, GOLD))
+	help_card.position = Vector2(110, 70)
+	var column: VBoxContainer = VBoxContainer.new()
+	column.add_theme_constant_override("separation", 6)
+	help_card.add_child(column)
+	column.add_child(_label(ChoiceText.HOW_TITLE, 13, GOLD, "Title"))
+	for line: String in ChoiceText.HOW_LINES:
+		var label: Label = _label(line, 9, INK, "Line")
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		label.custom_minimum_size = Vector2(400, 0)
+		column.add_child(label)
+	var close: Button = Button.new()
+	close.name = "GotItButton"
+	close.text = "Got it"
+	close.add_theme_font_size_override("font_size", 9)
+	close.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	close.custom_minimum_size = Vector2(100, 24)
+	close.pressed.connect(close_help)
+	column.add_child(close)
+	add_child(help_card)
+	# As tall as its lines, centred on the screen.
+	help_card.reset_size()
+	help_card.position.y = roundf((360.0 - help_card.size.y) * 0.5)
+	close.grab_focus()
+
+
+func close_help() -> void:
+	if help_card == null:
+		return
+	help_card.queue_free()
+	help_card = null
+	_focus_first()
 
 
 func _slot_view(kept: KeptPower) -> Control:
