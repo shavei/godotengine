@@ -31,10 +31,21 @@ func _input(event: InputEvent) -> void:
 			return
 		using_mouse = false
 		joy_device = event.device
-	elif event is InputEventMouseButton:
-		using_mouse = true
+		_use_kind(InputBindings.Kind.GAMEPAD)
+	elif event is InputEventMouseButton or event is InputEventKey:
+		if event is InputEventMouseButton:
+			using_mouse = true
+		_use_kind(InputBindings.Kind.KEYBOARD)
 	elif event is InputEventMouseMotion and event.relative.length() > MOUSE_WAKE_DISTANCE:
 		using_mouse = true
+		_use_kind(InputBindings.Kind.KEYBOARD)
+
+
+## Tells the HUD which device to name in its hints (once per switch).
+func _use_kind(kind: int) -> void:
+	if InputBindings.active_kind != kind:
+		InputBindings.active_kind = kind
+		EventBus.input_device_changed.emit(kind)
 
 
 func get_move() -> Vector2:

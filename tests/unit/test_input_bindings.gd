@@ -10,11 +10,13 @@ func before_each() -> void:
 	DirAccess.make_dir_recursive_absolute("user://test_settings")
 	DirAccess.remove_absolute(PATH)
 	InputBindings.reset_to_defaults()
+	InputBindings.active_kind = K
 
 
 func after_all() -> void:
 	DirAccess.remove_absolute(PATH)
 	InputBindings.reset_to_defaults()
+	InputBindings.active_kind = K
 
 
 func _key(code: Key) -> InputEventKey:
@@ -107,6 +109,33 @@ func test_menus_go_back_with_escape_or_b() -> void:
 	escape.keycode = KEY_ESCAPE
 	assert_true(InputMap.action_has_event(&"ui_cancel", escape))
 	assert_true(InputMap.action_has_event(&"ui_cancel", _button(JOY_BUTTON_B)))
+
+
+func test_hints_name_one_device_at_a_time() -> void:
+	assert_eq(InputBindings.hint_for(&"power_1", K), "Q")
+	assert_eq(InputBindings.hint_for(&"power_1", G), "LB")
+	assert_eq(InputBindings.move_hint_for(K), "WASD")
+	assert_eq(InputBindings.move_hint_for(G), "stick")
+	var pad: String = InputBindings.combat_help([["Map", &"map"]], G)
+	assert_string_contains(pad, "Attack X")
+	assert_string_contains(pad, "Aim right stick")
+	assert_string_contains(pad, "Map Back")
+	assert_false(pad.contains("Left click"), "no keyboard inputs in the gamepad line")
+	var keys: String = InputBindings.combat_help([["Map", &"map"]], K)
+	assert_string_contains(keys, "Attack Left click")
+	assert_false(keys.contains(" X"), "no gamepad inputs in the keyboard line")
+	assert_lt(pad.length(), InputBindings.combat_help([["Map", &"map"]]).length(), "one device is shorter")
+
+
+func test_the_help_line_follows_the_device_in_use() -> void:
+	var label: Label = Label.new()
+	add_child_autofree(label)
+	CombatHelp.attach(label, [["Map", &"map"]])
+	await wait_process_frames(1)
+	assert_string_contains(label.text, "Attack Left click")
+	InputBindings.active_kind = G
+	EventBus.input_device_changed.emit(G)
+	assert_string_contains(label.text, "Attack X")
 
 
 func test_back_paddles_have_names() -> void:

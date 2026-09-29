@@ -172,6 +172,7 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-28 | A pulled pickup steers its velocity toward the hero (`Pickup.TURN_ACCEL` 2400) instead of only adding speed toward them | Owner (checklist D3): loot sometimes circled the hero after a room clear. Adding 900 px/s² toward the hero with a 320 px/s cap is a stable orbit at about 110 px for anything moving sideways. Regression test reproduces it. |
 | 2026-09-29 | A hitbox waits one physics step after `activate()` before it hits; Mother Toad's tongue starts at the front of her body (`reach` 18) | Owner (checklist D6): the tongue pulled the hero even from behind her. `get_overlapping_areas()` still held the last shape (the 44 px belly flop circle around her), so the first frame of any attack that moves or resizes its hitbox hit with the old shape. Affects every attack; costs one frame (16 ms). Regression test. |
 | 2026-09-29 | Test shortcuts screen on the title (debug builds only): fight Mother Toad or the Warden, a power at the Shrine, kept slots at level 1 or 5, runs of training, Renown, god mode | Owner asked for an easier way to test; picked a title menu over more console commands (no typing). Boss runs start at the floor's exit room, so beating the Warden wins the run and drops the orbs as usual. |
+| 2026-09-29 | Run HUD hints name only the device in use (`InputBindings.active_kind`, set by `LocalInputSource`, `EventBus.input_device_changed`): power slots show LB/RB/Y or Q/E/R, the room help line (`CombatHelp`) switches live | Owner: power slots showed only Q/E/R with a gamepad, and the help line listing both devices ran off both edges of the screen. Village and menu hints still name both (they are short). |
 
 ## Rejected ideas (do not re-propose without new info)
 
@@ -218,6 +219,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-29 (device hints):** Owner's F2 screenshot: power slots showed keyboard keys only and the help line overflowed. Hints now follow the device in use (see decisions). Owner's checklist: A to E done, F1 done; D9 run took 8 min 2 s (target 12 to 15; asked whether to wait for testers or lengthen now); E3 half-loot rounding (1 shard lost) asked. 549 tests pass (2 new), xvfb screenshots in both modes.
 
 - **2026-09-29 (test shortcuts):** Owner: "add a way to make it easier to do the testing" (chose a title menu). `TestShortcuts` (pure: `boss_run`, `add_training_runs`, `keep_powers`) and `TestMenu` (scene, reuses `ConsoleCommands.give_power` / `add_renown`); title button hidden in release builds; checklist and ARCHITECTURE 11 note it. 547 tests pass (4 new), xvfb screenshots of the menu and a run starting at Mother Toad.
 

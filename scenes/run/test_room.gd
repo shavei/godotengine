@@ -13,7 +13,7 @@ const RESPAWN_DELAY: float = 1.5
 
 func _ready() -> void:
 	hud.bind_hero(hero)
-	$Overlay/Help.text = InputBindings.combat_help([["Title", &"pause"]])
+	CombatHelp.attach($Overlay/Help, [["Title", &"pause"]])
 	var bounds: Rect2 = room.get_rect()
 	camera.limit_left = int(bounds.position.x)
 	camera.limit_top = int(bounds.position.y)

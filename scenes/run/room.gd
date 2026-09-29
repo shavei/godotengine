@@ -104,7 +104,7 @@ func _ready() -> void:
 	_loot_rng = LootRoller.rng_for(run.run_seed, run.floor_index, run.current_room_id, &"loot")
 	hud.bind_hero(hero)
 	hud.bind_wallet(wallet, [Wallet.COINS, run.region.material, Wallet.CRYSTAL, Wallet.SHARDS])
-	$Overlay/Help.text = InputBindings.combat_help([["Use", &"interact"], ["Map", &"map"], ["Save and quit", &"pause"]])
+	CombatHelp.attach($Overlay/Help, [["Use", &"interact"], ["Map", &"map"], ["Save and quit", &"pause"]])
 	room.floor_a = run.region.floor_color
 	room.floor_b = run.region.floor_color.darkened(0.08)
 	_fit_camera()
