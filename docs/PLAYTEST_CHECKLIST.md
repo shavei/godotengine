@@ -40,9 +40,9 @@ Report back by ID ("A1 ok, C2 bug: ..."), screenshots welcome.
 - [x] **D3.** Loot pops out, drifts to you, flies to you after a room clears.
 - [x] **D4.** Merchant: flask, heal, Power Shard; wares you cannot use are greyed out.
 - [x] **D5.** Events (Mossy Shrine, Wishing Well): HP costs never kill; the last choice is always free.
-- [ ] **D6.** Mini-boss **Mother Toad:** tongue pulls you in, belly flop lands where you stood, enrages at half HP.
-- [ ] **D7.** Region boss **Warden of Roots:** seed volleys, root walls, slam if you stand next to it.
-- [ ] **D8.** Save and quit mid-run (Esc) shows **Continue run** on the title; the gate says "continue your run" and resumes it.
+- [x] **D6.** Mini-boss **Mother Toad:** tongue pulls you in, belly flop lands where you stood, enrages at half HP.
+- [x] **D7.** Region boss **Warden of Roots:** seed volleys, root walls, slam if you stand next to it.
+- [x] **D8.** Save and quit mid-run (Esc) shows **Continue run** on the title; the gate says "continue your run" and resumes it.
 - [ ] **D9.** A full run takes about 12 to 15 minutes. Your time: ____
 
 ## E. Results and death
