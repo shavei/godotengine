@@ -60,41 +60,41 @@ Report back by ID ("A1 ok, C2 bug: ..."), screenshots welcome.
 
 ## G. The Choice (the heart of the game)
 
-- [ ] **G1.** New game: the Shrine glows, the Elder says your first Spark must be given.
-- [ ] **G2.** First gift: you cannot keep it; it goes to the villager the Elder suggests.
-- [ ] **G3.** Gift ceremony plays; the villager changes color, gets a sash and the power icon; their house gets trimmed.
-- [ ] **G4.** Later Choices: Keep (slot 1 to 3), Merge (same power levels up), Give to a villager, Let a kept power go, Leave it behind.
-- [ ] **G5.** With 3 slots full, you are forced into a real decision.
-- [ ] **G6.** Grow stronger at the Shrine spends points and shards.
+- [x] **G1.** New game: the Shrine glows, the Elder says your first Spark must be given.
+- [x] **G2.** First gift: you cannot keep it; it goes to the villager the Elder suggests.
+- [x] **G3.** Gift ceremony plays; the villager changes color, gets a sash and the power icon; their house gets trimmed.
+- [x] **G4.** Later Choices: Keep (slot 1 to 3), Merge (same power levels up), Give to a villager, Let a kept power go, Leave it behind.
+- [x] **G5.** With 3 slots full, you are forced into a real decision.
+- [x] **G6.** Grow stronger at the Shrine spends points and shards.
 - [ ] **G7.** Feel: did you hesitate on at least one Choice? Why?
 
 ## H. Villager services
 
-- [ ] **H1.** Tilly with a power: extra flasks in runs.
-- [ ] **H2.** Brann with a power: sells an infusion (once).
+- [X] **H1.** Tilly with a power: extra flasks in runs.
+- [x] **H2.** Brann with a power: sells an infusion (once).
 - [ ] **H3.** Maren with a power: nothing in runs until Master (raids are not built yet). Does that feel like a wasted gift?
 
 ## I. Training and Renown
 
 - [ ] **I1.** After each run, "Novice 1/3, 2/3..." goes up.
-- [ ] **I2.** After 3 runs: Adept moment (camera, star, pennant on the roof).
-- [ ] **I3.** Renown (top right) rises with gifts; at Renown 2, Osk moves in with a moment.
-- [ ] **I4.** After 7 runs: Master moment (gold crown, second pennant), then the lesson teaches you a Technique.
-- [ ] **I5.** Character sheet lists the Technique and who taught it.
-- [ ] **I6.** The Technique works in a run (for example Regrowth, Ember Step, Cold Temper).
-- [ ] **I7.** With Osk and a revive token, you get back up at 30% HP.
+- [X] **I2.** After 3 runs: Adept moment (camera, star, pennant on the roof).
+- [X] **I3.** Renown (top right) rises with gifts; at Renown 2, Osk moves in with a moment.
+- [X] **I4.** After 7 runs: Master moment (gold crown, second pennant), then the lesson teaches you a Technique.
+- [x] **I5.** Character sheet lists the Technique and who taught it.
+- [x] **I6.** The Technique works in a run (for example Regrowth, Ember Step, Cold Temper).
+- [x] **I7.** With Osk and a revive token, you get back up at 30% HP.
 
 ## J. Debug console (editor only, F5)
 
-- [ ] **J1.** ` or F2 opens it in the village.
-- [ ] **J2.** `give_power fire` puts a power at the Shrine.
-- [ ] **J3.** `set_tp farmer 7` (after gifting Tilly) triggers Master and the lesson.
-- [ ] **J4.** `add_renown 10` triggers Renown moments.
-- [ ] **J5.** In a run: `skip_room` and `god_mode`.
+- [x] **J1.** ` or F2 opens it in the village.
+- [x] **J2.** `give_power fire` puts a power at the Shrine.
+- [x] **J3.** `set_tp farmer 7` (after gifting Tilly) triggers Master and the lesson.
+- [x] **J4.** `add_renown 10` triggers Renown moments.
+- [x] **J5.** In a run: `skip_room` and `god_mode`.
 
 ## K. Playtest build and logs
 
-- [ ] **K1.** A log file appears in the log folder after a session, with your Choices in it.
+- [x] **K1.** A log file appears in the log folder after a session, with your Choices in it.
 - [ ] **K2.** GitHub > Actions > **Playtest builds** > Run workflow; download the Windows zip.
 - [ ] **K3.** The zip runs on Windows (More info > Run anyway); test rooms and debug tools are hidden.
 - [ ] **K4.** `docs/PLAYTEST.md` (in the zip) is clear for someone new.
