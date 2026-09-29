@@ -129,6 +129,18 @@ func test_toad_tongue_hits_and_pulls_the_hero_in() -> void:
 	assert_gt(hero.position.x, 250.0, "the hero was pulled toward the toad")
 
 
+
+func test_toad_tongue_never_hits_behind_her() -> void:
+	var toad: Enemy = _boss(&"mother_toad", Vector2(320, 200), [MotherToadAI.TONGUE] as Array[StringName])
+	var ai: MotherToadAI = toad.ai as MotherToadAI
+	while ai.phase != MotherToadAI.Phase.TONGUE_WINDUP:
+		await wait_physics_frames(1)
+	# She aims at the hero (to her left); the hero dodges through her to her back.
+	hero.global_position = toad.global_position + Vector2(10, 0)
+	await wait_seconds(toad.data.tongue.windup + toad.data.tongue.active + 0.05)
+	assert_eq(hero.health.hp, hero.health.max_hp, "the tongue only reaches out in front of her")
+
+
 func test_toad_flop_leaps_to_the_marked_spot_and_lands_hard() -> void:
 	var toad: Enemy = _boss(&"mother_toad", Vector2(320, 200), [MotherToadAI.FLOP] as Array[StringName])
 	var boss: BossData = toad.data

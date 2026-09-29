@@ -23,7 +23,7 @@ damage = 10.0
 windup = 0.6
 active = 0.25
 recovery = 0.35
-reach = 0.0
+reach = 18.0
 radius = 7.0
 knockback = 0.0
 

@@ -10,6 +10,10 @@ var stats: CombatStats = CombatStats.new()
 var active: bool = false
 
 var _already_hit: Array[HurtboxComponent] = []
+## True for the first physics frame after activate(): the overlap list still describes
+## the shape as it was before this attack moved or resized it (Mother Toad's tongue
+## used to hit all around her with her belly flop's circle), so wait one step.
+var _settling: bool = false
 
 
 func _ready() -> void:
@@ -20,6 +24,7 @@ func _ready() -> void:
 func activate(new_attack: AttackData) -> void:
 	attack = new_attack
 	active = true
+	_settling = true
 	_already_hit.clear()
 
 
@@ -28,8 +33,12 @@ func deactivate() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	if active:
-		check_hits()
+	if not active:
+		return
+	if _settling:
+		_settling = false
+		return
+	check_hits()
 
 
 func check_hits() -> void:

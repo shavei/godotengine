@@ -42,7 +42,9 @@ func tick(delta: float) -> void:
 				_set_phase(Phase.TONGUE_OUT)
 		Phase.TONGUE_OUT:
 			enemy.move_toward_direction(Vector2.ZERO, delta)
-			_tongue_length = boss.tongue_range * minf(_time / maxf(boss.tongue.active, 0.01), 1.0)
+			# The tongue leaves from the front of her body (tongue.reach), never from its middle,
+			# so a hero behind or beside her is never caught.
+			_tongue_length = lerpf(boss.tongue.reach, boss.tongue_range, minf(_time / maxf(boss.tongue.active, 0.01), 1.0))
 			enemy.lash(_tongue_length)
 			if _time >= boss.tongue.active:
 				enemy.end_attack()
