@@ -109,6 +109,14 @@ size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 10
 text = "Tuning room"
 
+[node name="TestButton" type="Button" parent="Center"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 10
+text = "Test shortcuts"
+
 [node name="ControlsButton" type="Button" parent="Center"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(140, 0)

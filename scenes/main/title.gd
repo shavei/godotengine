@@ -7,7 +7,7 @@ extends Control
 ## Controls stay (they are per machine).
 ## Playtest log (bottom left) turns local metrics on or off (Metrics); while on, Open log
 ## folder shows where the session files are. Release builds (playtesters) hide the M1
-## test rooms.
+## test rooms and Test shortcuts (TestMenu).
 
 const RUN_ROOM_SCENE: String = "res://scenes/run/room.tscn"
 const VILLAGE_SCENE: String = "res://scenes/village/village.tscn"
@@ -15,6 +15,7 @@ const TEST_ROOM_SCENE: String = "res://scenes/run/test_room.tscn"
 const WAVE_ROOM_SCENE: String = "res://scenes/run/wave_room.tscn"
 const TUNING_ROOM_SCENE: String = "res://scenes/run/tuning_room.tscn"
 const CONTROLS_SCENE: String = "res://scenes/ui/controls_menu.tscn"
+const TEST_MENU_SCENE: String = "res://scenes/ui/test_menu.tscn"
 const NEW_GAME_TEXT: String = "New game"
 const NEW_GAME_CONFIRM: String = "Sure? Your progress is lost"
 const LOG_ON_TEXT: String = "Playtest log: on"
@@ -37,9 +38,10 @@ func _ready() -> void:
 	%WaveButton.pressed.connect(_on_wave_pressed)
 	%TuningButton.pressed.connect(_on_tuning_pressed)
 	%ControlsButton.pressed.connect(_on_controls_pressed)
+	%TestButton.pressed.connect(func() -> void: SceneRouter.go(TEST_MENU_SCENE))
 	%LogButton.pressed.connect(toggle_playtest_log)
 	%FolderButton.pressed.connect(Metrics.open_folder)
-	for button: Button in [%PlayButton, %WaveButton, %TuningButton]:
+	for button: Button in [%PlayButton, %WaveButton, %TuningButton, %TestButton]:
 		button.visible = OS.is_debug_build()
 	refresh_playtest_log()
 	%ContinueButton.visible = GameState.has_saved_run()

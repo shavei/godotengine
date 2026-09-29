@@ -171,6 +171,7 @@ Persistent project memory. Read at the start of every session, update at the end
 | 2026-09-28 | Rumble floor 0.25 for 0.1 s, strong motor carries the hit (was mostly the weak motor); Controls gets a Test rumble button; screen shake max offset 6 to 7.5 px | Owner (checklist C7): never feels any rumble; shake a tiny bit more aggressive. A sword tap asked for 0.12 on the weak (buzz) motor for 0.06 s, too faint to feel. The test button tells whether the pad is seen and can rumble at all. GDD 15.5 synced. |
 | 2026-09-28 | A pulled pickup steers its velocity toward the hero (`Pickup.TURN_ACCEL` 2400) instead of only adding speed toward them | Owner (checklist D3): loot sometimes circled the hero after a room clear. Adding 900 px/s² toward the hero with a 320 px/s cap is a stable orbit at about 110 px for anything moving sideways. Regression test reproduces it. |
 | 2026-09-29 | A hitbox waits one physics step after `activate()` before it hits; Mother Toad's tongue starts at the front of her body (`reach` 18) | Owner (checklist D6): the tongue pulled the hero even from behind her. `get_overlapping_areas()` still held the last shape (the 44 px belly flop circle around her), so the first frame of any attack that moves or resizes its hitbox hit with the old shape. Affects every attack; costs one frame (16 ms). Regression test. |
+| 2026-09-29 | Test shortcuts screen on the title (debug builds only): fight Mother Toad or the Warden, a power at the Shrine, kept slots at level 1 or 5, runs of training, Renown, god mode | Owner asked for an easier way to test; picked a title menu over more console commands (no typing). Boss runs start at the floor's exit room, so beating the Warden wins the run and drops the orbs as usual. |
 
 ## Rejected ideas (do not re-propose without new info)
 
@@ -217,6 +218,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-09-29 (test shortcuts):** Owner: "add a way to make it easier to do the testing" (chose a title menu). `TestShortcuts` (pure: `boss_run`, `add_training_runs`, `keep_powers`) and `TestMenu` (scene, reuses `ConsoleCommands.give_power` / `add_renown`); title button hidden in release builds; checklist and ARCHITECTURE 11 note it. 547 tests pass (4 new), xvfb screenshots of the menu and a run starting at Mother Toad.
 
 - **2026-09-29 (tongue from behind):** D6: belly flop perfect; tongue pulled the hero from behind. Reproduced in `test_toad_tongue_never_hits_behind_her`; root cause stale overlaps in `HitboxComponent` (fixed for all attacks), plus the tongue now leaves from her front edge. 543 tests pass.
 
