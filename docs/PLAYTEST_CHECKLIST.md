@@ -3,6 +3,8 @@
 Everything built so far, in play order. Tick a box when it works; add a note under any item that does not.
 Report back by ID ("A1 ok, C2 bug: ..."), screenshots welcome.
 
+**Shortcuts (editor, F5):** Title > **Test shortcuts** jumps straight to Mother Toad (D6) or the Warden (D7, F1), puts a power at the Shrine (F, G), fills your 3 slots at level 1 or 5 (F2 to F4), adds runs of training (I1 to I4) or Renown (I3), and turns god mode on.
+
 ## A. Title screen
 
 - [x] **A1.** Title shows Level, XP, coins banked, Runs; buttons: Go to the village, New game, Controls (plus 3 test rooms).
