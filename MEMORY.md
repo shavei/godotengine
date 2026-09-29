@@ -220,6 +220,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 
 ## Session log
 
+- **2026-09-29 (scripted checklist pass):** Owner asked Claude to test what it can and send screenshots. A throwaway scenario runner (xvfb) covered G1 to G6, H1 to H3, I1 to I7, J1 to J5, K1 and F4 (visual only). Found and fixed: a training tick without a rank-up was applied but not shown or saved (`Village.grow` returned early), so a villager read "Novice 0/3" after a run; regression test added. Noticed: after leaving the Shrine the hero stands on the Shrine's caption.
+
 - **2026-09-29 (device hints):** Owner's F2 screenshot: power slots showed keyboard keys only and the help line overflowed. Hints now follow the device in use (see decisions). Owner's checklist: A to E done, F1 done; D9 run took 8 min 2 s (target 12 to 15; asked whether to wait for testers or lengthen now); E3 half-loot rounding (1 shard lost) asked. 549 tests pass (2 new), xvfb screenshots in both modes.
 
 - **2026-09-29 (test shortcuts):** Owner: "add a way to make it easier to do the testing" (chose a title menu). `TestShortcuts` (pure: `boss_run`, `add_training_runs`, `keep_powers`) and `TestMenu` (scene, reuses `ConsoleCommands.give_power` / `add_renown`); title button hidden in release builds; checklist and ARCHITECTURE 11 note it. 547 tests pass (4 new), xvfb screenshots of the menu and a run starting at Mother Toad.
