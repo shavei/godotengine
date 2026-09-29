@@ -43,7 +43,7 @@ Report back by ID ("A1 ok, C2 bug: ..."), screenshots welcome.
 - [x] **D6.** Mini-boss **Mother Toad:** tongue pulls you in, belly flop lands where you stood, enrages at half HP.
 - [x] **D7.** Region boss **Warden of Roots:** seed volleys, root walls, slam if you stand next to it.
 - [x] **D8.** Save and quit mid-run (Esc) shows **Continue run** on the title; the gate says "continue your run" and resumes it.
-- [x] **D9.** A full run takes about 12 to 15 minutes. Your time: 8 minutes, 2 seconds
+- [ ] **D9.** A full run takes about 12 to 15 minutes. Your time: 8 minutes, 2 seconds
 
 ## E. Results and death
 
@@ -54,8 +54,8 @@ Report back by ID ("A1 ok, C2 bug: ..."), screenshots welcome.
 ## F. Powers
 
 - [x] **F1.** The boss drops power orbs; you pick one and it waits at the Shrine.
-- [ ] **F2.** Try each power: Fire (projectile), Frost (shards), Growth (healing patch), Stone (shield that bursts).
-- [ ] **F3.** Q / E / R (or LB / RB / Y) cast; the HUD shows cooldowns.
+- [x] **F2.** Try each power: Fire (projectile), Frost (shards), Growth (healing patch), Stone (shield that bursts).
+- [x] **F3.** Q / E / R (or LB / RB / Y) cast; the HUD shows cooldowns.
 - [ ] **F4.** Level 3 and level 5 upgrades feel different (Tuning room "Power level" to check fast).
 
 ## G. The Choice (the heart of the game)
