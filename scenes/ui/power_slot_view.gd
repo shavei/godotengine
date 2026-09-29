@@ -65,7 +65,7 @@ func _draw() -> void:
 		if _flash > 0.0:
 			draw_rect(box, Color(1, 1, 1, _flash / READY_FLASH * 0.5))
 		_text(str(slot.level), Vector2(SIZE - 3.0, 7.0), 6, Color(1, 0.95, 0.7))
-	_text(InputBindings.hint(action).get_slice(" / ", 0), Vector2(SIZE * 0.5, SIZE + 8.0), 7, Color(1, 1, 1, 0.7))
+	_text(InputBindings.hint_for(action, InputBindings.active_kind), Vector2(SIZE * 0.5, SIZE + 8.0), 7, Color(1, 1, 1, 0.7))
 
 
 func _text(value: String, center: Vector2, font_size: int, color: Color) -> void:

@@ -7,6 +7,10 @@ extends RefCounted
 
 enum Kind { KEYBOARD, GAMEPAD }
 
+## The device the player used last (LocalInputSource sets it). Hints on the HUD show
+## only this device's inputs, so they stay short and match what is in the player's hands.
+static var active_kind: int = Kind.KEYBOARD
+
 const SETTINGS_PATH: String = "user://settings.cfg"
 const SECTION: String = "input"
 
@@ -266,6 +270,21 @@ static func hint(action: StringName) -> String:
 	return " / ".join(names)
 
 
+## The action's input on one device ("Q" or "LB"), or the other device's if that one
+## has none.
+static func hint_for(action: StringName, kind: int) -> String:
+	var event: InputEvent = primary(action, kind)
+	if event == null:
+		event = primary(action, Kind.GAMEPAD if kind == Kind.KEYBOARD else Kind.KEYBOARD)
+	return event_name(event)
+
+
+## "WASD" or "stick" for one device (the four inputs spelled out when remapped).
+static func move_hint_for(kind: int) -> String:
+	var parts: PackedStringArray = move_hint().split(" / ", true, 1)
+	return parts[0] if kind == Kind.KEYBOARD or parts.size() < 2 else parts[1]
+
+
 ## "WASD / stick", or the four inputs spelled out when they are remapped.
 static func move_hint() -> String:
 	var keys: PackedStringArray = []
@@ -283,16 +302,20 @@ static func move_hint() -> String:
 
 
 ## The combat help line shown at the bottom of rooms. `extra` adds ["Label", action] pairs.
-static func combat_help(extra: Array[Array] = []) -> String:
+## With a `kind` it names only that device's inputs (the HUD uses active_kind).
+static func combat_help(extra: Array[Array] = [], kind: int = -1) -> String:
+	var name_of: Callable = func(action: StringName) -> String:
+		return hint(action) if kind < 0 else hint_for(action, kind)
+	var aim: String = "mouse / right stick" if kind < 0 else ("mouse" if kind == Kind.KEYBOARD else "right stick")
 	var parts: PackedStringArray = [
-		"Move %s" % move_hint(),
-		"Aim mouse / right stick",
-		"Attack %s" % hint(&"attack"),
-		"Dodge %s" % hint(&"dodge"),
-		"Flask %s" % hint(&"flask"),
+		"Move %s" % (move_hint() if kind < 0 else move_hint_for(kind)),
+		"Aim %s" % aim,
+		"Attack %s" % name_of.call(&"attack"),
+		"Dodge %s" % name_of.call(&"dodge"),
+		"Flask %s" % name_of.call(&"flask"),
 	]
 	for pair: Array in extra:
-		parts.append("%s %s" % [pair[0], hint(pair[1])])
+		parts.append("%s %s" % [pair[0], name_of.call(pair[1])])
 	return "    ".join(parts)
 
 

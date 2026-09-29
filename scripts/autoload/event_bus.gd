@@ -38,6 +38,8 @@ signal raid_ended(success: bool)
 
 # Game feel
 signal camera_shake_requested(trauma: float)
+## The player switched between keyboard/mouse and gamepad (InputBindings.Kind).
+signal input_device_changed(kind: int)
 
 # Combat
 signal hero_died(player_id: int)
