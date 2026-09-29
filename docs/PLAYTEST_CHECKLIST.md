@@ -43,7 +43,7 @@ Report back by ID ("A1 ok, C2 bug: ..."), screenshots welcome.
 - [x] **D6.** Mini-boss **Mother Toad:** tongue pulls you in, belly flop lands where you stood, enrages at half HP.
 - [x] **D7.** Region boss **Warden of Roots:** seed volleys, root walls, slam if you stand next to it.
 - [x] **D8.** Save and quit mid-run (Esc) shows **Continue run** on the title; the gate says "continue your run" and resumes it.
-- [ ] **D9.** A full run takes about 12 to 15 minutes. Your time: ____
+- [x] **D9.** A full run takes about 12 to 15 minutes. Your time: 8 minutes, 2 seconds
 
 ## E. Results and death
 
