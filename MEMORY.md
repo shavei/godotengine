@@ -9,7 +9,7 @@ Persistent project memory. Read at the start of every session, update at the end
 - **Next step:** The owner playtest before the prototype gate is under way (`docs/PLAYTEST_CHECKLIST.md`, 49 of 64 ticked; ROADMAP M5 "Owner playtest before the gate"). Just done: the **Choice clarity pass**; the owner re-checks the Shrine (a New game, then a free Choice) and answers the feel questions again. Then the owner finishes F4, K2 to K4 and a new run time with 3 to 4 waves, and the feel questions are asked again. External testers (the gate) only after that.
 - **Also:** Combat feel pass (merged): quick turns, swings keep momentum, stable facing, no swallowed finisher press. Owner feedback on it still welcome.
 - **Also:** Village fixes (owner's first playtest): the gate's caption sits above its ring, gamepad back paddles show as "Paddle 1" to "Paddle 4" (merged); then the camera looks 32 px past the bottom wall so the sign never covers walkable ground, a villager's name moves above their head while the hero stands on them, and the sign returns to the welcome line when the hero walks off whoever spoke.
-- **Last updated:** 2026-09-29 (roadmap sync after the owner playtest)
+- **Last updated:** 2026-10-03 (Claude's own checklist pass: Shrine re-check, run-time estimate, PLAYTEST.md)
 
 ## The game in brief
 
@@ -223,6 +223,8 @@ Runner-up ideas still considered original (keep for later or a future project): 
 - Platform targets beyond PC (Steam Deck verified is a goal; Switch-class consoles later).
 
 ## Session log
+
+- **2026-10-03 (Claude's checklist pass):** Owner: "do what you can by yourself and report back with screenshots". xvfb screenshots of every Shrine view after the clarity pass. Fixed: the orb pick had no line under it (now says what comes next), the help card hardcoded 3 slots and 3 / 7 runs (now `ChoiceText.how_lines(balance)`), and with full slots "Give a kept power away" sat beside "Give to a villager" without saying which power goes (now "Give Growth to a villager"). `PLAYTEST.md`: a "How a session goes" section (gate, run, Sparks, Shrine, forced first gift, Esc), neutral wording so testers are not nudged toward giving. D9 estimate: fights went from 7.25 to 11 enemies on average (2.5 to 3.5 waves), so the owner's 8 min run should now take about 10 to 11 min, likely still under 12; the owner times it. 559 tests pass (1 new, 2 asserts added).
 
 - **2026-09-29 (Choice clarity pass):** Owner: "let's deal with this now" (the proposal, Technique revealed). `ChoiceText` (pure, tested), Choice screen keep / give panels, villager timelines, button hints (focus or hover), help card once plus How it works, Esc / B closes the card first. 558 tests pass (7 new), xvfb screenshots of every Shrine view.
 

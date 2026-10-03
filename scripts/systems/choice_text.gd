@@ -74,15 +74,21 @@ const CONTINUE_HINT: String = "Back to the village. A power you have not settled
 const DONE_HINT: String = "Back to the village."
 const BACK_HINT: String = "Back to the power."
 const HOW_HINT: String = "How the Choice works, in four lines."
+const PICK_HINT: String = "Take one Spark. Next you choose: keep it for your runs, or give it to a villager."
 
 ## The one-time card that explains the Choice (and the "How it works" button).
 const HOW_TITLE: String = "How the Choice works"
-const HOW_LINES: PackedStringArray = [
-	"Keep it: you are stronger in your next run. You have 3 slots.",
-	"Give it: a villager holds it forever, and their service helps every run.",
-	"Every run they train it. In 3 runs they are Adept, in 7 a Master who teaches you a Technique: yours for good, no slot needed.",
-	"Merge: a power you keep already gains a level. Leave it: it is gone.",
-]
+
+
+## The card's lines, with the slot count and training thresholds from the balance data.
+static func how_lines(balance: BalanceData) -> PackedStringArray:
+	return [
+		"Keep it: you are stronger in your next run. You have %d slots." % GiftSystem.slot_count(balance),
+		"Give it: a villager holds it forever, and their service helps every run.",
+		"Every run they train it. In %d runs they are Adept, in %d a Master who teaches you a Technique: yours for good, no slot needed." % [
+				balance.adept_tp, balance.master_tp],
+		"Merge: a power you keep already gains a level. Leave it: it is gone.",
+	]
 
 
 ## "In 3 runs, Adept" or "Adept now" (a kept power given away can start there).

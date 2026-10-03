@@ -26,7 +26,8 @@ func test_every_line_is_plain_and_has_no_em_dash() -> void:
 	texts.append_array(ChoiceText.keep_lines(2, "E", 6.0))
 	texts.append_array(ChoiceText.merge_lines("Fire", 3, "Level 3: explodes."))
 	texts.append_array(ChoiceText.give_lines(balance))
-	texts.append_array(ChoiceText.HOW_LINES)
+	texts.append_array(ChoiceText.how_lines(balance))
+	texts.append(ChoiceText.PICK_HINT)
 	texts.append(ChoiceText.keep_hint("Fire", 1, "Q"))
 	texts.append(ChoiceText.leave_hint("Fire"))
 	texts.append(ChoiceText.let_go_hint("Fire", "Frost"))
@@ -34,3 +35,12 @@ func test_every_line_is_plain_and_has_no_em_dash() -> void:
 		assert_false(text.contains("—"), text)
 	assert_eq(ChoiceText.keep_lines(2, "E", 6.0)[0], "Yours in every run, on Power button 2 (E).")
 	assert_eq(ChoiceText.merge_lines("Fire", 3, "")[0], "Your Fire goes from level 2 to 3.")
+
+
+func test_the_help_card_reads_its_numbers_from_the_balance() -> void:
+	var tuned: BalanceData = BalanceData.new()
+	tuned.adept_tp = 4
+	tuned.master_tp = 9
+	var lines: PackedStringArray = ChoiceText.how_lines(tuned)
+	assert_true(lines[0].ends_with("You have %d slots." % GiftSystem.slot_count(tuned)), lines[0])
+	assert_true(lines[2].contains("In 4 runs they are Adept, in 9 a Master"), lines[2])

@@ -274,6 +274,7 @@ func test_full_slots_give_a_kept_power_away_to_make_room() -> void:
 	watch_signals(EventBus)
 	var screen: ChoiceScreen = await _open()
 	assert_null(_button(screen, "LetFrostGoButton"), "a free villager means no power is simply lost")
+	assert_eq(_button(screen, "GiveButton").text, "Give Growth to a villager", "the two Give buttons say which power goes")
 	_button(screen, "GiveKeptButton").pressed.emit()
 	await wait_process_frames(1)
 	assert_eq(_text(screen, "Headline"), "Give a kept power away")
@@ -386,6 +387,7 @@ func test_the_first_offer_still_lets_the_hero_pick_an_orb() -> void:
 	hero.power_offer = [&"fire", &"growth"] as Array[StringName]
 	var screen: ChoiceScreen = await _open()
 	assert_eq(_text(screen, "Headline"), "2 Sparks broke free")
+	assert_eq(_text(screen, "Note"), ChoiceText.PICK_HINT, "the orbs say what comes after the pick")
 	_button(screen, "GrowthCard").pressed.emit()
 	await wait_process_frames(1)
 	assert_eq(_text(screen, "Headline"), "Your first Spark: Growth")
