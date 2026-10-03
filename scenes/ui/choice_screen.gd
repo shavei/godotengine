@@ -167,7 +167,7 @@ func refresh() -> void:
 func _show_pick() -> void:
 	_headline.text = "%d Sparks broke free" % hero.power_offer.size()
 	_subline.text = "Take one. The %s for good." % ("other fades" if hero.power_offer.size() == 2 else "others fade")
-	_note.text = ""
+	_note.text = ChoiceText.PICK_HINT
 	for power_id: StringName in hero.power_offer:
 		var card: Button = Button.new()
 		card.name = "%sCard" % String(power_id).capitalize()
@@ -233,7 +233,7 @@ func _show_decision(power_id: StringName) -> void:
 	_cards.move_child(card, _cards.get_child_count() - 1)
 	if can_give:
 		_cards.add_child(_info_panel("If you give it", ChoiceText.give_lines(balance), GOOD, "GivePanel"))
-		_add_action("Give to a villager", GIVE, "GiveButton", power_id, ChoiceText.give_hint(_name(power_id)))
+		_add_action("Give %s to a villager" % _name(power_id), GIVE, "GiveButton", power_id, ChoiceText.give_hint(_name(power_id)))
 	else:
 		_cards.add_child(_info_panel("If you give it", ["Every villager holds a power already.",
 				"More villagers move in as your Renown grows."] as PackedStringArray, DIM, "GivePanel"))
@@ -707,7 +707,7 @@ func show_help() -> void:
 	column.add_theme_constant_override("separation", 6)
 	help_card.add_child(column)
 	column.add_child(_label(ChoiceText.HOW_TITLE, 13, GOLD, "Title"))
-	for line: String in ChoiceText.HOW_LINES:
+	for line: String in ChoiceText.how_lines(balance):
 		var label: Label = _label(line, 9, INK, "Line")
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT

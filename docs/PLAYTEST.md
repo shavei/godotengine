@@ -29,11 +29,21 @@ Where the folder is, if the button does not open it:
 
 Your save is in the `saves` folder next to it. **New game** on the title starts over.
 
+## How a session goes
+
+1. You start in the village. Walk to the **gate** to start a run.
+2. A run is a few floors of rooms. Clear a room, then pick the next one by its door (the Map button shows the floor).
+3. Beat the region's boss and a few **Sparks** (new powers) appear. Take one.
+4. Back in the village, the **Shrine** glows. That is where you make the Choice: keep the power, or give it to a villager forever.
+5. Your very first Spark is always a gift (the Elder asks for it). Every Choice after that is yours.
+
+In a run, Esc saves and quits; **Continue run** on the title picks the run up again.
+
 ## What to try
 
 - Play for about 2 hours, in one sitting or several.
-- Every run ends with a new power. Keep it, or give it to a villager. Watch what the villager does with it.
-- Talk to villagers, check the notice board, press the Map button in the village to see your hero.
+- Choose however feels right to you. Watch what a villager does with a gift, and what they teach you later.
+- Talk to villagers, check the notice board, press the Map button in the village to see your hero's sheet.
 
 ## Questions (send answers with your log files)
 
